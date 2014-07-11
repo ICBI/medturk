@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="medTurkApp">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>medTurk</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.css" rel="stylesheet">
+
+    <!-- Add CSS here -->
+    <link rel="stylesheet" href="font-awesome/css/font-awesome.min.css">
+    <link href="css/style.css" rel="stylesheet">
+  </head>
+
+  <body>
+
+    <div id="wrapper">
+      <!-- Sidebar -->
+      <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+         <h3>&nbsp;&nbsp;<a style="color: white"  href="#/">medTurk</a></h3>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse navbar-ex1-collapse">
+          <ul class="nav navbar-nav side-nav">  <!-- <li class="active"> -->
+            <li><a href="#/" style="color: white"><i class="fa fa-file"></i> Home</a></li>
+            <li><a href="#/create" style="color: white"><i class="fa fa-calendar"></i> Create a Project</a></li>
+            <li><a href="#/project" style="color: white"><i class="fa fa-calendar"></i> Project Status</a></li>
+            <li><a href="#/work" style="color: white"><i class="fa fa-edit"></i> Work</a></li>
+          </ul>
+
+          <!--
+          <ul class="nav navbar-nav navbar-right navbar-user">
+            <li class="dropdown user-dropdown">
+              <a class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-user"></i> Sign in <b class="caret"></b></a>
+              <ul class="dropdown-menu">
+                <li><a href="#"><i class="fa fa-power-off"></i> Log Out</a></li>
+              </ul>
+            </li>
+          </ul>-->
+        </div><!-- /.navbar-collapse -->
+      </nav>
+
+      <div id="page-wrapper">
+
+        <div class="row">
+          <div class="col-lg-12">
+            <div ng-view></div>
+          </div>
+        </div><!-- /.row -->
+
+      </div><!-- /#page-wrapper -->
+
+    </div><!-- /#wrapper -->
+
+    <!-- JavaScript -->
+    <script src="js/jquery-1.10.2.js"></script>
+    <script src="js/bootstrap.js"></script>
+    <script src="js/angular-file-upload-shim.min.js"></script>
+    <script src="js/angular.min.js"></script>
+    <script src="js/angular-file-upload.min.js"></script> 
+    <script src="js/angular-route.min.js"></script>
+    <script src="js/angular-sanitize.min.js"></script>
+    <script src="js/d3.v3.min.js" charset="utf-8"></script>
+    <script src="js/app.js"></script>
+    <script src="js/controllers.js"></script>
+
+  </body>
+</html>
