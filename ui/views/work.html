@@ -1,0 +1,60 @@
+<div ng-if="is_project_complete">
+    <h1>Congratuations! This project is complete. You may download your structured data <a ng-click="download()">here</a> or visit the <a href="#/project">project status page</a> for more information</h1>
+</div>
+
+<div ng-if="!is_project_complete" class="row area">
+        <h3>{{hit.question}}</h3>
+            <br/>
+            <br/>
+        <div ng-hide="hide_timeline">
+        <annotations-graph data="hit.annotations" callback="set_annotation(annotation)"></annotations-graph>
+        </div>
+
+        <table id="patient" class="table table-striped">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Your Answer</th>
+              </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                      <p class="kwic">{{annotation.kwic}}</p>
+                      <p>
+                        <button ng-click="get_record(annotation.record_id)" data-target="#myModal" data-toggle="modal" class="btn">view entire note
+                        </button> 
+                      </p>
+                    </td>
+                    <td>
+                        <form>
+                            <div class="btn-group">
+                               <button ng-repeat="ans in hit.answers" class="btn btn-default" ng-click="answer(ans)">{{ans}}</button>
+                            </div> 
+                        </form>
+                        <br/>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+</div>
+
+
+<!-- Modal for displaying full clincial note -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="myModalLabel">Clinical Note</h4>
+            </div>
+            <div class="modal-body">
+                <div><p ng-bind-html="clinical_note"></p></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+                

@@ -1,0 +1,40 @@
+<div class="row">
+	<h2>1. Upload a Research Model</h2>
+	<br/>
+	  <form enctype="multipart/form-data">
+	    <input type="file" ng-file-select="on_model_upload($files)" >
+	    </input>
+	 </form>
+</div>
+<br/>
+<br/>
+<div class="row">
+	<h2>2. Upload Patient Data</h2>
+		<br/>
+		  <form enctype="multipart/form-data">
+		    <input type="file" ng-file-select="on_patient_files_upload($files)" multiple>
+		    </input>
+		  </form>
+</div>
+<br/>
+<br/>
+<div class="row">
+	<h2>3. Upload cTAKES Data</h2>
+		<br/>
+		  <form enctype="multipart/form-data">
+		    <input type="file" ng-file-select="on_ctakes_files_upload($files)" multiple>
+		    </input>
+		  </form>
+</div>
+<br/>
+<br/>
+<div class="row">
+	<h2>4. Name Your Project</h2>
+		<br/>
+		    <input type="text" class="form-control" ng-model="project_name"/>
+</div>
+<br/>
+<br/>
+<div class="row">
+	<button ng-click="create_project(project_name)" class="btn btn-danger">Finish</button> 
+</div>

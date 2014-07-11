@@ -1,0 +1,42 @@
+
+<div class="jumbotron">
+  <h2>Pubmed</h2>
+  <table class="table table-striped">
+    <thead>
+        <tr>
+            <th ng-repeat="header in headers">{{header.name}}</th>
+        <tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>GET /pubmed/count</code></td>
+            <td>Returns the number of stored pubmed documents in Canopy</td>
+            <td><code>n/a</code></td>
+            <td><code>curl http://localhost:5000/pubmed/count</code></td>
+        </tr>
+        <tr>
+            <td><code>GET /pubmed/rsid</code></td>
+            <td>Returns pubmed documents which contain these rsIds</td>
+            <td><code>{rsids : [rs236114, rs1172822]}</code></td>
+            <td><code>curl http://localhost:5000/pubmed/rsid</code></td>
+        </tr>
+    </tbody>
+  </table>
+  
+  <h2>BioNLP</h2>
+  <table class="table table-striped">
+      <thead>
+          <tr>
+            <th ng-repeat="header in headers">{{header.name}}</th>
+          <tr>
+      </thead>
+      <tbody>
+          <tr>
+              <td><code>POST /bionlp/rsid</code></td>
+              <td>Returns rsIds found in unstructured text</td>
+              <td><code>{text : 'this is text with rs8593'}</code></td>
+              <td><code>curl http://localhost:5000/bionlp/rsid</code></td>
+          </tr>
+      </tbody>
+  </table>
+</div>
