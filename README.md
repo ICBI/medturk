@@ -5,4 +5,4 @@ medTurk (inspired by Amazon's Mechanical Turk) supports clinical research by usi
 
 ![alt tag](images/home.png)
 
-Ready to get started? Our [[medTurk book|book/medturk.pdf]] provides everything you want to know.
+Ready to get started? Our [medTurk book](book/medturk.pdf) provides everything you want to know.
