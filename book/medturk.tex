@@ -4,13 +4,14 @@
 \usepackage{float}
 \usepackage{anyfontsize}
 \usepackage[affil-it]{authblk}
+\usepackage{fullpage}
 
 \begin{document}
 
-\author{Constellation Team \\ mjohnson@dsbox.com}
+\author{Robert M. Johnson \\ rmj49@georgetotwn.edu}
 \title{Castle}
-\affil{Digital Sandbox \\ 8260 Greensboro Dr. Suite 200}
-\date{May 2013}
+\affil{ICBI \\ 2115 Wisconsin Ave NW, Suite 110}
+\date{July 2014}
 
 
 
@@ -19,8 +20,9 @@
 
 % Upper part of the page. The '~' is needed because \\
 % only works if a paragraph has started.
-\includegraphics[scale=0.7]{medkit.png}~  \\[1cm]
-medTurk
+{\fontsize{50}{150}\selectfont The medTurk Book}
+\includegraphics[scale=0.7]{../ui/img/medkit.png}~  \\[1cm]
+July 11, 2014
 \end{center}
 \end{titlepage}
 
@@ -29,41 +31,75 @@ medTurk
 
 
 \chapter*{Preface}
-ICBI at Georgetown University is proud to provide a simple, yet effective, tool for converting unstructured clinical notes into structured data for clinical research. This book contains instructions on how to set up and use medTurk.
+ICBI at Georgetown University is proud to provide this simple, yet effective, tool for converting unstructured clinical notes into structured data for clinical research. This book contains instructions on how to set up and use medTurk.
 \\
 \\
-- Robert M. Johnson
-\\
-rmj49@georgetown.edu
+- Robert M. Johnson (rmj49@georgetown.edu)
 
 \tableofcontents
 
 \mainmatter
 
-\chapter{Setting Up}
-\section{Preparing Patient Data}
-dsfsdf
+\chapter{Introduction}
+medTurk is web application that aims to coordinate the activity of mutiple users to convert unstructured clinical notes into structured clinical data for research. medTurk assumes there are questions you would like answered about your patients' data. To encapsulate these questions, types of allowable answers, medTurk uses 'Research Models' or RMs for short. A RM is a simple JSON file that organizes questions, answers, and taxonmies. 
 
-\section{Installing MongoDB}
+It works as follows. First, you must convert your clinical notes into a simple JSON format as described in Chapter 2. Next, you process these clinical notes using cTAKES. After this, you create a project 
+
+
+\chapter{Installation}
+Since we have yet to provide a simple installer package for medTurk, in this section we guide you through the process of setting up medTurk. medTurk depends on Python and several Python packages. In addition, it requires cTAKES for processing clinical notes, a local running instance of UMLS, and a local running instance of MongoDB. This chapter instructs you on how to setup each of these components. We start with Python dependencies.
+
+\section{Python}
+medTurk requires a Python version of at least 2.7.6. On a Mac Terminal, you can use following line to retrieve the current Python version:
+\begin{verbatim}
+python --version
+\end{verbatim}
+Next, using pip, you must install the following Python packages:
+\begin{verbatim}
+pip install Flask
+pip install mimerender
+\end{verbatim}
+
+
+\section{UMLS}
+medTurk uses UMLS to look up names associated with CUIs reported by cTAKES. The following webpage provides instructions on how to setup a UMLS MySQL database locally:
+
+\begin{verbatim}
+http://groups.csail.mit.edu/medg/projects/text/Load_UMLS_mysql.html
+\end{verbatim}
+
+\section{cTAKES}
+medTurk uses cTAKES to process each clinical note for concepts and stores ones which meet three following criteria. The first criteria is negation. The concept must have positive polarity, that is, it is not negated (e.g. the patient denies smoking).
+
+The second criteria is the concept must have a subject of patient. As an example, there are times when the a physician might write that a patient's father had lung cancer. In this example, the concept of "lung cancer" would have a subject of "Patient's Father". medTurk only extracts concepts which act directly on the patient.
+
+The last criteria is confidence. cTAKES reports a confidence number for each extraction and medTurk only keeps concepts which have a confidence value of "1.0".
+
+To install cTAKES, their website provides instructions on how to do this:
+
+\begin{verbatim}
+https://cwiki.apache.org/confluence/display/CTAKES/cTAKES+3.1+User+Install+Guide
+\end{verbatim}
+
+\section{mongoDB}
+To install mongoDB, following the instructions on this webpage:
+
+\begin{verbatim}
+http://www.mongodb.org/downloads
+\end{verbatim}
+
+
+\chapter{Creating a Toy Example Project}
+This chapter gets you started by running a toy example that is provided by medTurk. This toy example provides clinical notes and a research model to get you started. For your real project, you will of course load your own data and research model, but the steps remain the same nevertheless.
+
+\section{Loading Clinical Data}
+
+\section{Loading }
 dsfsdf
 
 \section{Installing cTAKES}
 dsfsdf
-\subsection{Running cTAKES}
-\section{Installing UMLS}
-dsfsdf
 
-
-\chapter{Creating Your First Project}
-\section{Preparing Patient Data}
-dsfsdf
-
-\section{Installing MongoDB}
-dsfsdf
-
-\section{Installing cTAKES}
-dsfsdf
-\subsection{Running cTAKES}
 \section{Installing UMLS}
 dsfsdf
 
