@@ -1,0 +1,37 @@
+{
+   "alive":"1",
+   "id":"1",
+   "gender":"m",
+   "records":[
+      {
+         "id":"1",
+         "date":"2011-6-19",
+         "note":"Jim is a 10 year-old male with newly diagnosed T-cell acute lymphoblastic leukemia diagnosed 5/26/2011. He is being treated according to COG protocol AALL0434 (On Study) and is day 22 of Induction chemotherapy. Coming for follow-up and chemotherapy."
+      },
+      {
+         "id":"2",
+         "date":"2011-11-01",
+         "note":"Jim is a 10 year-old male with newly diagnosed T-cell acute lymphoblastic leukemia diagnosed 5/26/2011. He is being treated according to COG protocol AALL0434 (On Study) and is day 22 of Induction chemotherapy. Coming for follow-up and chemotherapy."
+      },
+      {
+         "id":"3",
+         "date":"2011-12-19",
+         "note":"Jim is a 10 year-old male with newly diagnosed T-cell acute lymphoblastic leukemia diagnosed 5/26/2011. He is being treated according to COG protocol AALL0434 (On Study) and is day 22 of Induction chemotherapy. Coming for follow-up and chemotherapy."
+      },
+      {
+         "id":"4",
+         "date":"2012-6-19",
+         "note":"Jim is a 10 year-old male with newly diagnosed T-cell acute lymphoblastic leukemia diagnosed 5/26/2011. He is being treated according to COG protocol AALL0434 Arm C (On Study) and is here today for follow-up and possible admission for Day 29 Consolidation chemotherapy (count dependent)."
+      },
+      {
+         "id":"5",
+         "date":"2013-6-19",
+         "note":"10 year-old male with T-cell lymphoblastic leukemia (with CNS 3 status) on Day 1 of Consolidation chemotherapy on COG protocol AALL 0434, Arm C (HD MTX, no Nelarabine). Family meeting to review results of Jim's Day 29 LP and BMA/Bx. Jim is in Remission (M1 marrow, Negative for MRD (0%)). He is an average risk with RER. I discussed treatment plans and randomization of COG protocol AALL 0434. Medications and side effects discussed in detail. Answered all questions and concerns. COG consent was signed for Jim to remain on study. Jim was randomized to Arm C (HDMTX without Nelarabine) on AALL 0434. He is currently doing well and PE is unremarkable and is cleared to proceed with Day 1 of consolidation. Methotrexate, doxil, and urso."
+      },
+      {
+         "id":"6",
+         "date":"2014-6-19",
+         "note":"He is now taking methotrexate, doxil, and urso."
+      }
+   ]
+}
