@@ -85,6 +85,27 @@ class cTAKES(object):
                         
             s.append({'s_beg' : s_beg, 's_end' : s_end, 'index' : index, 'sentence' : self._text[s_beg:s_end]})
         return s
+
+
+    def _get_tokens_from_sentence(self, sentence_begin, sentence_end):
+        '''
+                Returns tokens for the given sentence
+        '''
+
+        _tokens = []
+
+        tokens = self._root.findall('org.apache.ctakes.typesystem.type.syntax.WordToken')
+
+        for token in tokens:
+            
+            # Where did this sentence begin and end relative to entire text?
+            token_begin = int(token.get('begin'))
+            token_end = int(token.get('end'))
+
+            if sentence_begin <= token_begin and token_end <= sentence_end:
+                _tokens.append(token.get('normalizedForm'))
+
+        return _tokens
     
 
 
@@ -100,6 +121,8 @@ class cTAKES(object):
             
             s_begin = int(sentence.get('begin'))
             s_end   = int(sentence.get('end'))
+
+            tokens = self._get_tokens_from_sentence(s_begin, s_end)
             
             if begin >= s_begin and end <= s_end:
                 
@@ -109,6 +132,7 @@ class cTAKES(object):
                 d['beg']      = begin
                 d['end']      = end
                 d['trigger']  = trigger
+                d['tokens']   = tokens
                 break
         return d
     
@@ -166,8 +190,8 @@ class cTAKES(object):
                         name = trigger
   
                     annotation = {
-                                  'cui'  : id,
-                                  'name' : name
+                                  'cui'    : id,
+                                  'name'   : name
                                   }
                     
                     annotation.update(d)
