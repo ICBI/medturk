@@ -38,7 +38,7 @@ def get_count():
 def generate_hits(node, tags = []):
 
     # Is this an active node or a passive node?
-    if 'trigger' in node:
+    if 'triggers' in node:
         node['tags'] = tags
         hits.append(node)
 
@@ -58,10 +58,16 @@ def create(project_name):
     generate_hits(model)
 
     for hit in hits:
-    
-        records_by_cui = [record for record in db.annotations.find({'cui' : hit.get('trigger')})]
 
-        for key, group in itertools.groupby(records_by_cui, lambda item: item['patient_id']):
+        triggered_records = []
+
+        for trigger in hit.get('triggers'):
+            if trigger.get('type') == 'cui':
+                triggered_records.extend( [record for record in db.annotations.find({'cui' : trigger.get('name')})])
+            elif trigger.get('type') == 'keyword':
+                triggered_records.extend( [record for record in db.annotations.find({'tokens' : {'$in' : [trigger.get('name').lower()]}})])
+
+        for key, group in itertools.groupby(triggered_records, lambda item: item['patient_id']):
             hit['annotations'] = [a for a in group]
             hit['patient_id']  = key
             hit['project_name'] = project_name
