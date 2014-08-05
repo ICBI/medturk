@@ -28,8 +28,12 @@
                     </td>
                     <td>
                         <form>
-                            <div class="btn-group">
+                            <div ng-if="annotation.answertype == radio" class="btn-group">
                                <button ng-repeat="ans in hit.answers" class="btn btn-default" ng-click="answer(ans)">{{ans}}</button>
+                            </div>
+                            <div ng-if="annotation.answertype == text" class="btn-group">
+                                <input type="text" class="form-control" ng-model="text_answer"/>
+                                <button class="btn btn-default" ng-click="answer(text_answer)">Submit</button>
                             </div> 
                         </form>
                         <br/>
