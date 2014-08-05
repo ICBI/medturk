@@ -143,7 +143,7 @@ app.controller('WorkController', function($scope, $sce, $location, patient_facto
 	     }
 
 	     $scope.answer = function(ans) {
-	   
+
 	     	hit_factory.answer($scope.hit._id, ans).success(function(data){
 
 	     		 // Generate a new hit
