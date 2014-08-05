@@ -112,6 +112,7 @@ app.controller('WorkController', function($scope, $sce, $location, patient_facto
             	
             	// Set first annotation as default annotation
             	$scope.annotation = data.annotations[0];
+
           }).error(function(data) {
 		 		$scope.is_project_complete = true;
 		  });
