@@ -25,102 +25,103 @@
 */
 
 
-function get_highlighted_text(text, text_to_highlight) {
-	return text.replace(text_to_highlight, '<span class="highlight">' + text_to_highlight + '</span>');
+function get_highlighted_text(text, beg, end) {
+
+	var html  = text.substring(0, beg);
+	    html += '<span class="highlight">';
+	    html += text.substring(beg, end);
+	    html += '</span>';
+	    html += text.substring(end);
+
+	return html;
 }
 
 
- app.controller('HomeController', function($scope) {
- 	
+app.controller('HomeController', function($scope, user_factory, project_factory) {
 
+	 $scope.project_id = '';
+
+	 user_factory.settings().success(function(data){
+           $scope.settings = data;
+     });
+
+
+     project_factory.get_all().success(function(data){
+           $scope.projects = data.projects;
+     });
+
+
+ 	  $scope.login = function(email, password) {
+  
+	      user_factory.login(email, password).success(function(data){
+	           alert(data.msg);
+	        }); 
+  	  }
+
+
+	  $scope.logout = function() {
+
+	      user_factory.logout().success(function(data){
+	           console.log(data);
+	        }); 
+	  }
+
+
+	  $scope.add_analyst = function(email) {
+
+			project_factory.add_analyst($scope.project_id, email).success(function(data){
+	           
+	        }); 
+	  }
+
+	  $scope.set_project_id = function(project_id) {
+  		 $scope.project_id = project_id;
+  	  }
+
+
+	  $scope.download = function(project_id) {
+  		 project_factory.data(project_id);
+  	  }
 });
 
 
-  app.controller('ProjectController', function($scope, model_factory, hit_factory, project_factory) {
- 	
-	$scope.num_answered = 0;
-	$scope.num_questions = 1;
+app.controller('CreateController', function($scope, $upload, model_factory, patient_factory, project_factory, dataset_factory) {
 
-  	model_factory.get_model().success(function(data){
-         		 $scope.model = data;
-    });
-
-
-  	hit_factory.get_count().success(function(data) {
-  				$scope.num_questions = data.count;
-  	});
-
-  	hit_factory.get_answer_count().success(function(data) {
-  				$scope.num_answered = data.count;
-  	});
+		$scope.project_name = '';
+		$scope.model_id = '';
+		$scope.workers = []; 
+		$scope.project_description = '';
+		$scope.datasets = [];
 
 
-  	$scope.download = function() {
-  		hit_factory.download();
-  	}
+		dataset_factory.get_datasets().success(function(data) {
+			$scope.datasets = data.datasets;
+		});
 
-});
-
-
-
-app.controller('CreateController', function($scope, $upload, model_factory, patient_factory, project_factory, annotation_factory) {
-
-	$scope.project_name = '';
-
-
-	$scope.on_model_upload = function($files) {
+		$scope.on_model_upload = function($files) {
 			  
 			    var file = $files[0];
 
 			    model_factory.save(file).success(function(data){
-			    	console.log(data);
+			    	$scope.model_id = data._id;
 			    }).progress(function(evt) {
               		console.log('percent: ' + parseInt(100.0 * evt.loaded / evt.total));
               	});
 		}
 
+		$scope.add_worker = function(email) {
 
-		$scope.on_patient_files_upload = function($files) {
-			  
-			    for (var i = 0; i < $files.length; i++) {
-      				var file = $files[i];
+				if ($scope.workers.indexOf(email) == -1) {
+					$scope.workers.push(email);
+				}	
+		  }
 
-				    patient_factory.save(file).success(function(data){
-				    	console.log(data);
-				    }).progress(function(evt) {
-	              		console.log('percent: ' + parseInt(100.0 * evt.loaded / evt.total));
-	              	});
-
-				}
-		}
-
-
-		$scope.on_ctakes_files_upload = function($files) {
-			  
-			    for (var i = 0; i < $files.length; i++) {
-      				var file = $files[i];
-
-				    annotation_factory.ctakes_save(file).success(function(data){
-				    	console.log(data);
-				    }).progress(function(evt) {
-	              		console.log('percent: ' + parseInt(100.0 * evt.loaded / evt.total));
-	              	});
-
-				}
-		}
 
 
 		$scope.create_project = function(name) {
-				if (name.length == 0) {
-					alert("Hey! You never named your project :(");
-
-				}
-				else {
-					project_factory.create(name).success(function(data) {
-						alert('Congrats! Your project is now underway')
-					});
-
-				}
+				project_factory.create($scope.project_name, $scope.project_description, $scope.dataset._id, $scope.model_id).success(function(data) {
+					alert('Congrats! Your project is now underway');
+				});
 		  }
 });
 
@@ -137,8 +138,15 @@ app.controller('WorkController', function($scope, $sce, $location, patient_facto
 		 	hit_factory.get_hit().success(function(data){
             	$scope.hit = data;
             	
+            	// Highlights all triggers
+            	for (var i = 0; i < $scope.hit.annotations.length; i++) {
+            		$scope.hit.annotations[i].kwic = $sce.trustAsHtml(get_highlighted_text($scope.hit.annotations[i].kwic, $scope.hit.annotations[i].beg, $scope.hit.annotations[i].end));
+            	}
+
+            	//$scope.clinical_note = $sce.trustAsHtml(get_highlighted_text(data.note, $scope.annotation.beg, $scope.annotation.end));
+            	
             	// Set first annotation as default annotation
-            	$scope.annotation = data.annotations[0];
+            	$scope.annotation = $scope.hit.annotations[0];
 
           }).error(function(data) {
 		 		$scope.is_project_complete = true;
@@ -160,7 +168,7 @@ app.controller('WorkController', function($scope, $sce, $location, patient_facto
 		  $scope.get_record = function(record_id, kwic) {
 
 		  		record_factory.get_record(record_id).success(function(data) {
-		  			$scope.clinical_note = $sce.trustAsHtml(get_highlighted_text(data.note, $scope.annotation.kwic));
+		  			$scope.clinical_note = $sce.trustAsHtml(get_highlighted_text(data.note, $scope.annotation.beg, $scope.annotation.end));
           		});
 		  }
 

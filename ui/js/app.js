@@ -25,6 +25,7 @@
 */
 
 
+
 var server = 'http://127.0.0.1:5000';
 var app = angular.module('medTurkApp', ['angularFileUpload', 'ngRoute', 'ngSanitize'], function($httpProvider){
 
@@ -76,8 +77,6 @@ var app = angular.module('medTurkApp', ['angularFileUpload', 'ngRoute', 'ngSanit
   $httpProvider.defaults.transformRequest = [function(data) {
     return angular.isObject(data) && String(data) !== '[object File]' ? param(data) : data;
   }];
-
-
 });
 
 /*
@@ -114,11 +113,6 @@ app.config(function($routeProvider) {
   {
      controller: 'CreateController',
      templateUrl: 'views/create.html'
-  })
-  .when('/project',
-  {
-     controller: 'ProjectController',
-     templateUrl: 'views/project.html'
   })
 });
 
@@ -165,6 +159,42 @@ app.factory('model_factory', function($http, $upload) {
 
 
 
+
+app.factory('dataset_factory', function($http) {
+
+    var factory = {};
+
+      factory.get_datasets = function() {
+       return $http.get(server + '/datasets');
+     }
+
+     return factory;
+});
+
+
+
+app.factory('user_factory', function($http, $upload) {
+
+
+    var factory = {};
+
+     factory.login = function(_email, _password) {
+         return $http.post(server + '/user/login', {user_id : _email, password : _password});
+     }
+
+     factory.settings = function() {
+         return $http.get(server + '/user/settings');
+     }
+
+     factory.logout = function() {
+         return $http.get(server + '/user/logout');
+     }
+
+     return factory;
+});
+
+
+
 app.factory('annotation_factory', function($http, $upload) {
 
 
@@ -187,10 +217,28 @@ app.factory('project_factory', function($http) {
 
     var factory = {};
 
-    factory.create = function(_name) {
-       return $http.post(server + '/project/create', {name : _name});
+
+    factory.data = function(_project_id) {
+       window.open(server + '/project/data?id=' + _project_id, '_blank', '');
      }
 
+    factory.get_all = function() {
+       return $http.get(server + '/project/get_all');
+     }
+
+
+     factory.add_analyst = function(_project_id, _email) {
+        return $http.post(server + '/project/analyst/add', {project_id    : _project_id, 
+                                                            email : _email});
+     }
+
+
+    factory.create = function(_project_name, _project_description, _dataset_id, _model_id) {
+          return $http.post(server + '/project/create', {name        : _project_name, 
+                                                         description : _project_description, 
+                                                         dataset_id  : _dataset_id,
+                                                         model_id    : _model_id});
+     }
 
      return factory;
 });
@@ -219,11 +267,6 @@ app.factory('hit_factory', function($http) {
 
      factory.answer = function(hit_id, answer) {
        return $http.post(server + '/hit/answer', {'id' : hit_id, 'answer' : answer});
-     }
-
-
-    factory.download = function() {
-       window.open(server + '/hit/download', '_blank', '');
      }
 
 
