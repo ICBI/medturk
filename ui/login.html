@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>medTurk</title>
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+  </head>
+
+  <body>
+
+    <div id="wrapper">
+      <!-- Sidebar -->
+      <div id="page-wrapper">
+        <div class="row">
+          <div class="col-lg-12">
+            <div>
+              <!-- START THE FEATURETTES -->
+              <div class="row featurette">
+                  
+                <div class="col-md-5">
+                      <img class="featurette-image img-responsive" data-src="holder.js/500x500/auto" src="img/medkit.png" alt="Generic placeholder image">
+                </div>
+                  
+                <div class="col-md-7">
+                  <h2 class="featurette-heading">what is medTurk?</h2>
+                  <p class="lead">medTurk (inspired by <a href="https://www.mturk.com/mturk/welcome">Amazon's Mechanical Turk</a>) supports clinical research by using the ingenuity of humans to convert unstructured clinical notes into structured data.</p>
+                </div>
+
+              <div class="col-md-5">
+                  <h2 class="lead" style="width: 250px">e-mail<input id="email" type="text" class="form-control"/></p>
+                  <p class="lead" style="width: 250px">password<input id="password" type="password" class="form-control"/></p>
+                  <p><button id="login" class="btn btn-danger">Login</button><p id="msg" style="color: gray"></p></p>
+              </div>
+
+              <!-- /END THE FEATURETTES -->
+            </div>
+          </div>
+          </div>
+        </div><!-- /.row -->
+      </div><!-- /#page-wrapper -->
+    </div><!-- /#wrapper -->
+
+    <!-- JavaScript -->
+    <script src="js/jquery-1.10.2.js"></script>
+    <script src="js/bootstrap.js"></script>
+    <script>
+        $("#login").click(function() {
+       
+            var server = 'http://127.0.0.1:5000';
+            var _email    = $("#email").val();
+            var _password = $("#password").val();
+
+            data = {id : _email, password : _password};
+            var posturl = $.ajax({
+                            url:        server + '/user/login',
+                            xhrFields: { withCredentials: true },
+                            crossDomain: true,
+                            type:       'POST',
+                            dataType:   'json',
+                            data:       data,
+                            success:    function(data) { 
+                              
+                                if (data.success) {
+                                    window.location.replace(server + "/medturk/index.html");
+                                }
+                                else {
+                                    $( "#msg" ).show();
+                                    $("#msg").text('Hmmm... We were unable to authorize you. Could you try again?');
+                                    $( "#msg" ).fadeOut(5000);
+                                }
+                            },
+                            error:      function(jqXHR, textStatus, errorThrown) { 
+
+                                $( "#msg" ).show();
+                                $("#msg").text('Hmmm... An error occurred on the server.');
+                                $( "#msg" ).fadeOut(5000);
+                            }
+              });
+        });
+    </script>
+  </body>
+</html>
