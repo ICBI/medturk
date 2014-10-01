@@ -35,22 +35,13 @@
         <!-- Collect the nav links, forms, and other content for toggling -->
         <div class="collapse navbar-collapse navbar-ex1-collapse">
           <ul class="nav navbar-nav side-nav">  <!-- <li class="active"> -->
-            <li><a href="#/" style="color: white"><i class="fa fa-file"></i> Home</a></li>
-            <li><a href="#/create" style="color: white"><i class="fa fa-calendar"></i> Create a Project</a></li>
-            <li><a href="#/project" style="color: white"><i class="fa fa-calendar"></i> Project Status</a></li>
-            <li><a href="#/work" style="color: white"><i class="fa fa-edit"></i> Work</a></li>
+            <li><a href="#/" style="color: white"><i class="fa fa-home"></i>&nbsp;&nbsp;Home</a></li>
+            <li><a href="#/create" style="color: white"><i class="fa fa-play-circle-o"></i>&nbsp;&nbsp;Create a Project</a></li>
+            <li><a href="#/work" style="color: white"><i class="fa fa-edit"></i>&nbsp;&nbsp;Questions</a></li>
+            <li><a id="sign_out" href="#" style="color: white"><i class="fa fa-sign-out"></i>&nbsp;&nbsp;Sign Out</a></li>
+         
           </ul>
-
-          <!--
-          <ul class="nav navbar-nav navbar-right navbar-user">
-            <li class="dropdown user-dropdown">
-              <a class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-user"></i> Sign in <b class="caret"></b></a>
-              <ul class="dropdown-menu">
-                <li><a href="#"><i class="fa fa-power-off"></i> Log Out</a></li>
-              </ul>
-            </li>
-          </ul>-->
-        </div><!-- /.navbar-collapse -->
+        </div>
       </nav>
 
       <div id="page-wrapper">
@@ -76,6 +67,29 @@
     <script src="js/d3.v3.min.js" charset="utf-8"></script>
     <script src="js/app.js"></script>
     <script src="js/controllers.js"></script>
+    <script>
 
+      $("#sign_out").click(function() {
+
+            var server = 'http://127.0.0.1:5000';
+
+            var posturl = $.ajax({
+                            url:        server + '/user/logout',
+                            xhrFields: { withCredentials: true },
+                            crossDomain: true,
+                            type:       'GET',
+                            dataType:   'json',
+                            success:    function(data) { 
+                              window.location.replace(server + "/medturk/login.html");
+
+                            },
+                            error:      function(jqXHR, textStatus, errorThrown) { 
+
+                             window.location.replace(server + "/medturk/login.html");
+                            }
+                        });
+        });
+
+    </script>
   </body>
 </html>
