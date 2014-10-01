@@ -27,9 +27,10 @@
 
 from medturk import config
 from flask import Flask
+from flask.ext.login import LoginManager
 import pymongo, mimerender, json
 from bson import ObjectId
-
+from datetime import timedelta
 
 
 '''
@@ -40,6 +41,16 @@ from bson import ObjectId
 		Prefix to use when accessing the static files (e.g. http://127.0.0.1:5000/medturk/index.html )
 '''
 app = Flask(__name__, static_url_path='/medturk', static_folder = '../ui')
+
+# set the secret key.  Keep this really secret:
+app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
+
+# Change the duration of how long the Remember Cookie is valid on the users
+# computer.  This can not really be trusted as a user can edit it.
+app.config["REMEMBER_COOKIE_DURATION"] = timedelta(days=1)
+
+login_manager = LoginManager()
+login_manager.init_app(app)
 
 
 
@@ -62,3 +73,5 @@ import medturk.api.project
 import medturk.api.annotation
 import medturk.api.hit
 import medturk.api.record
+import medturk.api.user
+import medturk.api.dataset

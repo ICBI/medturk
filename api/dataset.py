@@ -26,14 +26,13 @@
 '''
 
 
-from medturk.db import hit
+from medturk.db import db
 from flask.ext.login import login_required
 from medturk.api import app, mimerender, render_xml, render_json, render_html, render_txt
-from flask import request, abort, Response, make_response
+from flask import jsonify, request, abort
 
 
-
-@app.route('/hit', methods=['GET'])
+@app.route('/datasets', methods=['GET'])
 @mimerender(
             default = 'json',
             html = render_html,
@@ -42,69 +41,7 @@ from flask import request, abort, Response, make_response
             txt  = render_txt
             )
 @login_required
-def hit_get():
-    
-    return hit.get_hit()
-
-
-
-
-@app.route('/hit/count', methods=['GET'])
-@mimerender(
-            default = 'json',
-            html = render_html,
-            xml  = render_xml,
-            json = render_json,
-            txt  = render_txt
-            )
-@login_required
-def hit_count_get():
-    
-    count = hit.get_count()
-    return {'count' : count}
-
-
-
-@app.route('/hit/answer/count', methods=['GET'])
-@mimerender(
-            default = 'json',
-            html = render_html,
-            xml  = render_xml,
-            json = render_json,
-            txt  = render_txt
-            )
-@login_required
-def hit_answer_count_get():
-    
-    count = hit.get_answer_count()
-    return {'count' : count}
-
-
-
-@app.route('/hit/answer', methods=['POST'])
-@mimerender(
-            default = 'json',
-            html = render_html,
-            xml  = render_xml,
-            json = render_json,
-            txt  = render_txt
-            )
-@login_required
-def hit_answer_post():
-
-    hit_id = request.form.get('id')
-    answer = request.form.get('answer')    
-
-    if hit_id == None or len(hit_id) == 0:
-        abort(415, 'Hit Id is missing')
-
-    if answer == None or len(answer) == 0:
-        abort(415, 'Answer is missing')
-
-    
-    # Save project information
-    hit.answer(hit_id, answer)
-  
-    return {'msg' : 'success'}
+def datasets_get():
+    return {'datasets' : [dataset for dataset in db.datasets.find()]}
 
 

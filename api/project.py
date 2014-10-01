@@ -24,11 +24,96 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
-
-
 from medturk.db import project, hit
+from flask.ext.login import login_required
 from medturk.api import app, mimerender, render_xml, render_json, render_html, render_txt
-from flask import request, abort
+from flask import request, abort, Response, make_response
+from bson import ObjectId
+
+
+
+@app.route('/project/data')
+@login_required
+def project_get():
+
+    project_id = request.form.get('id')
+
+    #p = project.get(project_id)
+    #project_name = p.get('name')
+    project_name = 'medturk'
+
+    # Get all answered HITs
+    hits = hit.get_hits(project_id, True)
+    file_name = None
+
+    data = 'Patient Id, Question, Answer, Tags \n'
+   
+    if file_name == None:
+        file_name = project_name.replace(' ', '_') + '.csv'
+
+    for h in hits:
+
+        tags = '|'.join(h.get('tags'))
+        data += h.get('patient_id') + ',"' + h.get('question') + '",' + h.get('answer') + ',"' + tags + '"\n'
+    
+    generator = (cell for row in data
+                    for cell in row)
+    return Response(generator,
+                       mimetype="text/csv",
+                       headers={"Content-Disposition":
+                                    "attachment;filename=" + file_name})
+
+
+
+
+@app.route('/project/get_all', methods=['GET'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def project_get_all():
+    projects = project.get_all()
+
+    # Add completion percentage to each one
+    for p in projects:
+      
+        p['percentage'] = 100
+        answered = hit.get_answer_count(p['_id'])
+        total    = hit.get_count(p['_id'])
+
+        if total > 0:
+            p['percentage'] = int( (answered / (total*1.0))*100.0  )
+
+    return {'projects' : projects}
+
+
+
+@app.route('/project/analyst/add', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def project_analyst_add():
+
+    project_id  = request.form.get('project_id')
+    email       = request.form.get('email')
+
+    project.add_analyst(project_id, email)
+  
+    return {'msg' : 'success'}
+
+
+
+
+
 
 @app.route('/project/create', methods=['POST'])
 @mimerender(
@@ -38,18 +123,16 @@ from flask import request, abort
             json = render_json,
             txt  = render_txt
             )
+@login_required
 def project_save_post():
 
-    project_name = request.form.get('name')
-    
-    if project_name == None or len(project_name) == 0:
-        abort(415, 'Project name is missing')
+    _id          = ObjectId()
+    name         = request.form.get('name')
+    description  = request.form.get('description')
+    dataset_id   = request.form.get('dataset_id')
+    model_id     = request.form.get('model_id')
 
-    
-    # Save project information
-    project.save(project_name)
-
-    # Create hits for project
-    hit.create(project_name)
+    project.save(_id, name, description, dataset_id, model_id)
+    hit.create(_id)
   
     return {'msg' : 'success'}

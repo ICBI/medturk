@@ -27,6 +27,7 @@
 
 
 from medturk.db import model
+from flask.ext.login import login_required
 from medturk.api import app, mimerender, render_xml, render_json, render_html, render_txt
 from flask import jsonify, request, abort
 from bson import ObjectId
@@ -76,7 +77,10 @@ def model_post():
             json = render_json,
             txt  = render_txt
             )
+@login_required
 def model_get():
-    return model.get_model()
+    
+    model_id = request.args.get('id')
+    return db.model.get(model_id)
 
 

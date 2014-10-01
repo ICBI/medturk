@@ -27,6 +27,7 @@
 
 
 from medturk.db import record
+from flask.ext.login import login_required
 from medturk.api import app, mimerender, render_xml, render_json, render_html, render_txt
 from flask import request, abort
 
@@ -38,6 +39,7 @@ from flask import request, abort
             json = render_json,
             txt  = render_txt
             )
+@login_required
 def record_get():
     
     record_id = request.args.get('id')

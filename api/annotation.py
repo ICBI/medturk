@@ -26,6 +26,7 @@
 '''
 
 from medturk.db import annotation, record
+from flask.ext.login import login_required
 from medturk.api import app, mimerender, render_xml, render_json, render_html, render_txt
 from flask import request
 from medturk.core import ctakes
@@ -39,6 +40,7 @@ from medturk.core import ctakes
             json = render_json,
             txt  = render_txt
             )
+@login_required
 def annotation_ctakes_save_post():
 
     # Parse the file

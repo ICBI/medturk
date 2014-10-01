@@ -26,6 +26,7 @@
 '''
 
 from medturk.db import patient, record
+from flask.ext.login import login_required
 from medturk.api import app, mimerender, render_xml, render_json, render_html, render_txt
 from flask import request, abort
 from bson import ObjectId
