@@ -23,9 +23,25 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
+from medturk.api import app
 
-from medturk.api import app as application
+# By starting in debug mode, every time we modify our code and save
+# the server will restart for us 
+app.run(debug=True)
+print app.url_map
 
-application.run(debug=True)
-print appplication.url_map
 
+'''
+# Reloads user object from user ID stored in the session
+@login_manager.user_loader
+def load_user(userid):
+    if userid == u'123':
+        return matt
+    # If not valid, we should return None
+    return None
+
+@login_manager.user_loader
+def load_user(userid):
+    # userid is type 'unicode'
+    return User.get(userid)
+'''
