@@ -25,6 +25,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 from medturk.db import db
+from bson import ObjectId
 
 
 def save(record):
@@ -36,8 +37,12 @@ def save(record):
     db.records.save(record)
 
 
+def get_records(dataset_id):
+    return [r for r in db.records.find({'dataset_id' : dataset_id})]
+
+
 def get_record(record_id):
-    return db.records.find_one({'id' : record_id})
+    return db.records.find_one({'_id' : ObjectId(record_id)})
 
 
 if __name__ == '__main__':

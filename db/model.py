@@ -36,8 +36,8 @@ def save(model):
     db.models.save(model)
 
 
-def get_model():
-	return db.models.find_one()
+def get(_id):
+    return db.models.find_one({'_id' : _id})
 
 if __name__ == '__main__':
     pass
