@@ -1,6 +1,17 @@
 <div class="row">
-	<h2>1. Upload a Research Model</h2>
-	<br/>
+	<h2>1. Name of your project</h2>
+	<input style="width: 400px" type="text" class="form-control" ng-model="project_name"/>
+</div>
+<br/>
+<br/>
+<div class="row">
+	<h2>2. Description of your project</h2>
+		<textarea style="width: 400px" class="form-control" rows="3" ng-model="project_description"></textarea>
+</div>
+<br/>
+<br/>
+<div class="row">
+		<h2>3. Pick your research model</h2>
 	  <form enctype="multipart/form-data">
 	    <input type="file" ng-file-select="on_model_upload($files)" >
 	    </input>
@@ -9,32 +20,13 @@
 <br/>
 <br/>
 <div class="row">
-	<h2>2. Upload Patient Data</h2>
-		<br/>
-		  <form enctype="multipart/form-data">
-		    <input type="file" ng-file-select="on_patient_files_upload($files)" multiple>
-		    </input>
-		  </form>
+		<h2>4. Choose a dataset</h2>
+
+		<select ng-model="dataset" style="width: 400px" class="form-control" ng-options="ds.name for ds in datasets"></select>
+		
 </div>
 <br/>
 <br/>
 <div class="row">
-	<h2>3. Upload cTAKES Data</h2>
-		<br/>
-		  <form enctype="multipart/form-data">
-		    <input type="file" ng-file-select="on_ctakes_files_upload($files)" multiple>
-		    </input>
-		  </form>
-</div>
-<br/>
-<br/>
-<div class="row">
-	<h2>4. Name Your Project</h2>
-		<br/>
-		    <input type="text" class="form-control" ng-model="project_name"/>
-</div>
-<br/>
-<br/>
-<div class="row">
-	<button ng-click="create_project(project_name)" class="btn btn-danger">Finish</button> 
+	<button ng-click="create_project(project_name)" class="btn btn-danger">Create</button> 
 </div>

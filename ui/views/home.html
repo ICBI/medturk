@@ -7,21 +7,64 @@
         </div>
           
         <div class="col-md-7">
-          <h2 class="featurette-heading">what is medTurk?</h2>
-          <p class="lead">medTurk (inspired by <a href="https://www.mturk.com/mturk/welcome">Amazon's Mechanical Turk</a>) supports clinical research by using the ingenuity of humans to convert unstructured clinical notes into structured data.</p>
+          <h2 class="featurette-heading">hello {{settings.name}}.</h2>
+          <p class="lead">You have {{projects.length}} projects. You may start a project <a href="#/create">here.</a></p>
+
+
+          <table class="table table-striped" ng-if="projects.length > 0">
+            <tr><th>Name</th><th>Description</th><th>Analysts</th><th>Completion Percentage</th><th>Commands</th></tr>
+
+            <tr ng-repeat="project in projects">
+              <td>{{project.name}}</td>
+              <td>{{project.description}}</td>
+              <td>
+                  <p ng-repeat="analyst in project.analysts">
+                        {{analyst}}
+                  </p>
+              </td>
+              <td>{{project.percentage}}%</td>
+              <td><button class="btn btn-danger" ng-click="set_project_id(project._id)" data-target="#myModal" data-toggle="modal"> Invite Analysts</button>
+                  <br/>
+                  <br/>
+                  <button class="btn btn-danger" ng-click="download(project._id)"> Download Data </button></td>
+              </td>
+            </tr>
+         </table>
+
         </div>
-        
-        <div class="col-md-7">
-         <h2 class="featurette-heading">how do I begin?</h2>
-          <p class="lead">Begin by creating your project <a href="#/create">here<a/>.</p>
-        </div>
-        
-        <div class="col-md-7">
-         <h2 class="featurette-heading">already have a project?</h2>
-          <p class="lead">Start answering questions now</p>
-            <p><a class="btn btn-danger" href="#/work" role="button"> Start &raquo;</a></p>
-        </div>
-      </div>
+
       <!-- /END THE FEATURETTES -->
     </div>
 </div>
+
+
+
+
+<!-- Modal for displaying form to invite workers -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="myModalLabel">Invitation Form</h4>
+            </div>
+            <div class="modal-body">
+                <h3 class="lead">Invite people by e-mail:</h3>
+                  <div style="width: 400px"  class="input-group">
+                        <input type="text" class="form-control" ng-model="worker_id">
+                        <span class="input-group-btn">
+                          <button class="btn btn-default" type="button" ng-click="add_analyst(worker_id)">add</button>
+                        </span>
+                    </div>
+                    <ul>
+                      <li ng-repeat="email in workers">
+                        {{email}}
+                      </li>
+                    </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div

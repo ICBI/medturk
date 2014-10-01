@@ -1,5 +1,5 @@
 <div ng-if="is_project_complete">
-    <h1>Congratuations! This project is complete. You may download your structured data <a ng-click="download()">here</a> or visit the <a href="#/project">project status page</a> for more information</h1>
+    <h1>No questions are available</h1>
 </div>
 
 <div ng-if="!is_project_complete" class="row area">
@@ -20,7 +20,7 @@
             <tbody>
                 <tr>
                     <td>
-                      <p class="kwic">{{annotation.kwic}}</p>
+                      <p class="kwic" ng-bind-html="annotation.kwic"></p></div>
                       <p>
                         <button ng-click="get_record(annotation.record_id)" data-target="#myModal" data-toggle="modal" class="btn">view entire note
                         </button> 
