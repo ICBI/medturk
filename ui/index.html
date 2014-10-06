@@ -38,9 +38,19 @@
             <li><a href="#/" style="color: white"><i class="fa fa-home"></i>&nbsp;&nbsp;Home</a></li>
             <li><a href="#/create" style="color: white"><i class="fa fa-play-circle-o"></i>&nbsp;&nbsp;Create a Project</a></li>
             <li><a href="#/work" style="color: white"><i class="fa fa-edit"></i>&nbsp;&nbsp;Questions</a></li>
-            <li><a id="sign_out" href="#" style="color: white"><i class="fa fa-sign-out"></i>&nbsp;&nbsp;Sign Out</a></li>
-         
           </ul>
+
+          <ul class="nav navbar-nav navbar-right navbar-user">
+            <li class="dropdown user-dropdown">
+              <a class="dropdown-toggle" data-toggle="dropdown" style="color: white"><i class="fa fa-user"></i> matt<b class="caret"></b></a>
+              <ul class="dropdown-menu">
+                <li><a id="open_change_password" href="#" data-target="#password_modal" data-toggle="modal"><i class="fa fa-sign-out"></i> Change Password</a></li>
+                <li><a id="sign_out" href="#"><i class="fa fa-power-off"></i> Sign Out</a></li>
+              </ul>
+            </li>
+          </ul>
+
+
         </div>
       </nav>
 
@@ -56,6 +66,42 @@
 
     </div><!-- /#wrapper -->
 
+
+
+    <!-- Modal for displaying form to change password -->
+    <div class="modal fade" id="password_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="myModalLabel">Change Password</h4>
+                </div>
+                <div class="modal-body">
+                    <h3 class="lead">Current Password</h3>
+                      <div style="width: 400px"  class="input-group">
+                            <input id="current_password" type="password" class="form-control">
+                        </div>
+                    <h3 class="lead">New Password</h3>
+                      <div style="width: 400px"  class="input-group">
+                            <input id="new_password" type="password" class="form-control">
+                        </div>
+                        <br/>
+                        <p id="msg" style="color: gray"></p>
+                        <br/>
+                        <button id="change_password" class="btn btn-danger">Change Password</button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+
     <!-- JavaScript -->
     <script src="js/jquery-1.10.2.js"></script>
     <script src="js/bootstrap.js"></script>
@@ -68,6 +114,54 @@
     <script src="js/app.js"></script>
     <script src="js/controllers.js"></script>
     <script>
+
+
+      $("#change_password").click(function() {
+
+
+            var current_password = $("#current_password").val();
+            var new_password     = $("#new_password").val();
+
+            var password = 'password';
+
+            var server = 'http://127.0.0.1:5000';
+
+            var posturl = $.ajax({
+                            url:        server + '/user/password',
+                            xhrFields: { withCredentials: true },
+                            crossDomain: true,
+                            type:       'POST',
+                            data:       {'new_password' : new_password, 'current_password' : current_password},
+                            dataType:   'json',
+                            success:    function(data) { 
+                                  console.log(data);
+                                  if (data.success) {
+
+                                      $("#new_password").val('');
+                                      $("#current_password").val('');
+                                      $( "#msg" ).show();
+                                      $("#msg").text('Great! Your password has been changed.');
+                                      $( "#msg" ).fadeOut(6000);
+                                  }
+                                  else {
+                                    $( "#msg" ).show();
+                                    $("#msg").text('We were unable to authorize you. Could you try again?');
+                                    $( "#msg" ).fadeOut(6000);
+                                 }
+
+                            },
+                            error:      function(jqXHR, textStatus, errorThrown) { 
+                                $( "#msg" ).show();
+                                $("#msg").text("Uh oh. medkitpy isn't working correctly");
+                                $( "#msg" ).fadeOut(6000);
+                              
+                            }
+                        });
+        });
+
+
+
+
 
       $("#sign_out").click(function() {
 
