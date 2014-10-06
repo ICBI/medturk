@@ -32,7 +32,6 @@ from bson import ObjectId
 import itertools
 from operator import itemgetter
 
-active_nodes = []
 flank_size = 200
 bounded  = [' ', ',', ';', '(', ')', '.', '?', '!', '/', '\\', '{', '}', '[', ']', '"', '\'', ':']
 
@@ -40,8 +39,8 @@ def answer(hit_id, answer):
 	
 	db.hits.update({'_id' : ObjectId(hit_id)}, {'$set' : {'answer' : answer}})
 
-def get_hit(answered = False):
-    return db.hits.find_one( {'answer' : {'$exists' : answered}} )
+def get_hit(project_id, answered = False):
+    return db.hits.find_one( {'project_id' : ObjectId(project_id), 'answer' : {'$exists' : answered}} )
 
 
 def get_hits(project_id, answered = False):
@@ -56,7 +55,7 @@ def get_count(project_id):
     return db.hits.find({'project_id' : ObjectId(project_id)}).count()
 
 
-def populate_active_nodes_list(node, tags = []):
+def populate_active_nodes_list(node, active_nodes = [], tags = []):
     '''
         Parses active nodes from model
     '''
@@ -70,10 +69,7 @@ def populate_active_nodes_list(node, tags = []):
     children = node.get('children')
     if children != None:
         for child in node.get('children'):
-
-            _tags = [node.get('name')] + tags
-           
-            populate_active_nodes_list(child, _tags)
+            populate_active_nodes_list(child, active_nodes, [node.get('name')] + tags)
 
 
 def does_not_overlap(annotation, annotations):
@@ -118,6 +114,9 @@ def create(project_id):
         When generating hits, we want to group every mentioned concept by patient
     '''
 
+    # Ensure active nodes array is empty
+    active_nodes = []
+
     # Get information about this projrect
     p = project.get(project_id)
 
@@ -126,8 +125,7 @@ def create(project_id):
     # Retrieve the research model
     m = model.get(p['model_id'])
 
-    # Modifies our gobal variable of 'active_nodes'
-    populate_active_nodes_list(m)
+    populate_active_nodes_list(m, active_nodes)
 
     # Sort triggers in each active node by name before iterating through patient dataset
     for an in active_nodes:

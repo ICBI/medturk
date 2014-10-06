@@ -26,14 +26,10 @@
 '''
 from medturk.db import db
 from bson import ObjectId
-
-
-
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.MIMEImage import MIMEImage
-
 
 
 def get(_id):
