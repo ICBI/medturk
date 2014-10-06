@@ -43,8 +43,10 @@ from flask import request, abort, Response, make_response
             )
 @login_required
 def hit_get():
+
+    project_id = request.args.get('project_id')
     
-    return hit.get_hit()
+    return {'hit' : hit.get_hit(project_id)}
 
 
 

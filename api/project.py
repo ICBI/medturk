@@ -24,11 +24,13 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
+
 from medturk.db import project, hit
 from flask.ext.login import login_required
-from medturk.api import app, mimerender, render_xml, render_json, render_html, render_txt
+from medturk.api import app, mail, mimerender, render_xml, render_json, render_html, render_txt
 from flask import request, abort, Response, make_response
 from bson import ObjectId
+from flask.ext.mail import Message
 
 
 
@@ -106,7 +108,9 @@ def project_analyst_add():
     project_id  = request.form.get('project_id')
     email       = request.form.get('email')
 
-    project.add_analyst(project_id, email)
+    msg = Message("Hello", recipients=["to@example.com"])
+    msg.html = '<b>testing</b>'
+    mail.send(msg)
   
     return {'msg' : 'success'}
 

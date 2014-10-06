@@ -28,6 +28,7 @@
 from medturk import config
 from flask import Flask
 from flask.ext.login import LoginManager
+from flask.ext.mail import Mail
 import pymongo, mimerender, json
 from bson import ObjectId
 from datetime import timedelta
@@ -51,6 +52,10 @@ app.config["REMEMBER_COOKIE_DURATION"] = timedelta(days=1)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
+
+mail = Mail()
+mail.DEFAULT_MAIL_SENDER = 'rmj49@georgetown.edu'
+mail.init_app(app)
 
 
 

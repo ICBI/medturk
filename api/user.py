@@ -36,6 +36,7 @@ from itsdangerous import URLSafeTimedSerializer
     @login_required decorators check to see if current_user.is_authenticated():
 '''
 
+
 def hash_pass(password):
     """
     Return the md5 hash of the password+salt
@@ -43,9 +44,14 @@ def hash_pass(password):
     salted_password = password + app.secret_key
     return md5.new(salted_password).hexdigest()
 
-# What is this?
-login_serializer = URLSafeTimedSerializer(app.secret_key)
+def create_users():
 
+    db.users.drop()
+    db.users.insert({'id' : 'rmj49@georgetown.edu', 'name' : 'matt', 'password' : hash_pass('password'), 'authenticated' : False})
+    db.users.insert({'id' : 'amcdevitt14@gmail.com', 'name' : 'anna', 'password' : hash_pass('password'), 'authenticated' : False})
+
+
+login_serializer = URLSafeTimedSerializer(app.secret_key)
 
 # The class that models a user
 class User(UserMixin):
@@ -74,46 +80,64 @@ class User(UserMixin):
 
 
 
-class Users():
+class UserManager():
+    '''
+        Manages users from database. Converts users on-the-fly to a 'User' object as required
+        by Flask-Login
+    '''
     def __init__(self):
         self._users = dict()
 
-        for user in db.users.find():
-            user['password'] = hash_pass(user['password'])
-            user['authenticated'] = False
-            self._users[user['id']] = user
+        create_users()
 
     def meets_credentials(self, _id, _password):
-        user = self._users.get(_id)
+        user = db.users.find_one({'id' : _id})
         return (user and hash_pass(_password) == user['password'])
 
 
     def set_authenticated(self, _id, is_authenticated):
-            user = self.get(_id)
+
+            is_authenticated = False
+
+            # Get the user from the database
+            user = db.users.find_one({'id' : _id})
+
+            # We can only authenticate this user, if he/she exists
             if user != None:
-                self._users[_id]['authenticated'] = is_authenticated
-                return True
-            return False
+                is_authenticated = True
+
+                # Save back to database
+                db.users.update({'id' : _id}, {'$set' : {'authenticated' : is_authenticated}})
+
+            return is_authenticated
 
     def get_settings(self, _id):
-        user = self._users.get(_id)
+
+        #Get the user from the database
+        user = db.users.find_one({'id' : _id})
+        
         if user != None:
             return {'name' : user['name']}
 
     def get(self, _id):
-        user = self._users.get(_id)
+
+        #Get the user from the database
+        user = db.users.find_one({'id' : _id})
+
+        # We can only create and return a User object if he/she exists
         if user != None:
             return User(user['id'], user['password'], user['authenticated'])
 
+        # Flask-Login specifies to return None if User does not exist
         return None
 
-USERS = Users()
+user_manager = UserManager()
 
 
 @login_manager.user_loader
 def load_user(_id):
     #For every Flask request, we reconstruct the User object
-    return USERS.get(_id)
+    return user_manager.get(_id)
 
 
 @login_manager.token_loader
@@ -139,7 +163,7 @@ def load_token(token):
     data = login_serializer.loads(token, max_age=max_age)
 
     #Find the User
-    user = USERS.get(data[0])
+    user = user_manager.get(data[0])
 
     #Check Password and return user or None
     if user and data[1] == user.password:
@@ -166,14 +190,15 @@ def user_login():
     if _password == None or len(_password) == 0:
         abort(415, 'Password is missing')
   
-    user = USERS.get(_id)
+    user = user_manager.get(_id)
 
-    if USERS.meets_credentials(_id, _password):
+    if user_manager.meets_credentials(_id, _password):
 
-        # remember=True lets Flask-Login save a cookie to the user's computer
+        # By setting "remember = True", 
+        # this lets Flask-Login save a cookie to the user's computer
         login_user(user, remember=True)
 
-        if USERS.set_authenticated(current_user.get_id(), True):
+        if user_manager.set_authenticated(current_user.get_id(), True):
             return {'success' : True}
 
     return {'success' : False} 
@@ -190,7 +215,7 @@ def user_login():
             )
 @login_required
 def user_logout():
-    USERS.set_authenticated(current_user.get_id(), False)
+    user_manager.set_authenticated(current_user.get_id(), False)
     logout_user()
     return {'success' : True}
 
@@ -207,7 +232,7 @@ def user_logout():
             )
 @login_required
 def user_settings():
-    return USERS.get_settings(current_user.get_id())
+    return user_manager.get_settings(current_user.get_id())
 
 
 
