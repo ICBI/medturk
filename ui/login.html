@@ -33,7 +33,7 @@
 
               <div class="col-md-5">
                   <h2 class="lead" style="width: 250px">e-mail<input id="email" type="text" class="form-control"/></p>
-                  <p class="lead" style="width: 250px">password<input id="password" type="password" class="form-control"/></p>
+                  <h2 class="lead" style="width: 250px">password<input id="password" type="password" class="form-control"/></h2>
                   <p><button id="login" class="btn btn-danger">Login</button><p id="msg" style="color: gray"></p></p>
               </div>
 
@@ -49,6 +49,19 @@
     <script src="js/jquery-1.10.2.js"></script>
     <script src="js/bootstrap.js"></script>
     <script>
+        $("#email").keyup(function(event){
+            if(event.keyCode == 13){
+              $("#login").click();
+           }
+        });
+
+
+        $("#password").keyup(function(event){
+            if(event.keyCode == 13){
+              $("#login").click();
+           }
+        });
+
         $("#login").click(function() {
        
             var server = 'http://127.0.0.1:5000';
@@ -70,15 +83,21 @@
                                 }
                                 else {
                                     $( "#msg" ).show();
-                                    $("#msg").text('Hmmm... We were unable to authorize you. Could you try again?');
-                                    $( "#msg" ).fadeOut(5000);
+                                    $("#msg").text('We were unable to authorize you. Could you try again?');
+                                    $( "#msg" ).fadeOut(6000);
                                 }
                             },
                             error:      function(jqXHR, textStatus, errorThrown) { 
-
-                                $( "#msg" ).show();
-                                $("#msg").text('Hmmm... An error occurred on the server.');
-                                $( "#msg" ).fadeOut(5000);
+                                if (jqXHR.status == '415') {
+                                    $( "#msg" ).show();
+                                    $("#msg").text('You must supply an e-mail and password');
+                                    $( "#msg" ).fadeOut(6000);
+                                }
+                                else {
+                                  $( "#msg" ).show();
+                                  $("#msg").text('An error occurred on the server.');
+                                  $( "#msg" ).fadeOut(6000);
+                               }
                             }
               });
         });
