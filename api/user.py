@@ -95,6 +95,23 @@ class UserManager():
         return (user and hash_pass(_password) == user['password'])
 
 
+    def set_password(self, _id, _password):
+
+        password_changed = False
+
+        # Get the user from the database
+        user = db.users.find_one({'id' : _id})
+
+        # We can only authenticate this user, if he/she exists
+        if user != None:
+            password_changed = True
+
+            # Save back to database
+            db.users.update({'id' : _id}, {'$set' : {'password' : _password}})
+
+        return password_changed
+
+
     def set_authenticated(self, _id, is_authenticated):
 
             is_authenticated = False
@@ -202,6 +219,38 @@ def user_login():
             return {'success' : True}
 
     return {'success' : False} 
+
+
+
+
+
+@app.route("/user/password", methods=["POST"])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def user_password():
+
+    _current_password = request.form.get('current_password')
+    _new_password = request.form.get('new_password')
+
+
+    _id = current_user.get_id()
+    if user_manager.meets_credentials(_id, _current_password):
+
+        _new_password = hash_pass(_new_password)
+        if user_manager.set_password(_id, _new_password):
+            return {'success' : True}
+
+
+
+    return {'success' : False}
+
+
 
 
 
