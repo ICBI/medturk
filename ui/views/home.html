@@ -21,7 +21,7 @@
                   <p ng-repeat="analyst in project.analysts">
                         {{analyst}}
                   </p>
-                  <p><button class="btn btn-danger" ng-click="set_project_id(project._id)" data-target="#myModal" data-toggle="modal"> Invite Analysts</button></p>
+                  <p><a href="#" ng-click="set_project_id(project._id)" data-target="#myModal" data-toggle="modal"> Invite Analysts</a></p>
               </td>
               <td>{{project.percentage}}%</td>
               <td>
@@ -29,7 +29,6 @@
               </td>
             </tr>
          </table>
-
         </div>
 
       <!-- /END THE FEATURETTES -->
@@ -66,4 +65,4 @@
             </div>
         </div>
     </div>
-</div
+</div>
