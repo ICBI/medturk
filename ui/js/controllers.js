@@ -43,35 +43,28 @@ app.controller('HomeController', function($scope, user_factory, project_factory)
 
 	 user_factory.settings().success(function(data){
            $scope.settings = data;
+     }).error(function(data, status, headers, config){
+     		if (status == '401') {
+     			 redirect_to_login();
+     		}
+     		
      });
-
 
      project_factory.get_all().success(function(data){
            $scope.projects = data.projects;
      });
 
 
- 	  $scope.login = function(email, password) {
-  
-	      user_factory.login(email, password).success(function(data){
-	           alert(data.msg);
-	        }); 
-  	  }
-
-
-	  $scope.logout = function() {
-
-	      user_factory.logout().success(function(data){
-	           console.log(data);
-	        }); 
-	  }
-
-
 	  $scope.add_analyst = function(email) {
 
 			project_factory.add_analyst($scope.project_id, email).success(function(data){
 	           
-	        }); 
+	        }).error(function(data, status, headers, config){
+     			if (status == '401') {
+     			 	redirect_to_login();
+     			}
+     		
+     		}); 
 	  }
 
 	  $scope.set_project_id = function(project_id) {
@@ -116,41 +109,71 @@ app.controller('CreateController', function($scope, $upload, model_factory, pati
 				}	
 		  }
 
-
-
 		$scope.create_project = function(name) {
 				project_factory.create($scope.project_name, $scope.project_description, $scope.dataset._id, $scope.model_id).success(function(data) {
-					alert('Congrats! Your project is now underway');
+					window.location.replace(server + "/medturk/index.html");
 				});
 		  }
 });
 
 
-app.controller('WorkController', function($scope, $sce, $location, patient_factory, hit_factory, record_factory) {
+app.controller('WorkController', function($scope, $sce, $location, patient_factory, hit_factory, record_factory, project_factory) {
 
 		 $scope.hit = undefined;
 		 $scope.annotation = undefined;
 		 $scope.is_project_complete = false;
 
+		 $scope.projects = [];
+		 $scope.project = undefined;
+
+		 project_factory.get_all().success(function(data){
+           $scope.projects = data.projects;
+           $scope.project = $scope.projects[0];
+
+            // Generate an initial hit
+	        $scope.get_hit();
+
+         }).error(function(data, status, headers, config){
+     			if (status == '401') {
+     			 	redirect_to_login();
+     			}
+     		
+     	});
+
+		 $scope.on_change_project = function(project) {
+		 		$scope.project = project;
+	        	$scope.get_hit();
+		 }
+
 
 		 $scope.get_hit = function() {
 		 	
-		 	hit_factory.get_hit().success(function(data){
-            	$scope.hit = data;
-            	
-            	// Highlights all triggers
-            	for (var i = 0; i < $scope.hit.annotations.length; i++) {
-            		$scope.hit.annotations[i].kwic = $sce.trustAsHtml(get_highlighted_text($scope.hit.annotations[i].kwic, $scope.hit.annotations[i].beg, $scope.hit.annotations[i].end));
+		 	hit_factory.get_hit($scope.project._id).success(function(data){
+            	$scope.hit = data.hit;
+           	
+            	if ($scope.hit) {
+            		$scope.is_project_complete = false;
+
+            		// Highlights all triggers
+            		for (var i = 0; i < $scope.hit.annotations.length; i++) {
+            			$scope.hit.annotations[i].kwic = $sce.trustAsHtml(get_highlighted_text($scope.hit.annotations[i].kwic, $scope.hit.annotations[i].beg, $scope.hit.annotations[i].end));
+            		}
+
+            		// Set first annotation as default annotation
+            		$scope.annotation = $scope.hit.annotations[0];
             	}
-
-            	//$scope.clinical_note = $sce.trustAsHtml(get_highlighted_text(data.note, $scope.annotation.beg, $scope.annotation.end));
+            	else {
+            		$scope.is_project_complete = true;
+            	}
             	
-            	// Set first annotation as default annotation
-            	$scope.annotation = $scope.hit.annotations[0];
+            	
 
-          }).error(function(data) {
-		 		$scope.is_project_complete = true;
-		  });
+          }).error(function(data, status, headers, config){
+     			if (status == '401') {
+     			 	redirect_to_login();
+     			}
+     		
+     		});
 		 }
 
 		  $scope.prevent_default = function() {
@@ -191,10 +214,6 @@ app.controller('WorkController', function($scope, $sce, $location, patient_facto
 	     $scope.download = function() {
   			hit_factory.download();
   		}
-
-	     // Generate an initial hit
-	     $scope.get_hit();
-
 });
 
 

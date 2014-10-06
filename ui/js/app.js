@@ -27,8 +27,13 @@
 
 
 var server = 'http://127.0.0.1:5000';
-var app = angular.module('medTurkApp', ['angularFileUpload', 'ngRoute', 'ngSanitize'], function($httpProvider){
 
+function redirect_to_login() {
+    window.location.replace(server + "/medturk/login.html");
+}
+
+
+var app = angular.module('medTurkApp', ['angularFileUpload', 'ngRoute', 'ngSanitize'], function($httpProvider){
 
   // Use x-www-form-urlencoded Content-Type
   $httpProvider.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=utf-8';
@@ -179,7 +184,7 @@ app.factory('user_factory', function($http, $upload) {
     var factory = {};
 
      factory.login = function(_email, _password) {
-         return $http.post(server + '/user/login', {user_id : _email, password : _password});
+          return $http.post(server + '/user/login', {user_id : _email, password : _password});
      }
 
      factory.settings = function() {
@@ -251,8 +256,14 @@ app.factory('hit_factory', function($http) {
     var factory = {};
 
 
-     factory.get_hit = function() {
-       return $http.get(server + '/hit');
+     factory.get_hit = function(_project_id) {
+ 
+       return $http({
+          url: server + '/hit', 
+          method: "GET",
+          params: {project_id : _project_id}
+       });
+
      }
 
 
@@ -721,9 +732,9 @@ app.directive("ontologyGraph", function($parse) {
 
 
 
-                  console.log(Object.keys(d));
-                  console.log(d._children);
-                  console.log('');
+                  //console.log(Object.keys(d));
+                  //console.log(d._children);
+                  //console.log('');
                   if (d._children == null || d._children == undefined) {
                      scope.callback({name: d.name});
                   }
