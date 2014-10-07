@@ -39,10 +39,10 @@ function get_highlighted_text(text, beg, end) {
 
 app.controller('HomeController', function($scope, user_factory, project_factory) {
 
-	 $scope.project_id = '';
+	 $scope.project = undefined;
 
-	 user_factory.settings().success(function(data){
-           $scope.settings = data;
+	 user_factory.user().success(function(data){
+           $scope.user = data.user;
      }).error(function(data, status, headers, config){
      		if (status == '401') {
      			 redirect_to_login();
@@ -57,8 +57,9 @@ app.controller('HomeController', function($scope, user_factory, project_factory)
 
 	  $scope.add_analyst = function(email) {
 
-			project_factory.add_analyst($scope.project_id, email).success(function(data){
-	           
+			project_factory.add_analyst($scope.project._id, email).success(function(data){
+	           $('#close').click();
+
 	        }).error(function(data, status, headers, config){
      			if (status == '401') {
      			 	redirect_to_login();
@@ -67,8 +68,8 @@ app.controller('HomeController', function($scope, user_factory, project_factory)
      		}); 
 	  }
 
-	  $scope.set_project_id = function(project_id) {
-  		 $scope.project_id = project_id;
+	  $scope.set_project = function(project) {
+  		$scope.project = project;
   	  }
 
 

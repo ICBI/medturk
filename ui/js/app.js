@@ -187,8 +187,8 @@ app.factory('user_factory', function($http, $upload) {
           return $http.post(server + '/user/login', {user_id : _email, password : _password});
      }
 
-     factory.settings = function() {
-         return $http.get(server + '/user/settings');
+     factory.user = function() {
+         return $http.get(server + '/user');
      }
 
      factory.logout = function() {
@@ -233,6 +233,8 @@ app.factory('project_factory', function($http) {
 
 
      factory.add_analyst = function(_project_id, _email) {
+
+        console.log(_project_id);
         return $http.post(server + '/project/analyst/add', {project_id    : _project_id, 
                                                             email : _email});
      }
