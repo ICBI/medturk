@@ -25,7 +25,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-from medturk.db import project, hit
+from medturk.db import project, hit, user
 from flask.ext.login import login_required
 from medturk.api import app, mail, mimerender, render_xml, render_json, render_html, render_txt
 from flask import request, abort, Response, make_response
@@ -107,14 +107,39 @@ def project_analyst_add():
 
     project_id  = request.form.get('project_id')
     email       = request.form.get('email')
+    password    = '5dsf*934fj$@($&'
 
-    msg = Message("Hello", recipients=["to@example.com"])
-    msg.html = '<b>testing</b>'
+
+    print project_id
+    p = project.get(project_id)
+
+
+    msg = Message("medTurk", sender = app.config.get('DEFAULT_MAIL_SENDER'), recipients=[email])
+
+    msg.html  = '<p>Hello ' + email + ' . You are invited to be part of the ' + p['name'] + ' project.</p>'
+    
+    # Add this only if a description exists
+    if len(p['description']) > 0:
+        msg.html += '<p>Here\'s a brief description about this project:</p>'
+        msg.html += '<p>' + p['description'] +'</p>'
+
+
+    # Does this user account already exist?
+    if user.get(email) == None:
+
+        user.add(email, password, app.secret_key)
+
+        msg.html += '<p>We know you are new to medTurk. So, when you login, use this e-mail as your username and the following password:</p>'
+        msg.html += '<br/><br/><p><b>' + password +'</b></p>'
+        msg.html += '<br/><br/><p>Please change your password after logging in!</p>'
+
+    msg.html += 'Ready? <a href="http://127.0.0.1:5000/medturk/login.html">Click here</a> to get started!</p>'
     mail.send(msg)
+
+    # Add this user to the projects list
+    project.add_analyst(project_id, email)
   
     return {'msg' : 'success'}
-
-
 
 
 

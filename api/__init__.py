@@ -43,20 +43,22 @@ from datetime import timedelta
 '''
 app = Flask(__name__, static_url_path='/medturk', static_folder = '../ui')
 
-# set the secret key.  Keep this really secret:
 app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
-
-# Change the duration of how long the Remember Cookie is valid on the users
-# computer.  This can not really be trusted as a user can edit it.
 app.config["REMEMBER_COOKIE_DURATION"] = timedelta(days=1)
+app.config['MAIL_SERVER']              = 'smtp.gmail.com'
+app.config['MAIL_USE_TLS']             = True
+app.config['MAIL_PORT']                = 587
+app.config['MAIL_USERNAME']            = 'rjohnson0186@gmail.com'
+app.config['MAIL_PASSWORD']            = '10Faceb00k10'
+app.config['DEFAULT_MAIL_SENDER']      = 'rjohnson0186@gmail.com'
 
+# Handles authentication
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+# Handles e-mailing
 mail = Mail()
-mail.DEFAULT_MAIL_SENDER = 'rmj49@georgetown.edu'
 mail.init_app(app)
-
 
 
 class JSONEncoder(json.JSONEncoder):

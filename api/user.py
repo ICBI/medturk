@@ -25,8 +25,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-from medturk.db import db
-import md5
+from medturk.db import user as user_db
 from flask import request, abort
 from flask.ext.login import (UserMixin, login_user, logout_user, login_required, current_user)
 from medturk.api import app, login_manager, mimerender, render_xml, render_json, render_html, render_txt
@@ -35,21 +34,6 @@ from itsdangerous import URLSafeTimedSerializer
 '''
     @login_required decorators check to see if current_user.is_authenticated():
 '''
-
-
-def hash_pass(password):
-    """
-    Return the md5 hash of the password+salt
-    """
-    salted_password = password + app.secret_key
-    return md5.new(salted_password).hexdigest()
-
-def create_users():
-
-    db.users.drop()
-    db.users.insert({'id' : 'rmj49@georgetown.edu', 'name' : 'matt', 'password' : hash_pass('password'), 'authenticated' : False})
-    db.users.insert({'id' : 'amcdevitt14@gmail.com', 'name' : 'anna', 'password' : hash_pass('password'), 'authenticated' : False})
-
 
 login_serializer = URLSafeTimedSerializer(app.secret_key)
 
@@ -74,7 +58,6 @@ class User(UserMixin):
 
 
     def get_auth_token(self):
-
         data = [str(self.id), self.password]
         return login_serializer.dumps(data)
 
@@ -86,13 +69,12 @@ class UserManager():
         by Flask-Login
     '''
     def __init__(self):
-        self._users = dict()
-
-        create_users()
+        user_db.clear()
+        user_db.add('rmj49@georgetown.edu', 'password', app.secret_key)
 
     def meets_credentials(self, _id, _password):
-        user = db.users.find_one({'id' : _id})
-        return (user and hash_pass(_password) == user['password'])
+        u = user_db.get(_id)
+        return (u and user_db.hash_pass(_password, app.secret_key) == u['password'])
 
 
     def set_password(self, _id, _password):
@@ -100,14 +82,14 @@ class UserManager():
         password_changed = False
 
         # Get the user from the database
-        user = db.users.find_one({'id' : _id})
+        u = user_db.get(_id)
 
         # We can only authenticate this user, if he/she exists
-        if user != None:
+        if u != None:
             password_changed = True
 
             # Save back to database
-            db.users.update({'id' : _id}, {'$set' : {'password' : _password}})
+            user_db.update_password(_id, _password)
 
         return password_changed
 
@@ -117,33 +99,31 @@ class UserManager():
             is_authenticated = False
 
             # Get the user from the database
-            user = db.users.find_one({'id' : _id})
+            u = user_db.get(_id)
 
             # We can only authenticate this user, if he/she exists
-            if user != None:
+            if u != None:
                 is_authenticated = True
-
-                # Save back to database
-                db.users.update({'id' : _id}, {'$set' : {'authenticated' : is_authenticated}})
+                user_db.update_is_authenticated(_id, is_authenticated)
 
             return is_authenticated
 
     def get_settings(self, _id):
 
         #Get the user from the database
-        user = db.users.find_one({'id' : _id})
+        u = user_db.get(_id)
         
-        if user != None:
-            return {'name' : user['name']}
+        if u != None:
+            return {'name' : u['name']}
 
     def get(self, _id):
 
-        #Get the user from the database
-        user = db.users.find_one({'id' : _id})
+        # Get the user from the database
+        u = user_db.get(_id)
 
         # We can only create and return a User object if he/she exists
-        if user != None:
-            return User(user['id'], user['password'], user['authenticated'])
+        if u != None:
+            return User(u['id'], u['password'], u['authenticated'])
 
         # Flask-Login specifies to return None if User does not exist
         return None
@@ -180,11 +160,11 @@ def load_token(token):
     data = login_serializer.loads(token, max_age=max_age)
 
     #Find the User
-    user = user_manager.get(data[0])
+    u = user_manager.get(data[0])
 
     #Check Password and return user or None
-    if user and data[1] == user.password:
-        return user
+    if u and data[1] == u.password:
+        return u
     return None
 
 
@@ -207,13 +187,13 @@ def user_login():
     if _password == None or len(_password) == 0:
         abort(415, 'Password is missing')
   
-    user = user_manager.get(_id)
+    u = user_manager.get(_id)
 
     if user_manager.meets_credentials(_id, _password):
 
         # By setting "remember = True", 
         # this lets Flask-Login save a cookie to the user's computer
-        login_user(user, remember=True)
+        login_user(u, remember=True)
 
         if user_manager.set_authenticated(current_user.get_id(), True):
             return {'success' : True}
@@ -242,7 +222,7 @@ def user_password():
     _id = current_user.get_id()
     if user_manager.meets_credentials(_id, _current_password):
 
-        _new_password = hash_pass(_new_password)
+        _new_password = user_db.hash_pass(_new_password, app.secret_key)
         if user_manager.set_password(_id, _new_password):
             return {'success' : True}
 
@@ -271,7 +251,7 @@ def user_logout():
 
 
 
-@app.route("/user/settings")
+@app.route("/user")
 @mimerender(
             default = 'json',
             html = render_html,
@@ -280,8 +260,8 @@ def user_logout():
             txt  = render_txt
             )
 @login_required
-def user_settings():
-    return user_manager.get_settings(current_user.get_id())
+def user():
+    return {'user' : user_db.get(current_user.get_id())}
 
 
 
