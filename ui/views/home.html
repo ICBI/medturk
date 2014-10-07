@@ -7,7 +7,7 @@
         </div>
           
         <div class="col-md-7">
-          <h2 class="featurette-heading">hello {{settings.name}}.</h2>
+          <h2 class="featurette-heading">hello {{user.id}}</h2>
           <p class="lead">You have {{projects.length}} projects. You may start a project <a href="#/create">here.</a></p>
 
 
@@ -19,9 +19,9 @@
               <td>{{project.description}}</td>
               <td>
                   <p ng-repeat="analyst in project.analysts">
-                        {{analyst}}
+                        <span class="analyst"><i>{{analyst}}</i></span>
                   </p>
-                  <p><a href="#" ng-click="set_project_id(project._id)" data-target="#myModal" data-toggle="modal"> Invite Analysts</a></p>
+                  <p><a href ng-click="set_project(project)" data-target="#myModal" data-toggle="modal"> Invite Analysts</a></p>
               </td>
               <td>{{project.percentage}}%</td>
               <td>
@@ -61,7 +61,7 @@
                     </ul>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
