@@ -69,6 +69,26 @@ def model_post():
     return {'_id' : str(_id)}
 
 
+
+@app.route('/model/delete', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def model_delete_post():
+
+    _id = request.form.get('id')
+    model.delete(_id)
+  
+    return {'msg' : 'success'}
+
+
+
+
 @app.route('/model', methods=['GET'])
 @mimerender(
             default = 'json',
@@ -81,6 +101,19 @@ def model_post():
 def model_get():
     
     model_id = request.args.get('id')
-    return db.model.get(model_id)
+    return model.get(model_id)
+
+
+@app.route('/models', methods=['GET'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def models_get():
+    return {'models' : model.get_all()}
 
 

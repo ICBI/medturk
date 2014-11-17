@@ -144,6 +144,49 @@ def project_analyst_add():
 
 
 
+@app.route('/project/edit', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def project_edit_post():
+
+    _id          = request.form.get('id')
+    _name        = request.form.get('name')
+    _description = request.form.get('description')
+    
+    project.edit(_id, _name, _description)
+  
+    return {'msg' : 'success'}
+
+
+
+
+
+@app.route('/project/delete', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def project_delete_post():
+
+    project_id   = request.form.get('id')
+
+    project.delete(project_id)
+  
+    return {'msg' : 'success'}
+
+
+
+
 @app.route('/project/create', methods=['POST'])
 @mimerender(
             default = 'json',
