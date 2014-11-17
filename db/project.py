@@ -6,7 +6,7 @@
     Copyright (C) 2014 Innovation Center for Biomedical Informatics (ICBI)
                        Georgetown University <http://icbi.georgetown.edu/>
     
-    Author: Robert M. Johnson "matt"
+    Author: Robert M. Johnson
             <rmj49@georgetown.edu>
             <http://mattshomepage.com/>
             <@mattshomepage>
@@ -28,6 +28,21 @@ from medturk.db import db
 from bson import ObjectId
 
 
+def edit(_id, _name, _description):
+
+    converted_id = ObjectId(_id)
+
+    doc = db.projects.find_one({'_id' : converted_id})
+    doc['name']        = _name
+    doc['description'] = _description
+    db.projects.update({'_id': converted_id}, {'$set': doc}, upsert=False)
+
+
+
+def delete(_id):
+    db.projects.remove({'_id' : ObjectId(_id)})
+    db.hits.remove({'project_id' : ObjectId(_id)})
+
 def get(_id):
     return db.projects.find_one({'_id' : ObjectId(_id)})
 
@@ -45,6 +60,7 @@ def save(_id, name, description, dataset_id, model_id):
     '''
         Create the project
     '''
+
     # Insert the project
     db.projects.insert({'_id' : _id, 'name' : name, 'description' : description, 'dataset_id' : ObjectId(dataset_id), 'model_id' : ObjectId(model_id)})
 

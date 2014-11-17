@@ -33,6 +33,7 @@
                   http://dev.mysql.com/doc/connector-python/en/index.html
 '''
 
+'''
 import mysql.connector
 
 conn = mysql.connector.connect(user='root', database='umls')
@@ -53,6 +54,7 @@ def get_name_from_cui(cui):
 
 if __name__ == '__main__':
     pass
+'''
 
 
 

@@ -38,7 +38,7 @@ def save(record):
 
 
 def get_records(dataset_id):
-    return [r for r in db.records.find({'dataset_id' : dataset_id})]
+    return [r for r in db.records.find({'dataset_id' : ObjectId(dataset_id)})]
 
 
 def get_record(record_id):

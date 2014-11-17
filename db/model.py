@@ -26,6 +26,7 @@
 '''
 
 from medturk.db import db
+from bson import ObjectId
 
 def save(model):
     '''
@@ -34,6 +35,14 @@ def save(model):
                     The research model that encapsulates questions, answers, triggers, etc.
     '''
     db.models.save(model)
+
+
+def delete(_id):
+    db.models.remove({'_id' : ObjectId(_id)})
+
+
+def get_all():
+    return [m for m in db.models.find()]
 
 
 def get(_id):
