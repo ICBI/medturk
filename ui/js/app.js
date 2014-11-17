@@ -114,10 +114,10 @@ app.config(function($routeProvider) {
      controller: 'WorkController',
      templateUrl: 'views/work.html'
   })
-  .when('/create',
+  .when('/model',
   {
-     controller: 'CreateController',
-     templateUrl: 'views/create.html'
+     controller: 'ModelController',
+     templateUrl: 'views/model.html'
   })
 });
 
@@ -154,9 +154,13 @@ app.factory('model_factory', function($http, $upload) {
             });
      }
 
+     factory.delete = function(_id) {
+          return $http.post(server + '/model/delete', {id : _id});
+     }
 
-      factory.get_model = function() {
-       return $http.get(server + '/model');
+
+      factory.get_models = function() {
+       return $http.get(server + '/models');
      }
 
      return factory;
@@ -169,8 +173,32 @@ app.factory('dataset_factory', function($http) {
 
     var factory = {};
 
-      factory.get_datasets = function() {
+
+    factory.delete = function(_dataset_id) {
+          return $http.post(server + '/dataset/delete', {id : _dataset_id});
+     }
+
+
+    factory.get_datasets = function() {
        return $http.get(server + '/datasets');
+     }
+
+     factory.get_raw_datasets = function() {
+       return $http.get(server + '/datasets/raw');
+     }
+
+     factory.edit = function(_id, _name, _description) {
+
+          return $http.post(server + '/dataset/edit', {id          : _id, 
+                                                       name        : _name,
+                                                       description : _description});
+     }
+
+
+     factory.create = function(_name, _description, _folder) {
+          return $http.post(server + '/dataset/create', {name        : _name, 
+                                                         description : _description,
+                                                         folder      : _folder});
      }
 
      return factory;
@@ -222,6 +250,13 @@ app.factory('project_factory', function($http) {
 
     var factory = {};
 
+    factory.edit = function(_id, _name, _description) {
+
+          return $http.post(server + '/project/edit', {id          : _id, 
+                                                       name        : _name,
+                                                       description : _description});
+     }
+
 
     factory.data = function(_project_id) {
        window.open(server + '/project/data?id=' + _project_id, '_blank', '');
@@ -231,7 +266,6 @@ app.factory('project_factory', function($http) {
        return $http.get(server + '/project/get_all');
      }
 
-
      factory.add_analyst = function(_project_id, _email) {
 
         console.log(_project_id);
@@ -239,6 +273,9 @@ app.factory('project_factory', function($http) {
                                                             email : _email});
      }
 
+     factory.delete = function(_project_id) {
+          return $http.post(server + '/project/delete', {id : _project_id});
+     }
 
     factory.create = function(_project_name, _project_description, _dataset_id, _model_id) {
           return $http.post(server + '/project/create', {name        : _project_name, 
