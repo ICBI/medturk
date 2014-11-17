@@ -248,6 +248,11 @@ display: none;
 }
 
 
+.analyst:hover {
+  /*background-color: #DEDEDE;
+  border-radius: 25px;
+  padding: 10px;*/
+}
 
 /*
  *
@@ -269,6 +274,7 @@ display: none;
  * Validation Station
  *
  */
+
 
 .area {
 
