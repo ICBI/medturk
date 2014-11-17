@@ -8,11 +8,52 @@
           
         <div class="col-md-7">
           <h2 class="featurette-heading">hello {{user.id}}</h2>
-          <p class="lead">You have {{projects.length}} projects. You may start a project <a href="#/create">here.</a></p>
+          <p class="lead">You have {{datasets.length}} datasets, {{projects.length}} projects.</p>
+          <br/>
+          <br/>
 
+
+          <table class="table table-striped" ng-if="datasets.length > 0">
+          <h2>Datasets</h2>
+          <tr><th>Name</th><th>Description</th><th>Number of Patients</th><th>Date Uploaded</th><th></th></tr>
+          <tr ng-repeat="dataset in datasets">
+            <td>{{dataset.name}}</td>
+            <td>{{dataset.description}}</td>
+            <td>{{dataset.patient_count}}</td>
+            <td>{{dataset.date}}</td>
+            <td><a ng-click="set_dataset(dataset)" data-target="#dataset_edit_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_dataset(dataset._id, dataset.name)">Delete</td>
+          </tr>
+        </table>
+        <button data-target="#dataset_modal" class="btn btn-default" data-toggle="modal"><b>+</b></button>
+
+        <br/>
+         <br/>
+         <br/>
+         <br/>
+
+          <table class="table table-striped" ng-if="models.length > 0">
+            <h2>Questionnaires</h2>
+            <tr><th>Name</th><th>Description</th><th>Number of Questions</th><th></th></tr>
+
+            <tr ng-repeat="model in models">
+              <td>{{model.name}}</td>
+              <td>{{model.description}}</td>
+              <td>15</td>
+              <td>
+                  <a ng-click="download(model._id)">Download</a>&nbsp;&nbsp;&nbsp;<a ng-click="set_model(model)" data-target="#model_edit_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_model(model._id, model.name)">Delete</a></td>
+              </td>
+          </tr>
+         </table>
+         <button ng-click="add_model()" class="btn btn-default"><b>+</b></button> 
+
+          <br/>
+          <br/>
+          <br/>
+          <br/>
 
           <table class="table table-striped" ng-if="projects.length > 0">
-            <tr><th>Name</th><th>Description</th><th>Analysts</th><th>Completion Percentage</th><th></th></tr>
+            <h2>Projects</h2>
+            <tr><th>Name</th><th>Description</th><th>Analysts</th><th>Completion</th><th></th></tr>
 
             <tr ng-repeat="project in projects">
               <td>{{project.name}}</td>
@@ -25,15 +66,194 @@
               </td>
               <td>{{project.percentage}}%</td>
               <td>
-                  <button class="btn btn-danger" ng-click="download(project._id)"> Download Data </button></td>
+                  <a ng-click="download(project._id)">Download</a>&nbsp;&nbsp;&nbsp;<a ng-click="set_project(project)" data-target="#project_edit_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_project(project._id, project.name)">Delete</a></td>
               </td>
-            </tr>
+          </tr>
          </table>
+          <button data-target="#project_modal" class="btn btn-default" data-toggle="modal"><b>+</b></button>
         </div>
 
       <!-- /END THE FEATURETTES -->
     </div>
 </div>
+
+
+
+
+
+
+
+<!-- Modal for adding a dataset -->
+<div class="modal fade" id="dataset_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="myModalLabel">Add Dataset</h4>
+            </div>
+            <div class="modal-body">
+                  <div class="row">
+                      <h4>Name</h4>
+                      <input style="width: 400px" type="text" class="form-control" ng-model="name"/>
+                    </div>
+                    <br/>
+                    <br/>
+                    <div class="row">
+                      <h4>Description</h4>
+                        <textarea style="width: 400px" class="form-control" rows="3" ng-model="description"></textarea>
+                    </div>
+                    <br/>
+                    <br/>
+                    <div class="row">
+                        <h4>Source</h4>
+                        <select ng-model="folder" style="width: 400px" class="form-control" ng-options="x for x in raw_datasets"></select>
+                    </div>      
+                    <br/>
+                    <br/>
+                    <div class="row">
+                      <button ng-click="create_dataset()" class="btn btn-danger">Create</button> 
+                    </div>
+            </div>
+            <div class="modal-footer">
+                <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- Modal for adding a project -->
+<div class="modal fade" id="project_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="myModalLabel">Add Project</h4>
+            </div>
+            <div class="modal-body">
+                  <div class="row">
+                      <h4>Name</h4>
+                      <input style="width: 400px" type="text" class="form-control" ng-model="project_name"/>
+                    </div>
+                    <br/>
+                    <br/>
+                    <div class="row">
+                      <h4>Description</h4>
+                        <textarea style="width: 400px" class="form-control" rows="3" ng-model="project_description"></textarea>
+                    </div>
+                    <br/>
+                    <br/>
+                    <div class="row">
+                        <h4>Research Model</h4>
+                        <form enctype="multipart/form-data">
+                          <input type="file" ng-file-select="on_model_upload($files)" >
+                          </input>
+                       </form>
+                    </div>
+                    <br/>
+                    <br/>
+                    <div class="row">
+                        <h4>Dataset</h4>
+
+                        <select ng-model="dataset" style="width: 400px" class="form-control" ng-options="ds.name for ds in datasets"></select>
+                        
+                    </div>
+                    <br/>
+                    <br/>
+                    <div class="row">
+                      <button ng-click="create_project(project_name)" class="btn btn-danger">Create</button> 
+                    </div>
+            </div>
+            <div class="modal-footer">
+                <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Modal for editing dataset information -->
+<div class="modal fade" id="dataset_edit_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="myModalLabel">Edit Dataset</h4>
+            </div>
+            <div class="modal-body">
+                  <div class="row">
+                      <h4>Name</h4>
+                      <input style="width: 400px" type="text" class="form-control" ng-model="dataset.name"/>
+                    </div>
+                    <div class="row">
+                      <h4>Description</h4>
+                        <textarea style="width: 400px" class="form-control" rows="3" ng-model="dataset.description"></textarea>
+                    </div>
+            <br/>
+            <br/>
+            <div class="row">
+                  <button ng-click="edit_dataset()" class="btn btn-danger">Update</button> 
+            </div>
+          </div>
+            <div class="modal-footer">
+                <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+<!-- Modal for editing project information -->
+<div class="modal fade" id="project_edit_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="myModalLabel">Edit Project</h4>
+            </div>
+            <div class="modal-body">
+                  <div class="row">
+                      <h4>Name</h4>
+                      <input style="width: 400px" type="text" class="form-control" ng-model="project.name"/>
+                    </div>
+                    <div class="row">
+                      <h4>Description</h4>
+                        <textarea style="width: 400px" class="form-control" rows="3" ng-model="project.description"></textarea>
+                    </div>
+            <br/>
+            <br/>
+            <div class="row">
+                  <button ng-click="edit_project()" class="btn btn-danger">Update</button> 
+            </div>
+          </div>
+            <div class="modal-footer">
+                <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
 
 
 
@@ -44,7 +264,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title" id="myModalLabel">Invitation Form</h4>
+                <h4 class="modal-title" id="myModalLabel">Invite Analysts</h4>
             </div>
             <div class="modal-body">
                 <h3 class="lead">Invite people by e-mail:</h3>
