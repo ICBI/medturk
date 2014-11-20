@@ -8,11 +8,31 @@
           
         <div class="col-md-7">
           <h2 class="featurette-heading">hello {{user.id}}</h2>
-          <p class="lead">You have {{datasets.length}} datasets, {{projects.length}} projects.</p>
+          <p class="lead">There are {{users.length}} users, {{datasets.length}} datasets, {{models.length}} questionnaries, and {{projects.length}} projects.</p>
           <br/>
           <br/>
 
 
+          <!-- Users Table -->
+          <table class="table table-striped" ng-if="datasets.length > 0">
+          <h2>Analysts</h2>
+          <tr><th>Name</th><th>Role</th><th></th></tr>
+          <tr ng-repeat="user in users">
+            <td>{{user.id}}</td>
+            <td>{{user.role}}</td>
+            <td><a ng-click="set_edit_user(user)" data-target="#edit_user_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_user(user._id, $index)">Delete</td>
+          </tr>
+        </table>
+        <button data-target="#new_user_modal" class="btn btn-default" data-toggle="modal"><b>Create</b></button>
+
+
+        <br/>
+         <br/>
+         <br/>
+         <br/>
+
+
+          <!-- Datasets Table -->
           <table class="table table-striped" ng-if="datasets.length > 0">
           <h2>Datasets</h2>
           <tr><th>Name</th><th>Description</th><th>Number of Patients</th><th>Date Uploaded</th><th></th></tr>
@@ -24,13 +44,15 @@
             <td><a ng-click="set_dataset(dataset)" data-target="#dataset_edit_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_dataset(dataset._id, dataset.name)">Delete</td>
           </tr>
         </table>
-        <button data-target="#dataset_modal" class="btn btn-default" data-toggle="modal"><b>+</b></button>
+        <button data-target="#dataset_modal" class="btn btn-default" data-toggle="modal"><b>Create</b></button>
 
-        <br/>
+         <br/>
          <br/>
          <br/>
          <br/>
 
+
+         <!-- Questionnaire Table -->
           <table class="table table-striped" ng-if="models.length > 0">
             <h2>Questionnaires</h2>
             <tr><th>Name</th><th>Description</th><th>Number of Questions</th><th></th></tr>
@@ -38,39 +60,41 @@
             <tr ng-repeat="model in models">
               <td>{{model.name}}</td>
               <td>{{model.description}}</td>
-              <td>15</td>
+              <td>{{model.questions.length}}</td>
               <td>
-                  <a ng-click="download(model._id)">Download</a>&nbsp;&nbsp;&nbsp;<a ng-click="set_model(model)" data-target="#model_edit_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_model(model._id, model.name)">Delete</a></td>
+                  <a ng-click="download_model(model._id)">Download</a>&nbsp;&nbsp;&nbsp;<a ng-click="edit_model(model._id)" data-target="#model_edit_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_model(model._id, model.name)">Delete</a></td>
               </td>
           </tr>
          </table>
-         <button ng-click="add_model()" class="btn btn-default"><b>+</b></button> 
-
+         <button ng-click="create_model()" class="btn btn-default"><b>Create</b></button> 
+          <button data-target="#model_modal" class="btn btn-default" data-toggle="modal"><b>Upload</b></button>
           <br/>
           <br/>
           <br/>
           <br/>
 
+
+          <!-- Projects Table -->
           <table class="table table-striped" ng-if="projects.length > 0">
             <h2>Projects</h2>
-            <tr><th>Name</th><th>Description</th><th>Analysts</th><th>Completion</th><th></th></tr>
+            <tr><th>Name</th><th>Description</th><th>Analysts</th><th>Status</th><th>Completion</th><th></th></tr>
 
             <tr ng-repeat="project in projects">
               <td>{{project.name}}</td>
               <td>{{project.description}}</td>
               <td>
-                  <p ng-repeat="analyst in project.analysts">
-                        <span class="analyst"><i>{{analyst}}</i></span>
+                  <p ng-repeat="user_id in project.user_ids">
+                        <span class="label label-default">{{get_user_name(user_id)}}</span>
                   </p>
-                  <p><a href ng-click="set_project(project)" data-target="#myModal" data-toggle="modal"> Invite Analysts</a></p>
               </td>
+              <td>{{project.status}}</td>
               <td>{{project.percentage}}%</td>
               <td>
-                  <a ng-click="download(project._id)">Download</a>&nbsp;&nbsp;&nbsp;<a ng-click="set_project(project)" data-target="#project_edit_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_project(project._id, project.name)">Delete</a></td>
+                  <a ng-click="download(project._id)">Download</a>&nbsp;&nbsp;&nbsp;<a ng-click="set_project(project)" data-target="#project_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_project(project._id, project.name, $index)">Delete</a></td>
               </td>
           </tr>
          </table>
-          <button data-target="#project_modal" class="btn btn-default" data-toggle="modal"><b>+</b></button>
+          <button ng-click="create_project()" data-target="#project_modal" class="btn btn-default" data-toggle="modal"><b>Create</b></button>
         </div>
 
       <!-- /END THE FEATURETTES -->
@@ -124,40 +148,17 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-<!-- Modal for adding a project -->
-<div class="modal fade" id="project_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<!-- Modal for importing a model -->
+<div class="modal fade" id="model_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title" id="myModalLabel">Add Project</h4>
+                <h4 class="modal-title" id="myModalLabel">Upload Questionnaire</h4>
             </div>
             <div class="modal-body">
-                  <div class="row">
-                      <h4>Name</h4>
-                      <input style="width: 400px" type="text" class="form-control" ng-model="project_name"/>
-                    </div>
-                    <br/>
-                    <br/>
                     <div class="row">
-                      <h4>Description</h4>
-                        <textarea style="width: 400px" class="form-control" rows="3" ng-model="project_description"></textarea>
-                    </div>
-                    <br/>
-                    <br/>
-                    <div class="row">
-                        <h4>Research Model</h4>
+                        <h4>Questionnaire</h4>
                         <form enctype="multipart/form-data">
                           <input type="file" ng-file-select="on_model_upload($files)" >
                           </input>
@@ -165,20 +166,170 @@
                     </div>
                     <br/>
                     <br/>
+                    <br/>
+            </div>
+            <div class="modal-footer">
+                <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<!-- Modal for editing an analyst -->
+<div class="modal fade" id="edit_user_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="myModalLabel">Edit Analyst</h4>
+            </div>
+            <div class="modal-body">
+                  <div class="row">
+                      <h4>Edit E-mail</h4>
+                      <input id="edit_user_email" style="width: 400px" type="text" class="form-control" ng-model="edit_user.id"/>
+                    </div>
+                  <br/>
+                  <br/>
+                  <div class="row">
+                      <h4>Set New Password</h4>
+                      <input id="edit_user_password" type="password" style="width: 400px" type="text" class="form-control" ng-model="edit_user.password"/>
+                    </div>
+                  <br/>
+                  <br/>
+
+                  <div class="row">
+                    <h4>Change Role</h4>
+                  <select ng-change="update_user_role()" ng-model="edit_user.role" style="width: 200px" class="form-control" ng-options="role for role in roles"></select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+<!-- Modal for creating an analyst -->
+<div class="modal fade" id="new_user_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="myModalLabel">Create Analyst</h4>
+            </div>
+            <div class="modal-body">
+                  <div class="row">
+                      <h4>E-mail</h4>
+                      <input style="width: 400px" type="text" class="form-control" ng-model="new_user_email"/>
+                    </div>
+                  <br/>
+                  <br/>
+                  <div class="row">
+                      <h4>Password</h4>
+                      <input type="password" style="width: 400px" type="text" class="form-control" ng-model="new_user_password"/>
+                    </div>
+
+                  <br/>
+                  <br/>
+
+                  <div class="row">
+                    <h4>Role</h4>
+                  <select ng-model="new_user_role" style="width: 200px" class="form-control" ng-options="role for role in roles"></select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="close" ng-click="create_user(new_user_email, new_user_password, new_user_role)" type="button" class="btn btn-default" data-dismiss="modal">Create</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+<!-- Modal for editing a project -->
+<div class="modal fade" id="project_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="myModalLabel">Project</h4>
+            </div>
+            <div class="modal-body">
+                  <div class="row">
+                      <h4>Name</h4>
+                      <input id="project_name" style="width: 400px" type="text" class="form-control" ng-model="project.name"/>
+                    </div>
+                    <br/>
+                    <br/>
+                    <div class="row">
+                      <h4>Description</h4>
+                        <textarea id="project_description" style="width: 400px" class="form-control" rows="3" ng-model="project.description"></textarea>
+                    </div>
+                    <br/>
+                    <br/>
                     <div class="row">
                         <h4>Dataset</h4>
 
-                        <select ng-model="dataset" style="width: 400px" class="form-control" ng-options="ds.name for ds in datasets"></select>
+                        <select ng-change="update_project_dataset(project._id, project_dataset)" ng-model="project_dataset" style="width: 400px" class="form-control" ng-options="ds.name for ds in datasets"></select>
                         
                     </div>
                     <br/>
                     <br/>
                     <div class="row">
-                      <button ng-click="create_project(project_name)" class="btn btn-danger">Create</button> 
+                        <h4>Questionnaires</h4>
+                        <select ng-change="update_project_questionnaire(project._id, project_questionnaire)" ng-model="project_questionnaire" style="width: 400px" class="form-control" ng-options="model.name for model in models"></select>
                     </div>
+                    <br/>
+                    <br/>
+     
+              
+                    <div class="row">
+                      <h4>Analysts</h4>
+                        <table style="width: 400px" class="table table-striped">
+                        <tr>
+                          <th>Name</th>
+                          <th></th>
+                        </tr>
+
+                        <tr ng-repeat="user_id in project.user_ids">
+                          <td>
+                            <p class="label label-default">{{get_user_name(user_id)}}</p>
+                          </td>
+                          <td>
+                              <a ng-click="delete_user_from_project(user_id, $index)">Delete</a></td>
+                          </td>
+                        </tr>
+                      </table>
+                  </div>
+
+                  <div class="row">
+                        <p>Add Analyst</p>
+                        <select ng-change="add_user_to_project(project_user._id)" ng-model="project_user" style="width: 200px" class="form-control" ng-options="user.id for user in users"></select>
+                    </button>
+                    </div>
+
+
+
+
+
+                    <br/>
+                    <br/>
+
+
+
             </div>
             <div class="modal-footer">
-                <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button id="close" ng-click="build_project(project._id)" type="button" class="btn btn-danger" data-dismiss="modal">Build</button>
             </div>
         </div>
     </div>
@@ -215,42 +366,6 @@
         </div>
     </div>
 </div>
-
-
-
-
-
-
-<!-- Modal for editing project information -->
-<div class="modal fade" id="project_edit_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title" id="myModalLabel">Edit Project</h4>
-            </div>
-            <div class="modal-body">
-                  <div class="row">
-                      <h4>Name</h4>
-                      <input style="width: 400px" type="text" class="form-control" ng-model="project.name"/>
-                    </div>
-                    <div class="row">
-                      <h4>Description</h4>
-                        <textarea style="width: 400px" class="form-control" rows="3" ng-model="project.description"></textarea>
-                    </div>
-            <br/>
-            <br/>
-            <div class="row">
-                  <button ng-click="edit_project()" class="btn btn-danger">Update</button> 
-            </div>
-          </div>
-            <div class="modal-footer">
-                <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 
 
 

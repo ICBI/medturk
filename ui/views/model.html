@@ -13,7 +13,7 @@
 	      <td>{{model.description}}</td>
 	      <td>{{model.questions.length}}</td>
 	      <td>
-	         <a ng-click="set_tag(tag)" data-target="#model_modal" data-toggle="modal">Edit</a></td>
+	         <a data-target="#model_modal" data-toggle="modal">Edit</a></td>
 	      </td>
 	    </tr>
 	</table>
@@ -30,14 +30,14 @@
 	    <tr ng-repeat="tag in model.tags">
 	      <td><span class="label label-default">{{tag.name}}</span></td>
 	      <td>
-	          <a ng-click="set_tag(tag)" data-target="#tag_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_tag(tag._id)">Delete</a></td>
+	          <a ng-click="set_tag(tag)" data-target="#tag_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="remove_tag_from_model(model._id, tag._id, $index)">Delete</a></td>
 	      </td>
 	  </tr>
     </table>
     <div style="width: 250px"  class="input-group">
 	    <input type="text" class="form-control" ng-model="tag_name">
 	    <span class="input-group-btn">
-	      <button class="btn btn-default" type="button" ng-click="add_tag(tag_name)"><b>+</b></button>
+	      <button class="btn btn-default" type="button" ng-click="add_tag_to_model(model, tag_name)"><b>Create</b></button>
 	    </span>
 	</div>
 	<br/>
@@ -70,11 +70,11 @@
 	      </td>
 	      <td><span ng-repeat="trigger in question.triggers">{{trigger.name}}, </span></td>
 	      <td>
-	         <a ng-click="set_question(question)" data-target="#question_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_question(question._id, question.name)">Delete</a></td>
+	         <a ng-click="edit_question(question)" data-target="#question_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="remove_question_from_model(model._id, question._id, $index)">Delete</a></td>
 	      </td>
 	  </tr>
 	 </table>
- 	<button ng-click="set_question(undefined)" data-target="#question_modal" data-toggle="modal" class="btn btn-default"><b>+</b></button> 
+ 	<button ng-click="create_question()" data-target="#question_modal" data-toggle="modal" class="btn btn-default"><b>Create</b></button> 
 </div>
 
 
@@ -103,7 +103,7 @@
                     </div>
             </div>
             <div class="modal-footer">
-                <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button id="close" ng-click="save_model(model)" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -130,7 +130,7 @@
             <div class="modal-body">
                   <div class="row">
                       <h4>Name</h4>
-                      <input style="width: 400px" type="text" class="form-control" ng-model="tag.name"/>
+                      <input id="tag_name" style="width: 400px" type="text" class="form-control" ng-model="tag.name"/>
                     </div>
                     <br/>
                     <br/>
@@ -142,11 +142,6 @@
         </div>
     </div>
 </div>
-
-
-
-
-
 
 
 
@@ -163,7 +158,7 @@
                  
                    <div class="row">
                       <h4>Question</h4>
-                        <textarea style="width: 400px" class="form-control" rows="2" ng-model="question.question"></textarea>
+                        <textarea id="question_text" style="width: 400px" class="form-control" rows="2" ng-model="question.question"></textarea>
                     </div>
 		           
 		           <br/>
@@ -172,7 +167,7 @@
 		          	
 		            <div class="row">
 		            	<h4>Type</h4>
-		            	<select ng-model="question.type" style="width: 200px" class="form-control" ng-options="answer_type for answer_type in answer_types"></select>
+		            	<select ng-change="save_question_type()" ng-model="question.type" style="width: 200px" class="form-control" ng-options="answer_type for answer_type in answer_types"></select>
 		        	</div>
 
 		        	<br/>
@@ -188,9 +183,9 @@
 						    </tr>
 
 						    <tr ng-repeat="choice in question.choices">
-						    	<td><input style="width: 200px" type="text" class="form-control" ng-model="choice.name"/></td>
+						    	<td>{{choice.name}}</td>
 						      <td>
-						          <a ng-click="delete_choice(choice)">Delete</a></td>
+						          <a ng-click="remove_choice_from_question(choice, $index)">Delete</a></td>
 						      </td>
 						  </tr>
 					    </table>
@@ -200,7 +195,7 @@
 					    <div style="width: 250px"  class="input-group">
 						    <input type="text" class="form-control" ng-model="choice_name">
 						    <span class="input-group-btn">
-						      <button class="btn btn-default" type="button" ng-click="add_choice(choice_name)">Add Answer</button>
+						      <button class="btn btn-default" type="button" ng-click="add_choice_to_question(choice_name)">Add Answer</button>
 						    </span>
 						</div>
 
@@ -225,10 +220,10 @@
 
 						    <tr ng-repeat="tag_id in question.tag_ids">
 						      <td>
-						      	<p class="label label-default" >{{get_tag_by_id(tag_id).name}}</p>
+						      	<p class="label label-default">{{get_tag_by_id(tag_id).name}}</p>
 						      </td>
 						      <td>
-						          <a ng-click="remove_tag_id_from_question(question, tag_id)">Delete</a></td>
+						          <a ng-click="remove_tag_id_from_question(tag_id, $index)">Delete</a></td>
 						      </td>
 						  	</tr>
 					    </table>
@@ -236,10 +231,7 @@
 
 					<div class="row">
 		            	<p>Add Tag</p>
-		            	<select ng-model="tag" style="width: 200px" class="form-control" ng-options="tag.name for tag in model.tags"></select>
-		            	<br/>
-				      	<button class="btn btn-default" type="button" ng-click="add_tag_to_question(question, tag)">
-				      		<b>+</b>
+		            	<select ng-change="add_tag_to_question(tag)" ng-model="tag" style="width: 200px" class="form-control" ng-options="tag.name for tag in model.tags"></select>
 				      </button>
 		        	</div>
 
@@ -260,13 +252,12 @@
 						    </tr>
 
 						    <tr ng-repeat="trigger in question.triggers">
-						      <td><input style="width: 200px" type="text" class="form-control" ng-model="trigger.name"/></td>
+						      <td>{{trigger.name}}</td>
 						      <td>
-						      	<select ng-model="trigger.case_sensitive" style="width: 200px" class="form-control" ng-options="option for option in binary"></select>
-
+						      	{{trigger.case_sensitive}}
 						      </td>
 						      <td>
-						          <a ng-click="remove_trigger_from_question(question, $index)">Delete</a></td>
+						          <a ng-click="remove_trigger_from_question(trigger._id, $index)">Delete</a></td>
 						      </td>
 						  </tr>
 					   </table>
@@ -278,7 +269,7 @@
 
       						<input ng-model="trigger" type="text" class="form-control">
       						<span class="input-group-btn">
-        						<button ng-click="add_trigger(question, trigger)" class="btn btn-default" type="button">+</button>
+        						<button ng-click="add_trigger_to_question(trigger)" class="btn btn-default" type="button">Create</button>
       						</span>
       					</div>
 
