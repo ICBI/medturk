@@ -38,21 +38,79 @@ def hash_pass(password, secret_key):
     return md5.new(salted_password).hexdigest()
 
 
-def clear():
-    db.users.drop()
 
-def get(_id):
+
+
+
+
+
+'''
+    CREATE operations
+'''
+def create_user(email, password, role, secret_key, authenticated = False):
+
+    _id = ObjectId()
+    user = {'_id' : _id, 'id' : email, 'password' : hash_pass(password, secret_key), 'role' : role, 'authenticated' : authenticated}
+    db.users.insert(user)
+    return user
+
+
+
+
+
+
+
+
+
+'''
+    READ operations
+'''
+def get_user(_id):
     return db.users.find_one({'id' : _id})
 
-def update_password(_id, _password):
-    db.users.update({'id' : _id}, {'$set' : {'password' : _password}})
+def get_users():
+    return [user for user in db.users.find()]
 
-def update_is_authenticated(_id, _is_authenticated):
+
+
+
+
+
+
+
+
+'''
+    UPDATE operations
+'''
+def update_user_email(_id, email):
+    db.users.update({'_id' : ObjectId(_id)}, {'$set' : {'id' : email}})
+
+def update_user_password(_id, password, secret_key):
+    db.users.update({'_id' : ObjectId(_id)}, {'$set' : {'password' : hash_pass(password, secret_key)}})
+
+def update_user_role(_id, role):
+    db.users.update({'_id' : ObjectId(_id)}, {'$set' : {'role' : role}})
+
+def update_user_authenticated(_id, _is_authenticated):
     db.users.update({'id' : _id}, {'$set' : {'authenticated' : _is_authenticated}})
 
-def add(email, password, secret_key, authenticated = False):
 
-    db.users.insert({'id' : email, 'password' : hash_pass(password, secret_key), 'authenticated' : authenticated})
-    return True
+
+
+
+
+
+
+'''
+    DELETE operations
+'''
+def delete_user(_id):
+    db.users.remove({'_id' : ObjectId(_id)})
+
+
+
+
+
+
 
 

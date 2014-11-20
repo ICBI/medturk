@@ -35,6 +35,87 @@ from operator import itemgetter
 flank_size = 200
 bounded  = [' ', ',', ';', '(', ')', '.', '?', '!', '/', '\\', '{', '}', '[', ']', '"', '\'', ':']
 
+
+
+
+'''
+    CREATE operations
+'''
+def create_hits(_project_id):
+    '''
+        When generating hits, we want to group every mentioned concept by patient
+    '''
+
+    _project = project.get(_project_id)
+
+    dataset_id = _project['dataset_id']
+    m = model.get(_project['model_id'])
+
+    # Get cursor for all records from this dataset
+    for record in record.get_record_cursor(dataset_id):
+        _note             = record['note']
+        _lower_cased_note = record['note'].lower()
+
+
+
+
+    # Sort triggers in each active node by name before iterating through patient dataset
+    for an in active_nodes:
+
+        # Lower case all
+        for trigger in an.get('triggers'):
+            trigger['name'] = trigger['name'].lower()
+
+        # Sort by name
+        triggers = sorted(an.get('triggers'), key=lambda d: len(d['name']), reverse=True)
+        an['triggers'] = triggers
+
+    # Get all records
+    records = record.get_records(dataset_id)
+
+    # Group the records by patient
+    for key, group in itertools.groupby(records, lambda item: item['patient_id']):
+        
+        patient_id = key
+
+        # For every active node
+        for an in active_nodes:
+
+            annotations = []
+
+            for patient_record in group:
+
+                normalized_note = patient_record['note'].lower()
+
+                record_annotations = []
+
+                # For every trigger in this active node
+                for trigger in an['triggers']:
+                    record_annotations = get_annotations(trigger['name'], normalized_note, patient_record['note'])
+                    record_annotations.extend([a for a in record_annotations if does_not_overlap(a, record_annotations)])
+
+                 # Add record id and date
+                for ra in record_annotations:
+                    ra['record_id'] = patient_record['_id']
+                    ra['date']      = patient_record['date']
+
+                annotations.extend(record_annotations)
+
+
+            if len(annotations) > 0:
+                # Create a hit
+                hit = an.copy()
+                del hit['triggers']
+                hit['patient_id']  = patient_record['patient_id']
+                hit['dataset_id']  = patient_record['dataset_id']
+                hit['project_id']  = project_id
+                hit['annotations'] = annotations
+                db.hits.insert(hit)
+
+
+
+
+
 def answer(hit_id, answer):
 	
 	db.hits.update({'_id' : ObjectId(hit_id)}, {'$set' : {'answer' : answer}})
