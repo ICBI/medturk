@@ -31,8 +31,33 @@ from flask.ext.login import login_required
 from medturk.api import app, mimerender, render_xml, render_json, render_html, render_txt
 from flask import request, abort, Response, make_response
 
+'''
+    CREATE operations
+'''
+@app.route('/hit/create', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def hit_create_post():
+
+    _project_id = request.form.get('_project_id')
+    hit.create_hits(_project_id)
+    return {'msg' : 'success'}
 
 
+
+
+
+
+
+'''
+    READ operations
+'''
 @app.route('/hit', methods=['GET'])
 @mimerender(
             default = 'json',
@@ -49,8 +74,6 @@ def hit_get():
     return {'hit' : hit.get_hit(project_id)}
 
 
-
-
 @app.route('/hit/count', methods=['GET'])
 @mimerender(
             default = 'json',
@@ -64,8 +87,6 @@ def hit_count_get():
     
     count = hit.get_count()
     return {'count' : count}
-
-
 
 @app.route('/hit/answer/count', methods=['GET'])
 @mimerender(
@@ -83,6 +104,12 @@ def hit_answer_count_get():
 
 
 
+
+
+
+'''
+    UPDATE operations
+'''
 @app.route('/hit/answer', methods=['POST'])
 @mimerender(
             default = 'json',
@@ -108,5 +135,14 @@ def hit_answer_post():
     hit.answer(hit_id, answer)
   
     return {'msg' : 'success'}
+
+
+
+
+
+
+'''
+    DELETE operations
+'''
 
 

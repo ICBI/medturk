@@ -69,11 +69,10 @@ class UserManager():
         by Flask-Login
     '''
     def __init__(self):
-        user_db.clear()
-        user_db.add('rmj49@georgetown.edu', 'password', app.secret_key)
+        pass
 
     def meets_credentials(self, _id, _password):
-        u = user_db.get(_id)
+        u = user_db.get_user(_id)
         return (u and user_db.hash_pass(_password, app.secret_key) == u['password'])
 
 
@@ -82,7 +81,7 @@ class UserManager():
         password_changed = False
 
         # Get the user from the database
-        u = user_db.get(_id)
+        u = user_db.get_user(_id)
 
         # We can only authenticate this user, if he/she exists
         if u != None:
@@ -99,19 +98,19 @@ class UserManager():
             is_authenticated = False
 
             # Get the user from the database
-            u = user_db.get(_id)
+            u = user_db.get_user(_id)
 
             # We can only authenticate this user, if he/she exists
             if u != None:
                 is_authenticated = True
-                user_db.update_is_authenticated(_id, is_authenticated)
+                user_db.update_user_authenticated(_id, is_authenticated)
 
             return is_authenticated
 
     def get_settings(self, _id):
 
         #Get the user from the database
-        u = user_db.get(_id)
+        u = user_db.get_user(_id)
         
         if u != None:
             return {'name' : u['name']}
@@ -119,7 +118,7 @@ class UserManager():
     def get(self, _id):
 
         # Get the user from the database
-        u = user_db.get(_id)
+        u = user_db.get_user(_id)
 
         # We can only create and return a User object if he/she exists
         if u != None:
@@ -168,6 +167,14 @@ def load_token(token):
     return None
 
 
+
+
+
+
+
+
+
+
 @app.route("/user/login", methods=["POST"])
 @mimerender(
             default = 'json',
@@ -204,7 +211,7 @@ def user_login():
 
 
 
-@app.route("/user/password", methods=["POST"])
+@app.route("/user/password/change", methods=["POST"])
 @mimerender(
             default = 'json',
             html = render_html,
@@ -213,7 +220,7 @@ def user_login():
             txt  = render_txt
             )
 @login_required
-def user_password():
+def user_password_change_post():
 
     _current_password = request.form.get('current_password')
     _new_password = request.form.get('new_password')
@@ -261,13 +268,116 @@ def user_logout():
             )
 @login_required
 def user():
-    return {'user' : user_db.get(current_user.get_id())}
+    return {'user' : user_db.get_user(current_user.get_id())}
 
 
 
+def clean_user(user):
+    return {'id' : user['id'], '_id' : user['_id'], 'role' : user['role']}
+
+
+@app.route("/users")
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def users():
+    users = [clean_user(u) for u in user_db.get_users()]
+    return {'users' : users}
 
 
 
+# TODO: Only available to admin
+@app.route('/user/create', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def user_create():
+
+    email     = request.form.get('id')
+    password  = request.form.get('password')
+    role      = request.form.get('role')
+    user = user_db.create_user(email, password, role, app.secret_key)
+    return {'user' : user}
+
+
+# TODO: Only available to admin
+@app.route('/user/delete', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def user_delete_post():
+
+    _id  = request.form.get('_id')
+    user_db.delete_user(_id)
+  
+    return {'msg' : 'success'}
 
 
 
+# TODO: Only available to admin
+@app.route('/user/email', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def user_email_post():
+
+    _id       = request.form.get('_id')
+    _email     = request.form.get('email')
+    user_db.update_user_email(_id, _email)
+    return {'status' : 'success'}
+
+
+# TODO: Only available to admin
+@app.route('/user/role', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def user_role_post():
+
+    _id       = request.form.get('_id')
+    _role     = request.form.get('role')
+    user_db.update_user_role(_id, _role)
+    return {'status' : 'success'}
+
+
+# TODO: Only available to admin
+@app.route('/user/password', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def user_password_post():
+
+    _id        = request.form.get('_id')
+    _password  = request.form.get('password')
+    user_db.update_user_password(_id, _password, app.secret_key)
+    return {'status' : 'success'}

@@ -34,11 +34,57 @@ from flask.ext.mail import Message
 
 
 
+
+
+
+
+
+'''
+    CREATE operations
+'''
+@app.route('/project/create', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def project_create_post():
+    return {'project' : project.create_project()}
+
+
+@app.route('/project/user/create', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def project_user_create():
+
+    _project_id  = request.form.get('project_id')
+    _user_id     = request.form.get('user_id')
+    project.create_user(_project_id, _user_id)
+    return {'msg' : 'success'}
+
+
+
+
+
+
+
+'''
+    READ operations
+'''
 @app.route('/project/data')
 @login_required
 def project_get():
 
-    project_id = request.form.get('id')
+    project_id = request.args.get('id')
 
     #p = project.get(project_id)
     #project_name = p.get('name')
@@ -66,9 +112,7 @@ def project_get():
                                     "attachment;filename=" + file_name})
 
 
-
-
-@app.route('/project/get_all', methods=['GET'])
+@app.route('/projects', methods=['GET'])
 @mimerender(
             default = 'json',
             html = render_html,
@@ -78,7 +122,7 @@ def project_get():
             )
 @login_required
 def project_get_all():
-    projects = project.get_all()
+    projects = project.get_projects()
 
     # Add completion percentage to each one
     for p in projects:
@@ -94,7 +138,16 @@ def project_get_all():
 
 
 
-@app.route('/project/analyst/add', methods=['POST'])
+
+
+
+
+
+
+'''
+    UPDATE operations
+'''
+@app.route('/project/name/update', methods=['POST'])
 @mimerender(
             default = 'json',
             html = render_html,
@@ -103,48 +156,16 @@ def project_get_all():
             txt  = render_txt
             )
 @login_required
-def project_analyst_add():
+def project_name_update_post():
 
-    project_id  = request.form.get('project_id')
-    email       = request.form.get('email')
-    password    = '5dsf*934fj$@($&'
-
-
-    print project_id
-    p = project.get(project_id)
-
-
-    msg = Message("medTurk", sender = app.config.get('DEFAULT_MAIL_SENDER'), recipients=[email])
-
-    msg.html  = '<p>Hello ' + email + ' . You are invited to be part of the ' + p['name'] + ' project.</p>'
+    _project_id  = request.form.get('project_id')
+    _name        = request.form.get('name')
     
-    # Add this only if a description exists
-    if len(p['description']) > 0:
-        msg.html += '<p>Here\'s a brief description about this project:</p>'
-        msg.html += '<p>' + p['description'] +'</p>'
-
-
-    # Does this user account already exist?
-    if user.get(email) == None:
-
-        user.add(email, password, app.secret_key)
-
-        msg.html += '<p>We know you are new to medTurk. So, when you login, use this e-mail as your username and the following password:</p>'
-        msg.html += '<br/><br/><p><b>' + password +'</b></p>'
-        msg.html += '<br/><br/><p>Please change your password after logging in!</p>'
-
-    msg.html += 'Ready? <a href="http://127.0.0.1:5000/medturk/login.html">Click here</a> to get started!</p>'
-    mail.send(msg)
-
-    # Add this user to the projects list
-    project.add_analyst(project_id, email)
+    project.update_project_name(_project_id, _name)
   
     return {'msg' : 'success'}
 
-
-
-
-@app.route('/project/edit', methods=['POST'])
+@app.route('/project/description/update', methods=['POST'])
 @mimerender(
             default = 'json',
             html = render_html,
@@ -153,13 +174,48 @@ def project_analyst_add():
             txt  = render_txt
             )
 @login_required
-def project_edit_post():
+def project_description_update_post():
 
-    _id          = request.form.get('id')
-    _name        = request.form.get('name')
+    _project_id  = request.form.get('project_id')
     _description = request.form.get('description')
     
-    project.edit(_id, _name, _description)
+    project.update_project_description(_project_id, _description)
+  
+    return {'msg' : 'success'}
+
+@app.route('/project/dataset/update', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def project_dataset_update_post():
+
+    _project_id  = request.form.get('project_id')
+    _dataset_id  = request.form.get('dataset_id')
+    
+    project.update_project_dataset(_project_id, _dataset_id)
+  
+    return {'msg' : 'success'}
+
+@app.route('/project/questionnaire/update', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def project_questionnaire_update_post():
+
+    _project_id        = request.form.get('project_id')
+    _questionnaire_id  = request.form.get('questionnaire_id')
+    
+    project.update_project_questionnaire(_project_id, _questionnaire_id)
   
     return {'msg' : 'success'}
 
@@ -167,6 +223,12 @@ def project_edit_post():
 
 
 
+
+
+
+'''
+    DELETE operations
+'''
 @app.route('/project/delete', methods=['POST'])
 @mimerender(
             default = 'json',
@@ -178,16 +240,14 @@ def project_edit_post():
 @login_required
 def project_delete_post():
 
-    project_id   = request.form.get('id')
-
-    project.delete(project_id)
+    _project_id   = request.form.get('project_id')
+    project.delete_project(_project_id)
   
     return {'msg' : 'success'}
 
 
 
-
-@app.route('/project/create', methods=['POST'])
+@app.route('/project/user/delete', methods=['POST'])
 @mimerender(
             default = 'json',
             html = render_html,
@@ -196,15 +256,13 @@ def project_delete_post():
             txt  = render_txt
             )
 @login_required
-def project_save_post():
+def project_user_delete_post():
 
-    _id          = ObjectId()
-    name         = request.form.get('name')
-    description  = request.form.get('description')
-    dataset_id   = request.form.get('dataset_id')
-    model_id     = request.form.get('model_id')
-
-    project.save(_id, name, description, dataset_id, model_id)
-    hit.create(_id)
+    _project_id   = request.form.get('project_id')
+    _user_id      = request.form.get('user_id')
+    project.delete_user(_project_id, _user_id)
   
     return {'msg' : 'success'}
+
+
+
