@@ -211,7 +211,7 @@ def user_login():
 
 
 
-@app.route("/user/password/change", methods=["POST"])
+@app.route("/user/password/update", methods=["POST"])
 @mimerender(
             default = 'json',
             html = render_html,
@@ -220,7 +220,7 @@ def user_login():
             txt  = render_txt
             )
 @login_required
-def user_password_change_post():
+def user_password_update_post():
 
     _current_password = request.form.get('current_password')
     _new_password = request.form.get('new_password')

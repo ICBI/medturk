@@ -34,7 +34,7 @@ from flask import request, abort, Response, make_response
 '''
     CREATE operations
 '''
-@app.route('/hit/create', methods=['POST'])
+@app.route('/hit/all/create', methods=['POST'])
 @mimerender(
             default = 'json',
             html = render_html,
@@ -45,10 +45,25 @@ from flask import request, abort, Response, make_response
 @login_required
 def hit_create_post():
 
-    _project_id = request.form.get('_project_id')
+    _project_id = request.form.get('project_id')
     hit.create_hits(_project_id)
     return {'msg' : 'success'}
 
+@app.route('/hit/choice/create', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def hit_choice_create_post():
+
+    _hit_id    = request.form.get('hit_id')
+    _choice_id = request.form.get('choice_id')
+    hit.create_hit_choice(_hit_id, _choice_id)
+    return {'msg' : 'success'}
 
 
 
@@ -69,9 +84,13 @@ def hit_create_post():
 @login_required
 def hit_get():
 
-    project_id = request.args.get('project_id')
+    _project_id = request.args.get('project_id')
+    _hit = hit.get_hit(_project_id)
+
+    if _hit == None:
+        abort(404, 'No hits are available')
     
-    return {'hit' : hit.get_hit(project_id)}
+    return {'hit' : _hit}
 
 
 @app.route('/hit/count', methods=['GET'])
@@ -107,10 +126,11 @@ def hit_answer_count_get():
 
 
 
+
 '''
-    UPDATE operations
+    DELETE operations
 '''
-@app.route('/hit/answer', methods=['POST'])
+@app.route('/hit/all/delete', methods=['POST'])
 @mimerender(
             default = 'json',
             html = render_html,
@@ -119,30 +139,11 @@ def hit_answer_count_get():
             txt  = render_txt
             )
 @login_required
-def hit_answer_post():
+def hit_all_delete_post():
 
-    hit_id = request.form.get('id')
-    answer = request.form.get('answer')    
-
-    if hit_id == None or len(hit_id) == 0:
-        abort(415, 'Hit Id is missing')
-
-    if answer == None or len(answer) == 0:
-        abort(415, 'Answer is missing')
-
-    
-    # Save project information
-    hit.answer(hit_id, answer)
+    _project_id   = request.form.get('project_id')
+    hit.delete_hits(_project_id)
   
     return {'msg' : 'success'}
-
-
-
-
-
-
-'''
-    DELETE operations
-'''
 
 

@@ -27,53 +27,16 @@
 
 
 import os
-from medturk.db import dataset
+from medturk.db import dataset as dataset_db
 from flask.ext.login import login_required
 from medturk.api import app, mimerender, render_xml, render_json, render_html, render_txt
 from flask import jsonify, request, abort
 
 
 
-@app.route('/dataset/edit', methods=['POST'])
-@mimerender(
-            default = 'json',
-            html = render_html,
-            xml  = render_xml,
-            json = render_json,
-            txt  = render_txt
-            )
-@login_required
-def dataset_edit_post():
-
-    _id          = request.form.get('id')
-    _name        = request.form.get('name')
-    _description = request.form.get('description')
-    
-    dataset.edit(_id, _name, _description)
-  
-    return {'msg' : 'success'}
-
-
-
-@app.route('/dataset/delete', methods=['POST'])
-@mimerender(
-            default = 'json',
-            html = render_html,
-            xml  = render_xml,
-            json = render_json,
-            txt  = render_txt
-            )
-@login_required
-def dataset_delete_post():
-
-    dataset_id = request.form.get('id')
-    dataset.delete(dataset_id)
-  
-    return {'msg' : 'success'}
-
-
-
-
+'''
+    CREATE operations
+'''
 @app.route('/dataset/create', methods=['POST'])
 @mimerender(
             default = 'json',
@@ -85,16 +48,22 @@ def dataset_delete_post():
 @login_required
 def dataset_create_post():
 
-    name         = request.form.get('name')
-    description  = request.form.get('description')
-    folder       = request.form.get('folder')
+    _dataset_name         = request.form.get('dataset_name')
+    _dataset_description  = request.form.get('dataset_description')
+    _dataset_folder       = request.form.get('dataset_folder')
 
-    dataset.create(name, description, folder)
-  
-    return {'msg' : 'success'}
+    _dataset = dataset_db.create_dataset(_dataset_name, _dataset_description, _dataset_folder)
+    return {'dataset' : _dataset}
 
 
-@app.route('/datasets/raw', methods=['GET'])
+
+
+
+
+'''
+    READ operations
+'''
+@app.route('/dataset/raw/all', methods=['GET'])
 @mimerender(
             default = 'json',
             html = render_html,
@@ -115,9 +84,7 @@ def datasets_raw_get():
     return {'datasets' : datasets}
 
 
-
-
-@app.route('/datasets', methods=['GET'])
+@app.route('/dataset/all', methods=['GET'])
 @mimerender(
             default = 'json',
             html = render_html,
@@ -127,6 +94,87 @@ def datasets_raw_get():
             )
 @login_required
 def datasets_get():
-    return {'datasets' : dataset.get()}
+    return {'datasets' : dataset_db.get_datasets()}
+
+
+
+
+
+
+
+
+'''
+    UPDATE operations
+'''
+@app.route('/dataset/name/update', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def dataset_name_update_post():
+
+    _dataset_id   = request.form.get('dataset_id')
+    _dataset_name = request.form.get('dataset_name')   
+    dataset_db.update_dataset_name(_dataset_id, _dataset_name)
+  
+    return {'msg' : 'success'}
+
+@app.route('/dataset/description/update', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def dataset_description_update_post():
+
+    _dataset_id          = request.form.get('dataset_id')
+    _dataset_description = request.form.get('dataset_description')
+    
+    dataset_db.update_dataset_description(_dataset_id, _dataset_description)
+  
+    return {'msg' : 'success'}
+
+
+
+
+
+
+
+
+
+
+
+'''
+    DELETE operations
+'''
+@app.route('/dataset/delete', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def dataset_delete_post():
+
+    _dataset_id = request.form.get('dataset_id')
+    dataset_db.delete_dataset(_dataset_id)
+  
+    return {'msg' : 'success'}
+
+
+
+
+
+
+
 
 

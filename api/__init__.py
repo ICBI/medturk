@@ -75,7 +75,7 @@ render_html = lambda message: '<html><body>%s</body></html>'%message
 render_txt  = lambda message: message
 
 import medturk.api.patient
-import medturk.api.model
+import medturk.api.questionnaire
 import medturk.api.project
 import medturk.api.annotation
 import medturk.api.hit
