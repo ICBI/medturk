@@ -93,6 +93,10 @@ def update_project_questionnaire(_project_id, _questionnaire_id):
     _project['questionnaire_id'] = ObjectId(_questionnaire_id)
     db.projects.save(_project)
 
+def update_project_status(_project_id, _project_status):
+    _project = get_project(_project_id)
+    _project['status'] = _project_status
+    db.projects.save(_project)
 
 
 

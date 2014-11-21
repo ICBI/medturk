@@ -33,28 +33,16 @@ from bson import ObjectId
 from medturk.db import db
 from datetime import date
 
-def edit(_id, _name, _description):
-
-    converted_id = ObjectId(_id)
-
-    doc = db.datasets.find_one({'_id' : converted_id})
-    doc['name']        = _name
-    doc['description'] = _description
-    db.datasets.update({'_id': converted_id}, {'$set': doc}, upsert=False)
 
 
 
-def delete(_id):
-    db.datasets.remove({'_id' : ObjectId(_id)})
-    db.patients.remove({'dataset_id' : ObjectId(_id)})
-    db.records.remove({'dataset_id' : ObjectId(_id)})
 
 
-def get():
-    return [dataset for dataset in db.datasets.find()]
 
-
-def create(name, description, folder):
+'''
+    CREATE operations
+'''
+def create_dataset(name, description, folder):
     '''
         Create the dataset
     '''
@@ -91,12 +79,59 @@ def create(name, description, folder):
             # Update patient count
             patient_count += 1
 
-    db.datasets.save({'_id' : _id, 'name' : name, 'description' : description, 'date' : str(date.today()), 'patient_count' : patient_count})
+    _dataset = {'_id' : _id, 'name' : name, 'description' : description, 'date' : str(date.today()), 'patient_count' : patient_count}
+    db.datasets.save(_dataset)
+
+    return _dataset
 
 
 
-if __name__ == '__main__':
-    pass
+
+
+
+'''
+    READ operations
+'''
+def get_dataset(_dataset_id):
+    return db.datasets.find_one({'_id' : ObjectId(_dataset_id)})
+
+def get_datasets():
+    return list(db.datasets.find())
+
+
+
+
+
+
+
+
+
+'''
+    UPDATE operations
+'''
+def update_dataset_name(_dataset_id, _dataset_name):
+    _dataset = get_dataset(_dataset_id)
+    _dataset['name'] = _dataset_name
+    db.datasets.save(_dataset)
+
+def update_dataset_description(_dataset_id, _dataset_description):
+    _dataset = get_dataset(_dataset_id)
+    _dataset['description'] = _dataset_description
+    db.datasets.save(_dataset)
+
+
+
+
+
+
+
+
+'''
+    DELETE operations
+'''
+def delete_dataset(_dataset_id):
+    db.datasets.remove({'_id' : ObjectId(_dataset_id)})
+
 
 
 

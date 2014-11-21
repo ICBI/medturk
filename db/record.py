@@ -28,6 +28,24 @@ from medturk.db import db
 from bson import ObjectId
 
 
+
+'''
+    READ operations
+'''
+def get_records(_dataset_id):
+    return list(db.records.find({'dataset_id' : ObjectId(_dataset_id)}))
+
+
+def get_record(_record_id):
+    return db.records.find_one({'_id' : ObjectId(_record_id)})
+
+
+
+
+
+'''
+    UPDATE operations
+'''
 def save(record):
     '''
         Parameters:
@@ -37,16 +55,7 @@ def save(record):
     db.records.save(record)
 
 
-def get_records(dataset_id):
-    return [r for r in db.records.find({'dataset_id' : ObjectId(dataset_id)})]
 
-
-def get_record(record_id):
-    return db.records.find_one({'_id' : ObjectId(record_id)})
-
-
-if __name__ == '__main__':
-    pass
 
 
 

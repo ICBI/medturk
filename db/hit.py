@@ -26,7 +26,8 @@
 '''
 
 
-from medturk.db import project, model, record
+from medturk.db import project as project_db
+from medturk.db import project, questionnaire, record
 from medturk.db import db
 from bson import ObjectId
 import itertools
@@ -36,143 +37,26 @@ flank_size = 200
 bounded  = [' ', ',', ';', '(', ')', '.', '?', '!', '/', '\\', '{', '}', '[', ']', '"', '\'', ':']
 
 
-
-
-'''
-    CREATE operations
-'''
-def create_hits(_project_id):
-    '''
-        When generating hits, we want to group every mentioned concept by patient
-    '''
-
-    _project = project.get(_project_id)
-
-    dataset_id = _project['dataset_id']
-    m = model.get(_project['model_id'])
-
-    # Get cursor for all records from this dataset
-    for record in record.get_record_cursor(dataset_id):
-        _note             = record['note']
-        _lower_cased_note = record['note'].lower()
-
-
-
-
-    # Sort triggers in each active node by name before iterating through patient dataset
-    for an in active_nodes:
-
-        # Lower case all
-        for trigger in an.get('triggers'):
-            trigger['name'] = trigger['name'].lower()
-
-        # Sort by name
-        triggers = sorted(an.get('triggers'), key=lambda d: len(d['name']), reverse=True)
-        an['triggers'] = triggers
-
-    # Get all records
-    records = record.get_records(dataset_id)
-
-    # Group the records by patient
-    for key, group in itertools.groupby(records, lambda item: item['patient_id']):
-        
-        patient_id = key
-
-        # For every active node
-        for an in active_nodes:
-
-            annotations = []
-
-            for patient_record in group:
-
-                normalized_note = patient_record['note'].lower()
-
-                record_annotations = []
-
-                # For every trigger in this active node
-                for trigger in an['triggers']:
-                    record_annotations = get_annotations(trigger['name'], normalized_note, patient_record['note'])
-                    record_annotations.extend([a for a in record_annotations if does_not_overlap(a, record_annotations)])
-
-                 # Add record id and date
-                for ra in record_annotations:
-                    ra['record_id'] = patient_record['_id']
-                    ra['date']      = patient_record['date']
-
-                annotations.extend(record_annotations)
-
-
-            if len(annotations) > 0:
-                # Create a hit
-                hit = an.copy()
-                del hit['triggers']
-                hit['patient_id']  = patient_record['patient_id']
-                hit['dataset_id']  = patient_record['dataset_id']
-                hit['project_id']  = project_id
-                hit['annotations'] = annotations
-                db.hits.insert(hit)
-
-
-
-
-
-def answer(hit_id, answer):
-	
-	db.hits.update({'_id' : ObjectId(hit_id)}, {'$set' : {'answer' : answer}})
-
-def get_hit(project_id, answered = False):
-    return db.hits.find_one( {'project_id' : ObjectId(project_id), 'answer' : {'$exists' : answered}} )
-
-
-def get_hits(project_id, answered = False):
-    return list(db.hits.find( {'answer' : {'$exists' : answered}} ))
-
-
-def get_answer_count(project_id):
-    return db.hits.find( {'project_id' : ObjectId(project_id), 'answer' : {'$exists' : True}} ).count()
-
-
-def get_count(project_id):
-    return db.hits.find({'project_id' : ObjectId(project_id)}).count()
-
-
-def populate_active_nodes_list(node, active_nodes = [], tags = []):
-    '''
-        Parses active nodes from model
-    '''
-
-    # Is this an active node?
-    if 'triggers' in node:
-        node['tags'] = tags
-        active_nodes.append(node)
-
-    # Keep searching for more active nodes
-    children = node.get('children')
-    if children != None:
-        for child in node.get('children'):
-            populate_active_nodes_list(child, active_nodes, [node.get('name')] + tags)
-
-
-def does_not_overlap(annotation, annotations):
-    return True
-
-
-def is_start_boundary_ok(i, text):
+def _is_start_boundary_ok(i, text):
     return (  i == 0   or   (text[i-1] in bounded)  )
 
-def is_end_boundary_ok(i, name, text):
+def _is_end_boundary_ok(i, name, text):
     return ((i + len(name)) == len(text)) or (text[i+len(name)] in bounded)
 
-def get_annotations(trigger, normalized_note, note):
+def _get_record_annotations(trigger, case_sensitive, note, normalized_note):
 
     i = -1
     annotations = []
 
     try:
         while(True):
-            i = normalized_note.index(trigger, i+1)
+            if case_sensitive:
+                i = normalized_note.index(trigger, i+1)
+            else:
+                i = note.index(trigger, i+1)
+
             # Check to see if bounded by approved characters
-            if is_start_boundary_ok(i, note) and is_end_boundary_ok(i, trigger, note):
+            if _is_start_boundary_ok(i, note) and _is_end_boundary_ok(i, trigger, note):
                 
                 beg = i - flank_size
 
@@ -190,79 +74,108 @@ def get_annotations(trigger, normalized_note, note):
     return annotations
 
 
-def create(project_id):
+
+
+
+
+
+
+
+'''
+    CREATE operations
+'''
+def create_hits(_project_id):
     '''
         When generating hits, we want to group every mentioned concept by patient
     '''
 
-    # Ensure active nodes array is empty
-    active_nodes = []
+    _project       = project.get_project(_project_id)
+    _dataset_id    = _project['dataset_id']
+    _questionnaire = questionnaire.get_questionnaire(_project['questionnaire_id'])
 
-    # Get information about this projrect
-    p = project.get(project_id)
-
-    dataset_id = p['dataset_id']
-
-    # Retrieve the research model
-    m = model.get(p['model_id'])
-
-    populate_active_nodes_list(m, active_nodes)
-
-    # Sort triggers in each active node by name before iterating through patient dataset
-    for an in active_nodes:
-
-        # Lower case all
-        for trigger in an.get('triggers'):
-            trigger['name'] = trigger['name'].lower()
-
-        # Sort by name
-        triggers = sorted(an.get('triggers'), key=lambda d: len(d['name']), reverse=True)
-        an['triggers'] = triggers
-
-    # Get all records
-    records = record.get_records(dataset_id)
-
+    # Get all records specific to this dataset id
+    records = record.get_records(_dataset_id)
+    
     # Group the records by patient
     for key, group in itertools.groupby(records, lambda item: item['patient_id']):
         
         patient_id = key
 
-        # For every active node
-        for an in active_nodes:
+        # For every question
+        for question in _questionnaire['questions']:
 
-            annotations = []
+            question_annotations = []
 
             for patient_record in group:
 
-                normalized_note = patient_record['note'].lower()
-
                 record_annotations = []
 
-                # For every trigger in this active node
-                for trigger in an['triggers']:
-                    record_annotations = get_annotations(trigger['name'], normalized_note, patient_record['note'])
-                    record_annotations.extend([a for a in record_annotations if does_not_overlap(a, record_annotations)])
+                note            = patient_record['note']
+                normalized_note = patient_record['note'].lower()
+
+                for trigger in question['triggers']:
+                    record_annotations.extend(_get_record_annotations(trigger['name'], trigger['case_sensitive'], note, normalized_note))
 
                  # Add record id and date
-                for ra in record_annotations:
-                    ra['record_id'] = patient_record['_id']
-                    ra['date']      = patient_record['date']
+                for record_annotation in record_annotations:
+                    record_annotation['record_id'] = patient_record['_id']
+                    record_annotation['date']      = patient_record['date']
 
-                annotations.extend(record_annotations)
+                question_annotations.extend(record_annotations)
 
 
-            if len(annotations) > 0:
+            if len(question_annotations) > 0:
                 # Create a hit
-                hit = an.copy()
-                del hit['triggers']
-                hit['patient_id']  = patient_record['patient_id']
-                hit['dataset_id']  = patient_record['dataset_id']
-                hit['project_id']  = project_id
-                hit['annotations'] = annotations
+                hit = dict()
+                hit['patient_id']   = patient_record['patient_id']
+                hit['dataset_id']   = patient_record['dataset_id']
+                hit['project_id']   = ObjectId(_project_id)
+                hit['question_id']  = question['_id']
+                hit['tag_ids']      = question['tag_ids']
+                hit['annotations']  = question_annotations
                 db.hits.insert(hit)
 
-if __name__ == '__main__':
-    pass
+    project_db.update_project_status(_project_id, 'Build Complete')
+
+def create_hit_choice(_hit_id, _choice_id):
+    db.hits.update({'_id' : ObjectId(_hit_id)}, {'$set' : {'choice_id' : ObjectId(_choice_id)}})
+
+
+
+
+
+
+
+'''
+    READ operations
+'''
+def get_hit(_project_id, _choice_id_exists = False):
+    return db.hits.find_one( {'project_id' : ObjectId(_project_id), 'choice_id' : {'$exists' : _choice_id_exists}} )
+
+
+def get_hits(_project_id, _choice_id_exists = False):
+    return list(db.hits.find( {'project_id' : ObjectId(_project_id), 'choice_id' : {'$exists' : _choice_id_exists}} ))
+
+
+def get_answer_count(_project_id):
+    return db.hits.find( {'project_id' : ObjectId(_project_id), 'choice_id' : {'$exists' : True}} ).count()
+
+
+def get_count(_project_id):
+    return db.hits.find({'project_id' : ObjectId(_project_id)}).count()
+
+
+
+
+'''
+    DELETE operations
+'''
+
+def delete_hits(_project_id):
+    db.hits.remove({'project_id' : ObjectId(_project_id)})
+
+
+
 
 
 
