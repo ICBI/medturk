@@ -1,8 +1,9 @@
 <div ng-if="projects.length > 0" class="row">
-        <h2>Change Project</h2>
+        <br/>
 
         <select ng-change="on_change_project(project)" ng-model="project" style="width: 400px" class="form-control" ng-options="p.name for p in projects"></select>
         <br/>
+        <p>{{project.description}}</p>
         <br/>
 </div>
 
@@ -11,7 +12,7 @@
 </div>
 
 <div ng-if="!is_project_complete" class="row area">
-        <h3>{{hit.question}}</h3>
+        <h3>{{question.question}}</h3>
             <br/>
             <br/>
         <div ng-hide="hide_timeline">
@@ -36,12 +37,12 @@
                     </td>
                     <td>
                         <form>
-                            <div ng-if="hit.answertype == 'radio'" class="btn-group">
-                               <button ng-repeat="ans in hit.answers" class="btn btn-default" ng-click="answer(ans)">{{ans}}</button>
+                            <div ng-if="question.type == 'radio'" class="btn-group">
+                               <button ng-repeat="choice in question.choices" class="btn btn-default" ng-click="create_hit_choice(choice)">{{choice.name}}</button>
                             </div>
                             <div ng-if="hit.answertype == 'text'" class="btn-group">
                                 <input type="text" class="form-control" ng-model="text_answer"/>
-                                <button class="btn btn-default" ng-click="answer(text_answer)">Submit</button>
+                                <button class="btn btn-default" ng-click="create_answer(text_answer)">Submit</button>
                             </div> 
                         </form>
                         <br/>

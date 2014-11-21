@@ -2,19 +2,19 @@
       <!-- START THE FEATURETTES -->
       <div class="row featurette">
           
-        <div class="col-md-5">
+        <div class="col-md-2">
               <img class="featurette-image img-responsive" data-src="holder.js/500x500/auto" src="img/medkit.png" alt="Generic placeholder image">
         </div>
           
-        <div class="col-md-7">
+        <div class="col-md-8">
           <h2 class="featurette-heading">hello {{user.id}}</h2>
-          <p class="lead">There are {{users.length}} users, {{datasets.length}} datasets, {{models.length}} questionnaries, and {{projects.length}} projects.</p>
+          <p class="lead">There are {{users.length}} users, {{datasets.length}} datasets, {{questionnaires.length}} questionnaries, and {{projects.length}} projects.</p>
           <br/>
           <br/>
 
 
           <!-- Users Table -->
-          <table class="table table-striped" ng-if="datasets.length > 0">
+          <table class="table table-striped" ng-if="users.length > 0">
           <h2>Analysts</h2>
           <tr><th>Name</th><th>Role</th><th></th></tr>
           <tr ng-repeat="user in users">
@@ -41,7 +41,7 @@
             <td>{{dataset.description}}</td>
             <td>{{dataset.patient_count}}</td>
             <td>{{dataset.date}}</td>
-            <td><a ng-click="set_dataset(dataset)" data-target="#dataset_edit_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_dataset(dataset._id, dataset.name)">Delete</td>
+            <td><a ng-click="set_dataset(dataset)" data-target="#dataset_edit_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_dataset(dataset._id, dataset.name, $index)">Delete</td>
           </tr>
         </table>
         <button data-target="#dataset_modal" class="btn btn-default" data-toggle="modal"><b>Create</b></button>
@@ -53,21 +53,21 @@
 
 
          <!-- Questionnaire Table -->
-          <table class="table table-striped" ng-if="models.length > 0">
+          <table class="table table-striped" ng-if="questionnaires.length > 0">
             <h2>Questionnaires</h2>
             <tr><th>Name</th><th>Description</th><th>Number of Questions</th><th></th></tr>
 
-            <tr ng-repeat="model in models">
-              <td>{{model.name}}</td>
-              <td>{{model.description}}</td>
-              <td>{{model.questions.length}}</td>
+            <tr ng-repeat="q in questionnaires">
+              <td>{{q.name}}</td>
+              <td>{{q.description}}</td>
+              <td>{{q.questions.length}}</td>
               <td>
-                  <a ng-click="download_model(model._id)">Download</a>&nbsp;&nbsp;&nbsp;<a ng-click="edit_model(model._id)" data-target="#model_edit_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_model(model._id, model.name)">Delete</a></td>
+                  <a ng-click="download_questionnaire(q._id)">Download</a>&nbsp;&nbsp;&nbsp;<a ng-click="edit_questionnaire(q._id)" data-target="#questionnaire_edit_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_questionnaire(q._id, q.name)">Delete</a></td>
               </td>
           </tr>
          </table>
-         <button ng-click="create_model()" class="btn btn-default"><b>Create</b></button> 
-          <button data-target="#model_modal" class="btn btn-default" data-toggle="modal"><b>Upload</b></button>
+         <button ng-click="create_questionnaire()" class="btn btn-default"><b>Create</b></button> 
+          <button data-target="#questionnaire_modal" class="btn btn-default" data-toggle="modal"><b>Upload</b></button>
           <br/>
           <br/>
           <br/>
@@ -134,12 +134,9 @@
                     </div>      
                     <br/>
                     <br/>
-                    <div class="row">
-                      <button ng-click="create_dataset()" class="btn btn-danger">Create</button> 
-                    </div>
             </div>
             <div class="modal-footer">
-                <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button id="close" ng-click="create_dataset()" type="button" class="btn btn-danger" data-dismiss="modal">Create</button>
             </div>
         </div>
     </div>
@@ -149,7 +146,7 @@
 
 
 <!-- Modal for importing a model -->
-<div class="modal fade" id="model_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal fade" id="questionnaire_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -160,7 +157,7 @@
                     <div class="row">
                         <h4>Questionnaire</h4>
                         <form enctype="multipart/form-data">
-                          <input type="file" ng-file-select="on_model_upload($files)" >
+                          <input type="file" ng-file-select="on_questionnaire_upload($files)" >
                           </input>
                        </form>
                     </div>
@@ -287,7 +284,7 @@
                     <br/>
                     <div class="row">
                         <h4>Questionnaires</h4>
-                        <select ng-change="update_project_questionnaire(project._id, project_questionnaire)" ng-model="project_questionnaire" style="width: 400px" class="form-control" ng-options="model.name for model in models"></select>
+                        <select ng-change="update_project_questionnaire(project._id, project_questionnaire)" ng-model="project_questionnaire" style="width: 400px" class="form-control" ng-options="questionnaire.name for questionnaire in questionnaires"></select>
                     </div>
                     <br/>
                     <br/>
@@ -348,17 +345,14 @@
             <div class="modal-body">
                   <div class="row">
                       <h4>Name</h4>
-                      <input style="width: 400px" type="text" class="form-control" ng-model="dataset.name"/>
+                      <input id="dataset_name" style="width: 400px" type="text" class="form-control" ng-model="dataset.name"/>
                     </div>
                     <div class="row">
                       <h4>Description</h4>
-                        <textarea style="width: 400px" class="form-control" rows="3" ng-model="dataset.description"></textarea>
+                        <textarea id="dataset_description" style="width: 400px" class="form-control" rows="3" ng-model="dataset.description"></textarea>
                     </div>
             <br/>
             <br/>
-            <div class="row">
-                  <button ng-click="edit_dataset()" class="btn btn-danger">Update</button> 
-            </div>
           </div>
             <div class="modal-footer">
                 <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
