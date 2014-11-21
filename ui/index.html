@@ -92,10 +92,9 @@
                         <br/>
                         <p id="msg" style="color: gray"></p>
                         <br/>
-                        <button id="change_password" class="btn btn-danger">Change Password</button>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button id="change_password" type="button" class="btn btn-danger" data-dismiss="modal">Change Password</button>
                 </div>
             </div>
         </div>
@@ -125,13 +124,10 @@
 
             var current_password = $("#current_password").val();
             var new_password     = $("#new_password").val();
-
-            var password = 'password';
-
             var server = 'http://127.0.0.1:5000';
 
             var posturl = $.ajax({
-                            url:        server + '/user/password',
+                            url:        server + '/user/password/update',
                             xhrFields: { withCredentials: true },
                             crossDomain: true,
                             type:       'POST',
@@ -156,7 +152,7 @@
                             },
                             error:      function(jqXHR, textStatus, errorThrown) { 
                                 $( "#msg" ).show();
-                                $("#msg").text("Uh oh. medkitpy isn't working correctly");
+                                $("#msg").text("Uh oh. medTurk isn't working correctly");
                                 $( "#msg" ).fadeOut(6000);
                               
                             }
