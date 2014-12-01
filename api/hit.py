@@ -27,7 +27,9 @@
 
 
 from medturk.db import hit
+from medturk.db import user as user_db
 from flask.ext.login import login_required
+from flask.ext.login import current_user
 from medturk.api import app, mimerender, render_xml, render_json, render_html, render_txt
 from flask import request, abort, Response, make_response
 
@@ -62,9 +64,26 @@ def hit_choice_create_post():
 
     _hit_id    = request.form.get('hit_id')
     _choice_id = request.form.get('choice_id')
-    hit.create_hit_choice(_hit_id, _choice_id)
+    _user      = user_db.get_user(current_user.get_id())
+    hit.create_hit_choice(_hit_id, _choice_id, _user['_id'])
     return {'msg' : 'success'}
 
+@app.route('/hit/text/create', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def hit_text_create_post():
+
+    _hit_id    = request.form.get('hit_id')
+    _text      = request.form.get('text')
+    _user      = user_db.get_user(current_user.get_id())
+    hit.create_hit_text(_hit_id, _text, _user['_id'])
+    return {'msg' : 'success'}
 
 
 

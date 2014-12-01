@@ -289,6 +289,29 @@ def questionnaire_question_type_update_post():
 
     return {'status' : 'success'}
 
+
+@app.route('/questionnaire/question/choice/name/update', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def questionnaire_question_choice_name_update_post(): 
+
+    _questionnaire_id   = request.form.get('questionnaire_id')
+    _question_id        = request.form.get('question_id')
+    _choice_id          = request.form.get('choice_id')
+    _choice_name        = request.form.get('choice_name')
+
+    questionnaire_db.update_question_choice_name(_questionnaire_id, _question_id, _choice_id, _choice_name)
+
+    return {'status' : 'success'}
+
+
+
 @app.route('/questionnaire/question/text/update', methods=['POST'])
 @mimerender(
             default = 'json',

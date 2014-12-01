@@ -88,7 +88,7 @@ class UserManager():
             password_changed = True
 
             # Save back to database
-            user_db.update_password(_id, _password)
+            user_db.update_user_password(u['_id'], _password, app.secret_key)
 
         return password_changed
 
@@ -203,7 +203,7 @@ def user_login():
         login_user(u, remember=True)
 
         if user_manager.set_authenticated(current_user.get_id(), True):
-            return {'success' : True}
+            return {'success' : True, 'user' : clean_user(user_db.get_user(current_user.get_id()))}
 
     return {'success' : False} 
 
@@ -211,7 +211,7 @@ def user_login():
 
 
 
-@app.route("/user/password/update", methods=["POST"])
+@app.route("/user/password/self/update", methods=["POST"])
 @mimerender(
             default = 'json',
             html = render_html,
@@ -220,7 +220,7 @@ def user_login():
             txt  = render_txt
             )
 @login_required
-def user_password_update_post():
+def user_password_self_update_post():
 
     _current_password = request.form.get('current_password')
     _new_password = request.form.get('new_password')
@@ -228,8 +228,6 @@ def user_password_update_post():
 
     _id = current_user.get_id()
     if user_manager.meets_credentials(_id, _current_password):
-
-        _new_password = user_db.hash_pass(_new_password, app.secret_key)
         if user_manager.set_password(_id, _new_password):
             return {'success' : True}
 
@@ -270,10 +268,8 @@ def user_logout():
 def user():
     return {'user' : user_db.get_user(current_user.get_id())}
 
-
-
 def clean_user(user):
-    return {'id' : user['id'], '_id' : user['_id'], 'role' : user['role']}
+    return {'id' : user['id'], '_id' : user['_id'], 'is_admin' : user['is_admin']}
 
 
 @app.route("/users")
@@ -305,8 +301,9 @@ def user_create():
 
     email     = request.form.get('id')
     password  = request.form.get('password')
-    role      = request.form.get('role')
-    user = user_db.create_user(email, password, role, app.secret_key)
+    is_admin  = request.form.get('is_admin')
+    is_admin = is_admin.lower() == 'true'
+    user = user_db.create_user(email, password, is_admin, app.secret_key)
     return {'user' : user}
 
 
@@ -348,7 +345,7 @@ def user_email_post():
 
 
 # TODO: Only available to admin
-@app.route('/user/role', methods=['POST'])
+@app.route('/user/is_admin/update', methods=['POST'])
 @mimerender(
             default = 'json',
             html = render_html,
@@ -357,11 +354,12 @@ def user_email_post():
             txt  = render_txt
             )
 @login_required
-def user_role_post():
+def user_is_admin_update_post():
 
-    _id       = request.form.get('_id')
-    _role     = request.form.get('role')
-    user_db.update_user_role(_id, _role)
+    _user_id  = request.form.get('user_id')
+    _is_admin = request.form.get('is_admin')
+    _is_admin = _is_admin.lower() == 'true'
+    user_db.update_user_is_admin(_user_id, _is_admin)
     return {'status' : 'success'}
 
 

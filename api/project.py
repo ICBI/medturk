@@ -25,9 +25,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-from medturk.db import project, hit, user
+from medturk.db import project
+from medturk.db import hit as hit_db
+from medturk.db import user as user_db
+from medturk.db import questionnaire as questionnaire_db
 from flask.ext.login import login_required
 from medturk.api import app, mail, mimerender, render_xml, render_json, render_html, render_txt
+from flask.ext.login import current_user
 from flask import request, abort, Response, make_response
 from bson import ObjectId
 from flask.ext.mail import Message
@@ -84,25 +88,30 @@ def project_user_create():
 @login_required
 def project_get():
 
+    
     project_id = request.args.get('id')
 
-    #p = project.get(project_id)
-    #project_name = p.get('name')
-    project_name = 'medturk'
+    _project = project.get_project(project_id)
+    _questionnaire = questionnaire_db.get_questionnaire(_project['questionnaire_id'])
+    _hits = hit_db.get_hits(project_id, True)
 
-    # Get all answered HITs
-    hits = hit.get_hits(project_id, True)
-    file_name = None
+    file_name = _project.get('name').replace(' ', '_') + '.csv'
+    data = 'Patient Id, Question, Answer \n'
 
-    data = 'Patient Id, Question, Answer, Tags \n'
-   
-    if file_name == None:
-        file_name = project_name.replace(' ', '_') + '.csv'
+    for hit in _hits:
+  
+        question = ''
+        answer   = ''
+        for q in _questionnaire['questions']:
+            if q['_id'] == hit['question_id']:
+                question = q['question']
+                for c in q['choices']:
+                    if c['_id'] == hit['choice_id']:
+                        answer = c['name']
+                        break
+                break
 
-    for h in hits:
-
-        tags = '|'.join(h.get('tags'))
-        data += h.get('patient_id') + ',"' + h.get('question') + '",' + h.get('answer') + ',"' + tags + '"\n'
+        data += hit.get('patient_id') + ',"' + question + '",' + answer + '\n'
     
     generator = (cell for row in data
                     for cell in row)
@@ -122,17 +131,20 @@ def project_get():
             )
 @login_required
 def project_get_all():
-    projects = project.get_projects()
 
-    # Add completion percentage to each one
+    u = user_db.get_user(current_user.get_id())
+    projects = project.get_projects(u['_id'], u['is_admin'])
+
+    # Add completion status to each one
     for p in projects:
       
-        p['percentage'] = 100
-        answered = hit.get_answer_count(p['_id'])
-        total    = hit.get_count(p['_id'])
+        p['completion'] = '0% (0/0)'
+
+        answered = hit_db.get_answer_count(p['_id'])
+        total    = hit_db.get_count(p['_id'])
 
         if total > 0:
-            p['percentage'] = int( (answered / (total*1.0))*100.0  )
+            p['completion'] = str(int( (answered / (total*1.0))*100.0)) + '% (' + str(answered) + '/' + str(total) + ')'
 
     return {'projects' : projects}
 
