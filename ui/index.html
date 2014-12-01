@@ -30,17 +30,17 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-         <h3>&nbsp;&nbsp;<a style="color: white"  href="#/">medTurk beta</a></h3>
+         <h3>&nbsp;&nbsp;<a style="color: white" href="#/work">medTurk beta</a></h3>
         </div>
 
         <!-- Collect the nav links, forms, and other content for toggling -->
         <div class="collapse navbar-collapse navbar-ex1-collapse">
           <ul class="nav navbar-nav side-nav">  <!-- <li class="active"> -->
             <li>
-              <a href="#/" style="color: white"><i class="fa fa-home"></i>&nbsp;&nbsp;Home</a>
+              <a href="#/work" style="color: white"><i class="fa fa-edit"></i>&nbsp;&nbsp;Answer</a>
             </li>
             <li>
-              <a href="#/work" style="color: white"><i class="fa fa-edit"></i>&nbsp;&nbsp;Answer</a>
+              <a id="home" href="#/" style="color: white; display: none;"><i class="fa fa-edit"></i>&nbsp;&nbsp;Admin</a>
             </li>
           </ul>
 
@@ -118,16 +118,36 @@
     <script src="js/controllers.js"></script>
     <script>
 
+      var server = 'http://127.0.0.1:5000';
+
+            var get_user = $.ajax({
+                            url:        server + '/user',
+                            xhrFields: { withCredentials: true },
+                            crossDomain: true,
+                            type:       'GET',
+                            dataType:   'json',
+                            success:    function(data) {
+                               if(data.user.is_admin) {
+                                   $('#home').show();
+                               }
+                            },
+                            error:      function(jqXHR, textStatus, errorThrown) { 
+                                window.location.replace(server + "/medturk/login.html");
+                            }
+                        });
+
+
+
+
 
       $("#change_password").click(function() {
 
 
             var current_password = $("#current_password").val();
             var new_password     = $("#new_password").val();
-            var server = 'http://127.0.0.1:5000';
 
             var posturl = $.ajax({
-                            url:        server + '/user/password/update',
+                            url:        server + '/user/password/self/update',
                             xhrFields: { withCredentials: true },
                             crossDomain: true,
                             type:       'POST',
@@ -164,8 +184,6 @@
 
 
       $("#sign_out").click(function() {
-
-            var server = 'http://127.0.0.1:5000';
 
             var posturl = $.ajax({
                             url:        server + '/user/logout',
