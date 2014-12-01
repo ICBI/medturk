@@ -5,7 +5,7 @@
     Copyright (C) 2014 Innovation Center for Biomedical Informatics (ICBI)
                        Georgetown University <http://icbi.georgetown.edu/>
     
-    Author: Robert M. Johnson "matt"
+    Author: Robert M. Johnson
             <rmj49@georgetown.edu>
             <http://mattshomepage.com/>
             <@mattshomepage>
@@ -26,22 +26,8 @@
 from medturk.api import app
 
 # By starting in debug mode, every time we modify our code and save
-# the server will restart for us 
-app.run(debug=True)
-print app.url_map
+# the server will restart for us
 
-
-'''
-# Reloads user object from user ID stored in the session
-@login_manager.user_loader
-def load_user(userid):
-    if userid == u'123':
-        return matt
-    # If not valid, we should return None
-    return None
-
-@login_manager.user_loader
-def load_user(userid):
-    # userid is type 'unicode'
-    return User.get(userid)
-'''
+if __name__ == '__main__':
+    app.run(debug=True, threaded=True)
+    print app.url_map
