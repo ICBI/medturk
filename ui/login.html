@@ -79,7 +79,13 @@
                             success:    function(data) { 
                               
                                 if (data.success) {
-                                    window.location.replace(server + "/medturk/index.html");
+                                    if (data.user.is_admin) {
+                                        window.location.replace(server + "/medturk/index.html");
+                                    }
+                                    else {
+                                        window.location.replace(server + "/medturk/index.html#/work");
+                                    }
+                                    
                                 }
                                 else {
                                     $( "#msg" ).show();
