@@ -11,6 +11,11 @@ body {
   padding: 5px 15px;
 }
 
+.navbar-fixed-top {
+    background-color: #930D1A;
+}
+
+
 /* Nav Messages */
 
 .messages-dropdown .dropdown-menu .message-preview .avatar,
@@ -149,10 +154,6 @@ table.tablesorter thead tr th:hover {
     padding-right: 15px !important;
   }
 
-  .navbar-fixed-top {
-    background-color: #930D1A;
-  }
-
 
 .kwic {
   width: 800px;
@@ -167,17 +168,6 @@ table.tablesorter thead tr th:hover {
     border-radius: 5px;
     font-family:monospace;
     font-size: 15px;
-}
-
-.gene_annotation {
-    color: #F5F5F5;
-    background-color: #C25B62;
-}
-
-.gene_annotation:hover {
-    cursor: pointer;
-    color: white;
-    background-color: #F75C66;
 }
 
 .highlight {
