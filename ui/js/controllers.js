@@ -48,11 +48,8 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
   	 $scope.project_description = '';
   	 $scope.datasets = [];
   	 $scope.questionnaires = [];
-  	 $scope.roles = ['admin', 'analyst'];
-  	 $scope.new_user_role = 'analyst';
-
-
-
+     $scope.new_user_is_admin = false;
+  
       /*
        *
        *
@@ -105,10 +102,8 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
   		    });
     	 });
 
-       // Update user role of the user being edited
-      $scope.update_user_role = function() {
-
-    		user_factory.update_user_role($scope.edit_user._id,$scope.edit_user.role).success(function(data){
+      $scope.update_user_is_admin = function(_is_admin) {
+    		user_factory.update_user_is_admin($scope.edit_user._id, _is_admin).success(function(data){
       	});
     	}
 
@@ -127,8 +122,8 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
   	  }
 
       // Create new user
-      $scope.create_user = function(new_user_email, new_user_password, new_user_role) {
-        user_factory.create_user(new_user_email, new_user_password, new_user_role).success(function(data) {
+      $scope.create_user = function(new_user_email, new_user_password, new_user_is_admin) {
+        user_factory.create_user(new_user_email, new_user_password, new_user_is_admin).success(function(data) {
           $scope.users.push(data.user);
         });
 
@@ -399,9 +394,9 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
 
 
   	$scope.build_project = function(_project_id) {
-  	    $scope.project.status = 'Building...';
+  	    $scope.project.status = 'Building (0% complete)';
         hit_factory.create_hits(_project_id).success(function(data){
-                $scope.project.status = 'Ready';
+                $scope.project.status = 'Active';
         });
 
   	 }
@@ -450,6 +445,11 @@ app.controller('QuestionnaireController', function($scope, $routeParams, questio
     	questionnaire_factory.update_questionnaire_tag_name($scope.questionnaire._id, $scope.tag._id, $scope.tag.name).success(function(data){
     	});
   });
+
+  $scope.update_choice_name = function(_choice_id, _choice_name) {
+      questionnaire_factory.update_question_choice_name($scope.questionnaire._id, $scope.question._id, _choice_id, _choice_name).success(function(data){
+      });
+  }
 
 
 
@@ -535,7 +535,6 @@ app.controller('QuestionnaireController', function($scope, $routeParams, questio
 
     		if (_trigger.length == 0) {
         			alert('Trigger cannot be empty');
-        			$scope.case_sensitive = false;
           		$scope.trigger = '';
         			return;
     		}
@@ -552,7 +551,6 @@ app.controller('QuestionnaireController', function($scope, $routeParams, questio
 		
     		questionnaire_factory.create_question_trigger($scope.questionnaire._id, $scope.question._id, _trigger, $scope.case_sensitive).success(function(data){
     			     $scope.question.triggers.push(data.trigger);
-    			     $scope.case_sensitive = false;
       			   $scope.trigger = '';
     		});
   }
@@ -691,7 +689,7 @@ app.controller('WorkController', function($scope, $sce, $location, patient_facto
 
             		// Highlights all triggers
             		for (var i = 0; i < $scope.hit.annotations.length; i++) {
-            			$scope.hit.annotations[i].kwic = $sce.trustAsHtml(get_highlighted_text($scope.hit.annotations[i].kwic, $scope.hit.annotations[i].beg, $scope.hit.annotations[i].end));
+            			$scope.hit.annotations[i].kwic = $sce.trustAsHtml(get_highlighted_text($scope.hit.annotations[i].kwic, $scope.hit.annotations[i].rel_beg, $scope.hit.annotations[i].rel_end));
             		}
 
             		// Set first annotation as default annotation
@@ -731,7 +729,8 @@ app.controller('WorkController', function($scope, $sce, $location, patient_facto
 		  $scope.get_record = function(record_id, kwic) {
 
 		  		record_factory.get_record(record_id).success(function(data) {
-		  			$scope.clinical_note = $sce.trustAsHtml(get_highlighted_text(data.note, $scope.annotation.beg, $scope.annotation.end));
+            console.log(data);
+		  			$scope.clinical_note = $sce.trustAsHtml(get_highlighted_text(data.note, $scope.annotation.rel_beg, $scope.annotation.rel_end));
           		});
 		  }
 
@@ -751,9 +750,9 @@ app.controller('WorkController', function($scope, $sce, $location, patient_facto
 	     }
 
 
-       $scope.create_answer_text = function(text) {
-
-        hit_factory.create_answer($scope.hit._id, text).success(function(data){
+       $scope.create_hit_text = function(text) {
+       
+        hit_factory.create_hit_text($scope.hit._id, text).success(function(data){
 
            // Generate a new hit
              $scope.get_hit();

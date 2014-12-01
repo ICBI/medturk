@@ -290,6 +290,20 @@ app.factory('questionnaire_factory', function($http, $upload) {
      }
 
 
+     factory.update_question_choice_name = function(_questionnaire_id, _question_id, _choice_id, _choice_name) {
+
+          var _json = {
+                          questionnaire_id : _questionnaire_id, 
+                          question_id      : _question_id,
+                          choice_id        : _choice_id, 
+                          choice_name      : _choice_name
+                      };
+
+        return $http.post(server + '/questionnaire/question/choice/name/update', _json);
+     }
+
+
+
      factory.update_question_text = function(_questionnaire_id, _question_id, _question_text) {
 
         var _json = {
@@ -517,13 +531,13 @@ app.factory('user_factory', function($http, $upload) {
         return $http.post(server + '/user/password', {_id : __id, password : _password});
      }
 
-     factory.update_user_role = function(__id, _role) {
-        return $http.post(server + '/user/role', {_id : __id, role : _role});
+     factory.update_user_is_admin = function(_user_id, _is_admin) {
+        return $http.post(server + '/user/is_admin/update', {user_id : _user_id, is_admin : _is_admin});
      }
 
 
-     factory.create_user = function(_email, _password, _role) {
-          return $http.post(server + '/user/create', {id : _email, password : _password, role : _role});
+     factory.create_user = function(_email, _password, _is_admin) {
+          return $http.post(server + '/user/create', {id : _email, password : _password, is_admin : _is_admin});
      }
 
      factory.get_user = function() {
@@ -703,7 +717,8 @@ app.factory('hit_factory', function($http) {
         return $http.post(server + '/hit/all/create', _json);
      }
 
-      factory.create_hit_choice = function(_hit_id, _choice_id) {
+
+    factory.create_hit_choice = function(_hit_id, _choice_id) {
         var _json = {
                         hit_id :    _hit_id,
                         choice_id : _choice_id
@@ -711,6 +726,17 @@ app.factory('hit_factory', function($http) {
 
 
         return $http.post(server + '/hit/choice/create', _json);
+     }
+
+
+     factory.create_hit_text = function(_hit_id, _text) {
+        var _json = {
+                        hit_id : _hit_id,
+                        text   : _text
+                    };
+
+
+        return $http.post(server + '/hit/text/create', _json);
      }
 
 
@@ -1013,6 +1039,9 @@ app.directive("annotationsGraph", function($parse) {
                 x.domain([t_min, t_max]);
 
 
+                var x_points = new Array();
+
+
                 var svg = d3.select(element[0]).append("svg")
                 .attr("width", width + margin.left + margin.right)
                 .attr("height", height + margin.top + margin.bottom)
@@ -1030,7 +1059,21 @@ app.directive("annotationsGraph", function($parse) {
                      .append("circle")
                      .attr("r", 8.0)
                      .attr("class", "circle")
-                     .attr("cy", function(d) {return height})
+                     .attr("cy", function(d) {
+                        // If this is not done, circles would align on top of each other
+                        // They need to be perturbed if sharing same x-coordinate
+                        _x = x(d.date);
+                        var num_repeats = 0;
+                        for(var i = 0; i < x_points.length; i++) {
+                            if (_x == x_points[i]) {
+                                num_repeats += 1;
+                            }
+                        }
+
+                        x_points.push(_x);
+
+                        return height + num_repeats*8;
+                      })
                      .attr("cx", function(d) {return x(d.date)})
                      .on("mouseover", function(d) {
                           scope.callback({annotation: d});
