@@ -53,7 +53,18 @@ def create_dataset(name, description, folder):
     # Create an entry for this dataset
     patient_count = 0
 
-    for file_name in glob.glob('/Users/matt/Development/git/ICBI/medturk/datasets/' + folder + '/*.json'):
+    # Used for status updates
+    status = lambda a,b: 'Building (' + str(int(round((a*1.0)/b,2)*100)) + '% complete)'
+
+    # Create the entry for this dataset
+    _dataset = {'_id' : _id, 'name' : name, 'status' : 'Building (0% complete)', 'description' : description, 'date' : str(date.today()), 'patient_count' : patient_count}
+    db.datasets.save(_dataset)
+
+    file_names = glob.glob('/Users/matt/Development/git/ICBI/medturk/datasets/' + folder + '/*.json')
+
+    for file_name in file_names:
+
+        patient_count += 1
 
         with open(file_name) as file:
 
@@ -76,13 +87,17 @@ def create_dataset(name, description, folder):
             patient['dataset_id'] = _id
             db.patients.insert(patient)
 
-            # Update patient count
-            patient_count += 1
+            # Update every 5 patients
+            if (patient_count % 5) == 0:
+                update_dataset_patient_count(_id, patient_count)
+                update_dataset_status(_id, status(patient_count, len(file_names)))
 
-    _dataset = {'_id' : _id, 'name' : name, 'description' : description, 'date' : str(date.today()), 'patient_count' : patient_count}
-    db.datasets.save(_dataset)
+    if patient_count > 0:
+        update_dataset_patient_count(_id, patient_count)
+    
+    update_dataset_status(_id, "Active")
 
-    return _dataset
+    return get_dataset(_id)
 
 
 
@@ -119,8 +134,15 @@ def update_dataset_description(_dataset_id, _dataset_description):
     _dataset['description'] = _dataset_description
     db.datasets.save(_dataset)
 
+def update_dataset_patient_count(_dataset_id, _patient_count):
+    _dataset = get_dataset(_dataset_id)
+    _dataset['patient_count'] = _patient_count
+    db.datasets.save(_dataset)
 
-
+def update_dataset_status(_dataset_id, _status):
+    _dataset = get_dataset(_dataset_id)
+    _dataset['status'] = _status
+    db.datasets.save(_dataset)
 
 
 
@@ -130,7 +152,11 @@ def update_dataset_description(_dataset_id, _dataset_description):
     DELETE operations
 '''
 def delete_dataset(_dataset_id):
-    db.datasets.remove({'_id' : ObjectId(_dataset_id)})
+    update_dataset_status(_dataset_id, 'Deleting')
+    _dataset_id = ObjectId(_dataset_id)
+    db.datasets.remove({'_id' : _dataset_id})
+    db.patients.remove({'dataset_id' : _dataset_id})
+    db.records.remove({'dataset_id' : _dataset_id})
 
 
 

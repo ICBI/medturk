@@ -47,10 +47,10 @@ def hash_pass(password, secret_key):
 '''
     CREATE operations
 '''
-def create_user(email, password, role, secret_key, authenticated = False):
+def create_user(email, password, is_admin, secret_key, authenticated = False):
 
     _id = ObjectId()
-    user = {'_id' : _id, 'id' : email, 'password' : hash_pass(password, secret_key), 'role' : role, 'authenticated' : authenticated}
+    user = {'_id' : _id, 'id' : email, 'password' : hash_pass(password, secret_key), 'is_admin' : is_admin, 'authenticated' : authenticated}
     db.users.insert(user)
     return user
 
@@ -88,8 +88,8 @@ def update_user_email(_id, email):
 def update_user_password(_id, password, secret_key):
     db.users.update({'_id' : ObjectId(_id)}, {'$set' : {'password' : hash_pass(password, secret_key)}})
 
-def update_user_role(_id, role):
-    db.users.update({'_id' : ObjectId(_id)}, {'$set' : {'role' : role}})
+def update_user_is_admin(_id, _is_admin):
+    db.users.update({'_id' : ObjectId(_id)}, {'$set' : {'is_admin' : _is_admin}})
 
 def update_user_authenticated(_id, _is_authenticated):
     db.users.update({'id' : _id}, {'$set' : {'authenticated' : _is_authenticated}})

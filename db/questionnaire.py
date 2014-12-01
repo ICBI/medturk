@@ -120,8 +120,8 @@ def get_questionnaires():
     return [m for m in db.questionnaires.find()]
 
 
-def get_questionnaire(_questionnaires_id):
-    return db.questionnaires.find_one({'_id' : ObjectId(_questionnaires_id)})
+def get_questionnaire(_questionnaire_id):
+    return db.questionnaires.find_one({'_id' : ObjectId(_questionnaire_id)})
 
 
 
@@ -155,6 +155,25 @@ def update_question_type(_questionnaire_id, _question_id, _question_type):
             question['type'] = _question_type
             db.questionnaires.save(_questionnaire)
             break
+
+
+def update_question_choice_name(_questionnaire_id, _question_id, _choice_id, _choice_name):
+    _questionnaire = get_questionnaire(_questionnaire_id)
+
+    # Convert to BSON
+    _question_id = ObjectId(_question_id)
+    _choice_id = ObjectId(_choice_id)
+
+    for question in _questionnaire['questions']:
+        if _question_id == question['_id']:
+            for choice in question['choices']:
+                if _choice_id == choice['_id']:
+                    choice['name'] = _choice_name
+                    db.questionnaires.save(_questionnaire)
+                    break
+            break
+
+
 
 def update_question_text(_questionnaire_id, _question_id, _question_text):
     _questionnaire = get_questionnaire(_questionnaire_id)

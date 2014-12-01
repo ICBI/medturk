@@ -30,6 +30,7 @@ from medturk.db import project as project_db
 from medturk.db import project, questionnaire, record
 from medturk.db import db
 from bson import ObjectId
+import datetime
 import itertools
 from operator import itemgetter
 
@@ -45,29 +46,43 @@ def _is_end_boundary_ok(i, name, text):
 
 def _get_record_annotations(trigger, case_sensitive, note, normalized_note):
 
-    i = -1
+    abs_beg = -1
     annotations = []
 
     try:
         while(True):
             if case_sensitive:
-                i = normalized_note.index(trigger, i+1)
+                abs_beg = note.index(trigger, abs_beg + 1)
             else:
-                i = note.index(trigger, i+1)
+                abs_beg = normalized_note.index(trigger, abs_beg + 1)
 
             # Check to see if bounded by approved characters
-            if _is_start_boundary_ok(i, note) and _is_end_boundary_ok(i, trigger, note):
+            if _is_start_boundary_ok(abs_beg, note) and _is_end_boundary_ok(abs_beg, trigger, note):
                 
-                beg = i - flank_size
+                # Absolute end of trigger
+                abs_end = (abs_beg + len(trigger))
+
+                kwic_beg = abs_beg - flank_size
+                kwic_end = abs_beg + flank_size
 
                 # A string can only begin at 0, so set beginning kwic at 0
-                if beg < 0:
-                    beg = 0
+                if kwic_beg < 0:
+                    kwic_beg = 0
 
                 # Grab contents surrounding the trigger
-                kwic = note[beg:(i + flank_size)]
+                kwic = note[kwic_beg:kwic_end]
 
-                annotations.append({'beg' : i, 'end' : (i + len(trigger)), 'kwic' : kwic})
+                # Absolute end of trigger
+                abs_end = (abs_beg + len(trigger))
+
+                rel_beg = abs_beg - kwic_beg
+                rel_end = rel_beg + len(trigger)
+
+                annotations.append({'abs_beg' : abs_beg, 
+                                    'abs_end' : abs_end,
+                                    'rel_beg' : rel_beg,
+                                    'rel_end' : rel_end,
+                                    'kwic' : kwic})
     except ValueError:
         pass
 
@@ -89,6 +104,9 @@ def create_hits(_project_id):
         When generating hits, we want to group every mentioned concept by patient
     '''
 
+    # Used for status updates
+    status = lambda a,b: 'Building (' + str(int(round((a*1.0)/b,2)*100)) + '% complete)'
+
     _project       = project.get_project(_project_id)
     _dataset_id    = _project['dataset_id']
     _questionnaire = questionnaire.get_questionnaire(_project['questionnaire_id'])
@@ -97,16 +115,28 @@ def create_hits(_project_id):
     records = record.get_records(_dataset_id)
     
     # Group the records by patient
-    for key, group in itertools.groupby(records, lambda item: item['patient_id']):
-        
-        patient_id = key
+    patient_records = dict()
+    for patient_id, group in itertools.groupby(records, lambda item: item['patient_id']):
+        patient_records[patient_id] = [g for g in group]
 
-        # For every question
+
+    project_db.update_project_status(_project_id, "Building (0% complete)")
+
+    counter = 0
+
+    _patient_count = len(patient_records.keys())
+
+    for patient_id in patient_records.keys():
+
+        counter += 1
+        if (counter % 5) == 0:
+            project_db.update_project_status(_project_id, status(counter, _patient_count))
+
         for question in _questionnaire['questions']:
 
             question_annotations = []
 
-            for patient_record in group:
+            for patient_record in patient_records[patient_id]:
 
                 record_annotations = []
 
@@ -127,19 +157,21 @@ def create_hits(_project_id):
             if len(question_annotations) > 0:
                 # Create a hit
                 hit = dict()
-                hit['patient_id']   = patient_record['patient_id']
-                hit['dataset_id']   = patient_record['dataset_id']
+                hit['patient_id']   = patient_id
+                hit['dataset_id']   = ObjectId(_dataset_id)
                 hit['project_id']   = ObjectId(_project_id)
                 hit['question_id']  = question['_id']
                 hit['tag_ids']      = question['tag_ids']
                 hit['annotations']  = question_annotations
                 db.hits.insert(hit)
 
-    project_db.update_project_status(_project_id, 'Build Complete')
+    project_db.update_project_status(_project_id, 'Active')
 
-def create_hit_choice(_hit_id, _choice_id):
-    db.hits.update({'_id' : ObjectId(_hit_id)}, {'$set' : {'choice_id' : ObjectId(_choice_id)}})
+def create_hit_choice(_hit_id, _choice_id, _user_id):
+    db.hits.update({'_id' : ObjectId(_hit_id)}, {'$set' : {'choice_id' : ObjectId(_choice_id), 'answered' : True, 'user_id' : _user_id, 'date' : str(datetime.datetime.now())}})
 
+def create_hit_text(_hit_id, _text, _user_id):
+    db.hits.update({'_id' : ObjectId(_hit_id)}, {'$set' : {'text' : _text, 'answered' : True, 'user_id' : _user_id, 'date' : str(datetime.datetime.now())}})
 
 
 
@@ -149,8 +181,11 @@ def create_hit_choice(_hit_id, _choice_id):
 '''
     READ operations
 '''
-def get_hit(_project_id, _choice_id_exists = False):
-    return db.hits.find_one( {'project_id' : ObjectId(_project_id), 'choice_id' : {'$exists' : _choice_id_exists}} )
+def get_hit(_project_id, _answered = False):
+    _hit = db.hits.find_one( {'project_id' : ObjectId(_project_id), 'answered' : {'$exists' : _answered}} )
+    if _hit == None:
+        project_db.update_project_status(_project_id, 'Complete')
+    return _hit
 
 
 def get_hits(_project_id, _choice_id_exists = False):
@@ -158,7 +193,7 @@ def get_hits(_project_id, _choice_id_exists = False):
 
 
 def get_answer_count(_project_id):
-    return db.hits.find( {'project_id' : ObjectId(_project_id), 'choice_id' : {'$exists' : True}} ).count()
+    return db.hits.find( {'project_id' : ObjectId(_project_id), 'answered' : True} ).count()
 
 
 def get_count(_project_id):
@@ -175,7 +210,8 @@ def delete_hits(_project_id):
     db.hits.remove({'project_id' : ObjectId(_project_id)})
 
 
-
+if __name__ == '__main__':
+    create_hits("547351176c132901ff94e17b")
 
 
 

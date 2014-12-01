@@ -59,11 +59,13 @@ def create_user(_project_id, _user_id):
 def get_project(_project_id):
     return db.projects.find_one({'_id' : ObjectId(_project_id)})
 
-def get_projects():
-    return list(db.projects.find())
+def get_projects(_user_id, _is_admin):
+    _user_id = ObjectId(_user_id)
 
-
-
+    if _is_admin:
+        return list(db.projects.find())
+    else:
+        return [p for p in db.projects.find() if _user_id in p['user_ids']]
 
 
 
