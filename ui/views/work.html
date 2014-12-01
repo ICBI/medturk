@@ -7,11 +7,15 @@
         <br/>
 </div>
 
+<div ng-if="projects.length == 0">
+    <h3>No projects available</h3>
+</div>
+
 <div ng-if="is_project_complete">
     <h1>The {{project.name}} is finished</h1>
 </div>
 
-<div ng-if="!is_project_complete" class="row area">
+<div ng-if="!is_project_complete && projects.length > 0" class="row area">
         <h3>{{question.question}}</h3>
             <br/>
             <br/>
@@ -40,9 +44,9 @@
                             <div ng-if="question.type == 'radio'" class="btn-group">
                                <button ng-repeat="choice in question.choices" class="btn btn-default" ng-click="create_hit_choice(choice)">{{choice.name}}</button>
                             </div>
-                            <div ng-if="hit.answertype == 'text'" class="btn-group">
+                            <div ng-if="question.type == 'text'" class="btn-group">
                                 <input type="text" class="form-control" ng-model="text_answer"/>
-                                <button class="btn btn-default" ng-click="create_answer(text_answer)">Submit</button>
+                                <button class="btn btn-default" ng-click="create_hit_text(text_answer)">Submit</button>
                             </div> 
                         </form>
                         <br/>

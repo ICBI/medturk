@@ -2,13 +2,13 @@
       <!-- START THE FEATURETTES -->
       <div class="row featurette">
           
-        <div class="col-md-2">
-              <img class="featurette-image img-responsive" data-src="holder.js/500x500/auto" src="img/medkit.png" alt="Generic placeholder image">
-        </div>
           
-        <div class="col-md-8">
+        <div class="col-md-12">
+          <img style="width: 220px; height: 200px; float: left; padding-right: 10px" class="featurette-image img-responsive" data-src="holder.js/500x500/auto" src="img/medkit.png" alt="Generic placeholder image">
           <h2 class="featurette-heading">hello {{user.id}}</h2>
           <p class="lead">There are {{users.length}} users, {{datasets.length}} datasets, {{questionnaires.length}} questionnaries, and {{projects.length}} projects.</p>
+          <br/>
+          <br/>
           <br/>
           <br/>
 
@@ -16,10 +16,10 @@
           <!-- Users Table -->
           <table class="table table-striped" ng-if="users.length > 0">
           <h2>Analysts</h2>
-          <tr><th>Name</th><th>Role</th><th></th></tr>
+          <tr><th>Name</th><th>Is Admin?</th><th></th></tr>
           <tr ng-repeat="user in users">
             <td>{{user.id}}</td>
-            <td>{{user.role}}</td>
+            <td>{{user.is_admin ? "Yes" : "No"}}</td>
             <td><a ng-click="set_edit_user(user)" data-target="#edit_user_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_user(user._id, $index)">Delete</td>
           </tr>
         </table>
@@ -35,10 +35,11 @@
           <!-- Datasets Table -->
           <table class="table table-striped" ng-if="datasets.length > 0">
           <h2>Datasets</h2>
-          <tr><th>Name</th><th>Description</th><th>Number of Patients</th><th>Date Uploaded</th><th></th></tr>
+          <tr><th>Name</th><th>Description</th><th>Status</th><th>Number of Patients</th><th>Date Uploaded</th><th></th></tr>
           <tr ng-repeat="dataset in datasets">
             <td>{{dataset.name}}</td>
             <td>{{dataset.description}}</td>
+            <td>{{dataset.status}}</td>
             <td>{{dataset.patient_count}}</td>
             <td>{{dataset.date}}</td>
             <td><a ng-click="set_dataset(dataset)" data-target="#dataset_edit_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_dataset(dataset._id, dataset.name, $index)">Delete</td>
@@ -77,18 +78,19 @@
           <!-- Projects Table -->
           <table class="table table-striped" ng-if="projects.length > 0">
             <h2>Projects</h2>
-            <tr><th>Name</th><th>Description</th><th>Analysts</th><th>Status</th><th>Completion</th><th></th></tr>
+            <tr><th>Name</th><th>Description</th><th>Questionnaire</th><th>Analysts</th><th>Status</th><th>Completion</th><th></th></tr>
 
             <tr ng-repeat="project in projects">
               <td>{{project.name}}</td>
               <td>{{project.description}}</td>
+              <td>{{get_questionnaire_by_id(project.questionnaire_id).name}}</td>
               <td>
                   <p ng-repeat="user_id in project.user_ids">
                         <span class="label label-default">{{get_user_name(user_id)}}</span>
                   </p>
               </td>
               <td>{{project.status}}</td>
-              <td>{{project.percentage}}%</td>
+              <td>{{project.completion}}</td>
               <td>
                   <a ng-click="download(project._id)">Download</a>&nbsp;&nbsp;&nbsp;<a ng-click="set_project(project)" data-target="#project_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_project(project._id, project.name, $index)">Delete</a></td>
               </td>
@@ -198,8 +200,8 @@
                   <br/>
 
                   <div class="row">
-                    <h4>Change Role</h4>
-                  <select ng-change="update_user_role()" ng-model="edit_user.role" style="width: 200px" class="form-control" ng-options="role for role in roles"></select>
+                    <h4>Is Admin?</h4>
+                  <select ng-change="update_user_is_admin(edit_user.is_admin)" ng-model="edit_user.is_admin" style="width: 200px" class="form-control" ng-options="t for t in [true, false]"></select>
                 </div>
             </div>
             <div class="modal-footer">
@@ -237,12 +239,12 @@
                   <br/>
 
                   <div class="row">
-                    <h4>Role</h4>
-                  <select ng-model="new_user_role" style="width: 200px" class="form-control" ng-options="role for role in roles"></select>
+                    <h4>Is Admin?</h4>
+                  <select ng-model="new_user_is_admin" style="width: 200px" class="form-control" ng-options="t for t in [true, false]"></select>
                 </div>
             </div>
             <div class="modal-footer">
-                <button id="close" ng-click="create_user(new_user_email, new_user_password, new_user_role)" type="button" class="btn btn-default" data-dismiss="modal">Create</button>
+                <button id="close" ng-click="create_user(new_user_email, new_user_password, new_user_is_admin)" type="button" class="btn btn-default" data-dismiss="modal">Create</button>
             </div>
         </div>
     </div>
