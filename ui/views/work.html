@@ -1,9 +1,12 @@
+<img style="width: 240px; height: 200px; float: left; padding-right: 30px" class="featurette-image img-responsive" data-src="holder.js/500x500/auto" src="img/medkit.png" alt="Generic placeholder image">
+
 <div ng-if="projects.length > 0" class="row">
         <br/>
-
+        <h4>Select a project to work on here:</h4>
         <select ng-change="on_change_project(project)" ng-model="project" style="width: 400px" class="form-control" ng-options="p.name for p in projects"></select>
         <br/>
-        <p>{{project.description}}</p>
+        <p><b>Description:</b> {{project.description}}</p>
+        <p><b>Status:</b> {{project.completion}}</p>
         <br/>
 </div>
 

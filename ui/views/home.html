@@ -4,19 +4,11 @@
           
           
         <div class="col-md-12">
-          <img style="width: 220px; height: 200px; float: left; padding-right: 10px" class="featurette-image img-responsive" data-src="holder.js/500x500/auto" src="img/medkit.png" alt="Generic placeholder image">
-          <h2 class="featurette-heading">hello {{user.id}}</h2>
-          <p class="lead">There are {{users.length}} users, {{datasets.length}} datasets, {{questionnaires.length}} questionnaries, and {{projects.length}} projects.</p>
-          <br/>
-          <br/>
-          <br/>
-          <br/>
-
 
           <!-- Users Table -->
           <table class="table table-striped" ng-if="users.length > 0">
           <h2>Analysts</h2>
-          <tr><th>Name</th><th>Is Admin?</th><th></th></tr>
+          <tr><th>E-mail</th><th>Is Admin?</th><th></th></tr>
           <tr ng-repeat="user in users">
             <td>{{user.id}}</td>
             <td>{{user.is_admin ? "Yes" : "No"}}</td>
