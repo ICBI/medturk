@@ -104,6 +104,8 @@ def create_hits(_project_id):
         When generating hits, we want to group every mentioned concept by patient
     '''
 
+    project_db.update_project_status(_project_id, "Building (0% complete)")
+
     # Used for status updates
     status = lambda a,b: 'Building (' + str(int(round((a*1.0)/b,2)*100)) + '% complete)'
 
@@ -119,8 +121,6 @@ def create_hits(_project_id):
     for patient_id, group in itertools.groupby(records, lambda item: item['patient_id']):
         patient_records[patient_id] = [g for g in group]
 
-
-    project_db.update_project_status(_project_id, "Building (0% complete)")
 
     counter = 0
 
