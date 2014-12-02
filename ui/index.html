@@ -37,16 +37,15 @@
         <div class="collapse navbar-collapse navbar-ex1-collapse">
           <ul class="nav navbar-nav side-nav">  <!-- <li class="active"> -->
             <li>
-              <a href="#/work" style="color: white"><i class="fa fa-edit"></i>&nbsp;&nbsp;Answer</a>
+              <a href="#/work" style="color: white"><i class="fa fa-medkit"></i>&nbsp;&nbsp;Questions</a>
             </li>
             <li>
               <a id="home" href="#/" style="color: white; display: none;"><i class="fa fa-edit"></i>&nbsp;&nbsp;Admin</a>
             </li>
           </ul>
-
           <ul class="nav navbar-nav navbar-right navbar-user">
             <li class="dropdown user-dropdown">
-              <a class="dropdown-toggle" data-toggle="dropdown" style="color: white"><i class="fa fa-user"></i><b class="caret"></b></a>
+              <a class="dropdown-toggle" data-toggle="dropdown" style="color: white"><span id="user_name"></span>&nbsp;&nbsp;&nbsp;<i class="fa fa-user"></i><b class="caret"></b></a>
               <ul class="dropdown-menu">
                 <li><a id="open_change_password" href="#" data-target="#password_modal" data-toggle="modal"><i class="fa fa-sign-out"></i> Change Password</a></li>
                 <li><a id="sign_out" href="#"><i class="fa fa-power-off"></i> Sign Out</a></li>
@@ -90,11 +89,14 @@
                             <input id="new_password" type="password" class="form-control">
                         </div>
                         <br/>
+                        <button id="change_password" type="button" class="btn btn-danger">Change Password</button>
+                        <br/>
+                        <br/>
                         <p id="msg" style="color: gray"></p>
                         <br/>
                 </div>
                 <div class="modal-footer">
-                    <button id="change_password" type="button" class="btn btn-danger" data-dismiss="modal">Change Password</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -127,6 +129,8 @@
                             type:       'GET',
                             dataType:   'json',
                             success:    function(data) {
+
+                               $("#user_name").text(data.user.id);
                                if(data.user.is_admin) {
                                    $('#home').show();
                                }
