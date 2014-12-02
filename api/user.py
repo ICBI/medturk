@@ -282,12 +282,14 @@ def clean_user(user):
             )
 @login_required
 def users():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
+
     users = [clean_user(u) for u in user_db.get_users()]
     return {'users' : users}
 
 
-
-# TODO: Only available to admin
 @app.route('/user/create', methods=['POST'])
 @mimerender(
             default = 'json',
@@ -299,15 +301,17 @@ def users():
 @login_required
 def user_create():
 
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
     email     = request.form.get('id')
     password  = request.form.get('password')
     is_admin  = request.form.get('is_admin')
-    is_admin = is_admin.lower() == 'true'
+    is_admin  = is_admin.lower() == 'true'
     user = user_db.create_user(email, password, is_admin, app.secret_key)
     return {'user' : user}
 
 
-# TODO: Only available to admin
 @app.route('/user/delete', methods=['POST'])
 @mimerender(
             default = 'json',
@@ -319,6 +323,9 @@ def user_create():
 @login_required
 def user_delete_post():
 
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
     _id  = request.form.get('_id')
     user_db.delete_user(_id)
   
@@ -326,7 +333,6 @@ def user_delete_post():
 
 
 
-# TODO: Only available to admin
 @app.route('/user/email', methods=['POST'])
 @mimerender(
             default = 'json',
@@ -338,13 +344,16 @@ def user_delete_post():
 @login_required
 def user_email_post():
 
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
     _id       = request.form.get('_id')
     _email     = request.form.get('email')
     user_db.update_user_email(_id, _email)
     return {'status' : 'success'}
 
 
-# TODO: Only available to admin
+
 @app.route('/user/is_admin/update', methods=['POST'])
 @mimerender(
             default = 'json',
@@ -356,6 +365,9 @@ def user_email_post():
 @login_required
 def user_is_admin_update_post():
 
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
     _user_id  = request.form.get('user_id')
     _is_admin = request.form.get('is_admin')
     _is_admin = _is_admin.lower() == 'true'
@@ -363,7 +375,7 @@ def user_is_admin_update_post():
     return {'status' : 'success'}
 
 
-# TODO: Only available to admin
+
 @app.route('/user/password', methods=['POST'])
 @mimerender(
             default = 'json',
@@ -374,6 +386,10 @@ def user_is_admin_update_post():
             )
 @login_required
 def user_password_post():
+
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
 
     _id        = request.form.get('_id')
     _password  = request.form.get('password')

@@ -46,6 +46,9 @@ from flask import request, abort, Response, make_response
             )
 @login_required
 def hit_create_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
 
     _project_id = request.form.get('project_id')
     hit.create_hits(_project_id)
@@ -159,6 +162,9 @@ def hit_answer_count_get():
             )
 @login_required
 def hit_all_delete_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+    
 
     _project_id   = request.form.get('project_id')
     hit.delete_hits(_project_id)

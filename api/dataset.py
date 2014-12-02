@@ -28,7 +28,8 @@
 
 import os
 from medturk.db import dataset as dataset_db
-from flask.ext.login import login_required
+from medturk.db import user as user_db
+from flask.ext.login import login_required, current_user
 from medturk.api import app, mimerender, render_xml, render_json, render_html, render_txt
 from flask import jsonify, request, abort
 
@@ -47,6 +48,9 @@ from flask import jsonify, request, abort
             )
 @login_required
 def dataset_create_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
 
     _dataset_name         = request.form.get('dataset_name')
     _dataset_description  = request.form.get('dataset_description')
@@ -73,6 +77,9 @@ def dataset_create_post():
             )
 @login_required
 def datasets_raw_get():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
     
     top = '/Users/matt/Development/git/ICBI/medturk/datasets'
 
@@ -94,6 +101,9 @@ def datasets_raw_get():
             )
 @login_required
 def datasets_get():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
     return {'datasets' : dataset_db.get_datasets()}
 
 
@@ -116,6 +126,9 @@ def datasets_get():
             )
 @login_required
 def dataset_name_update_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
 
     _dataset_id   = request.form.get('dataset_id')
     _dataset_name = request.form.get('dataset_name')   
@@ -133,6 +146,9 @@ def dataset_name_update_post():
             )
 @login_required
 def dataset_description_update_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
 
     _dataset_id          = request.form.get('dataset_id')
     _dataset_description = request.form.get('dataset_description')
@@ -164,6 +180,9 @@ def dataset_description_update_post():
             )
 @login_required
 def dataset_delete_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
 
     _dataset_id = request.form.get('dataset_id')
     dataset_db.delete_dataset(_dataset_id)

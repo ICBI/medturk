@@ -30,13 +30,10 @@ from medturk.db import hit as hit_db
 from medturk.db import user as user_db
 from medturk.db import questionnaire as questionnaire_db
 from flask.ext.login import login_required
-from medturk.api import app, mail, mimerender, render_xml, render_json, render_html, render_txt
+from medturk.api import app, mimerender, render_xml, render_json, render_html, render_txt
 from flask.ext.login import current_user
 from flask import request, abort, Response, make_response
 from bson import ObjectId
-from flask.ext.mail import Message
-
-
 
 
 
@@ -56,6 +53,9 @@ from flask.ext.mail import Message
             )
 @login_required
 def project_create_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
     return {'project' : project.create_project()}
 
 
@@ -69,6 +69,8 @@ def project_create_post():
             )
 @login_required
 def project_user_create():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
 
     _project_id  = request.form.get('project_id')
     _user_id     = request.form.get('user_id')
@@ -169,6 +171,9 @@ def project_get_all():
             )
 @login_required
 def project_name_update_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
 
     _project_id  = request.form.get('project_id')
     _name        = request.form.get('name')
@@ -187,6 +192,9 @@ def project_name_update_post():
             )
 @login_required
 def project_description_update_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
 
     _project_id  = request.form.get('project_id')
     _description = request.form.get('description')
@@ -205,6 +213,9 @@ def project_description_update_post():
             )
 @login_required
 def project_dataset_update_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
 
     _project_id  = request.form.get('project_id')
     _dataset_id  = request.form.get('dataset_id')
@@ -223,6 +234,9 @@ def project_dataset_update_post():
             )
 @login_required
 def project_questionnaire_update_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
 
     _project_id        = request.form.get('project_id')
     _questionnaire_id  = request.form.get('questionnaire_id')
@@ -251,6 +265,9 @@ def project_questionnaire_update_post():
             )
 @login_required
 def project_delete_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
 
     _project_id   = request.form.get('project_id')
     project.delete_project(_project_id)
@@ -269,6 +286,8 @@ def project_delete_post():
             )
 @login_required
 def project_user_delete_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
 
     _project_id   = request.form.get('project_id')
     _user_id      = request.form.get('user_id')

@@ -27,7 +27,8 @@
 
 
 from medturk.db import questionnaire as questionnaire_db
-from flask.ext.login import login_required
+from medturk.db import user as user_db
+from flask.ext.login import login_required, current_user
 from medturk.api import app, mimerender, render_xml, render_json, render_html, render_txt
 from flask import jsonify, request, abort, Response
 from bson import ObjectId
@@ -54,6 +55,8 @@ from bson.json_util import loads
             )
 @login_required
 def questionnaire_tag_create_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
     
     _questionnaire_id   = request.form.get('questionnaire_id')
     _tag_name           = request.form.get('tag_name')
@@ -72,6 +75,8 @@ def questionnaire_tag_create_post():
             )
 @login_required
 def questionnaire_upload_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
     
     # Parse the file
     file = request.files['file']
@@ -109,6 +114,9 @@ def questionnaire_upload_post():
             )
 @login_required
 def questionnaire_create_post(): 
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
     return {'questionnaire_id' : questionnaire_db.create_questionnaire()}
 
 
@@ -125,6 +133,9 @@ def questionnaire_create_post():
             )
 @login_required
 def questionnaire_question_choice_create_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
     _questionnaire_id = request.form.get('questionnaire_id')
     _question_id      = request.form.get('question_id')
     _choice_name      = request.form.get('choice_name')
@@ -143,6 +154,9 @@ def questionnaire_question_choice_create_post():
             )
 @login_required
 def questionnaire_question_trigger_create_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
     _questionnaire_id         = request.form.get('questionnaire_id')
     _question_id              = request.form.get('question_id')
     _trigger_name             = request.form.get('trigger_name')
@@ -163,6 +177,9 @@ def questionnaire_question_trigger_create_post():
             )
 @login_required
 def questionnaire_question_tag_create_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
     _questionnaire_id = request.form.get('questionnaire_id')
     _question_id      = request.form.get('question_id')
     _tag_id           = request.form.get('tag_id')
@@ -181,6 +198,9 @@ def questionnaire_question_tag_create_post():
             )
 @login_required
 def questionnaire_create_question_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
     _questionnaire_id        = request.form.get('questionnaire_id')
     return {'question' : questionnaire_db.create_question(_questionnaire_id)}
 
@@ -260,7 +280,10 @@ def questionnaire_all_get():
             txt  = render_txt
             )
 @login_required
-def questionnaire_tag_name_update_post(): 
+def questionnaire_tag_name_update_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
 
     _questionnaire_id  = request.form.get('questionnaire_id')
     _tag_id            = request.form.get('tag_id')
@@ -279,7 +302,10 @@ def questionnaire_tag_name_update_post():
             txt  = render_txt
             )
 @login_required
-def questionnaire_question_type_update_post(): 
+def questionnaire_question_type_update_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
 
     _questionnaire_id   = request.form.get('questionnaire_id')
     _question_id        = request.form.get('question_id')
@@ -299,7 +325,10 @@ def questionnaire_question_type_update_post():
             txt  = render_txt
             )
 @login_required
-def questionnaire_question_choice_name_update_post(): 
+def questionnaire_question_choice_name_update_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
 
     _questionnaire_id   = request.form.get('questionnaire_id')
     _question_id        = request.form.get('question_id')
@@ -321,7 +350,10 @@ def questionnaire_question_choice_name_update_post():
             txt  = render_txt
             )
 @login_required
-def questionnaire_question_text_update_post(): 
+def questionnaire_question_text_update_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
 
     _questionnaire_id = request.form.get('questionnaire_id')
     _question_id      = request.form.get('question_id')
@@ -339,7 +371,10 @@ def questionnaire_question_text_update_post():
             txt  = render_txt
             )
 @login_required
-def questionnaire_name_update_post(): 
+def questionnaire_name_update_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
 
     _questionnaire_id          = request.form.get('questionnaire_id')
     _questionnaire_name        = request.form.get('questionnaire_name')
@@ -356,7 +391,10 @@ def questionnaire_name_update_post():
             txt  = render_txt
             )
 @login_required
-def questionnaire_description_update_post(): 
+def questionnaire_description_update_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
 
     _questionnaire_id          = request.form.get('questionnaire_id')
     _questionnaire_description = request.form.get('questionnaire_description')
@@ -386,6 +424,9 @@ def questionnaire_description_update_post():
 @login_required
 def questionnaire_delete_post():
 
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
     _questionnaire_id = request.form.get('questionnaire_id')
     questionnaire_db.delete_questionnaire(_questionnaire_id)
   
@@ -401,6 +442,8 @@ def questionnaire_delete_post():
             )
 @login_required
 def questionnaire_tag_delete_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
 
     _questionnaire_id = request.form.get('questionnaire_id')
     _tag_id            = request.form.get('tag_id')
@@ -418,6 +461,9 @@ def questionnaire_tag_delete_post():
             )
 @login_required
 def questionnaire_question_tag_delete_post():
+
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
 
     _questionnaire_id = request.form.get('questionnaire_id')
     _question_id      = request.form.get('question_id')
@@ -437,6 +483,9 @@ def questionnaire_question_tag_delete_post():
             )
 @login_required
 def questionnaire_question_trigger_delete_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
     _questionnaire_id = request.form.get('questionnaire_id')
     _question_id      = request.form.get('question_id')
     _trigger_id       = request.form.get('trigger_id')
@@ -455,6 +504,9 @@ def questionnaire_question_trigger_delete_post():
             )
 @login_required
 def questionnaire_question_choice_remove_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
     _questionnaire_id = request.form.get('questionnaire_id')
     _question_id      = request.form.get('question_id')
     _choice_id        = request.form.get('choice_id')
@@ -472,6 +524,9 @@ def questionnaire_question_choice_remove_post():
             )
 @login_required
 def questionnaire_question_delete_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
 
     _questionnaire_id = request.form.get('questionnaire_id')
     _question_id      = request.form.get('question_id')
