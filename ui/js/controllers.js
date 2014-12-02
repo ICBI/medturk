@@ -37,7 +37,7 @@ function get_highlighted_text(text, beg, end) {
 }
 
 
-app.controller('HomeController', function($scope, $upload, user_factory, project_factory, questionnaire_factory, patient_factory, dataset_factory, hit_factory) {
+app.controller('HomeController', function($scope, $upload, $interval, user_factory, project_factory, questionnaire_factory, dataset_factory, hit_factory) {
 
   	 $scope.project = undefined;
   	 $scope.dataset = undefined;
@@ -49,6 +49,76 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
   	 $scope.datasets = [];
   	 $scope.questionnaires = [];
      $scope.new_user_is_admin = false;
+
+
+     $scope.get_dataset_by_id = function(dataset_id) {
+              for (var i = 0; i < $scope.datasets.length; i++) {
+                  if ($scope.datasets[i]._id == dataset_id) {
+                      return $scope.datasets[i];
+                  }
+              }
+
+          return undefined;
+     }
+
+
+     $scope.get_project_by_id = function(project_id) {
+              for (var i = 0; i < $scope.projects.length; i++) {
+                  if ($scope.projects[i]._id == project_id) {
+                      return $scope.projects[i];
+                  }
+              }
+
+          return undefined;
+     }
+
+
+
+     var timer = $interval(function() {
+
+
+            // Update project status
+                project_factory.get_projects().success(function(data){
+                    for (var i = 0; i < data.projects.length; i++) {
+                        // Get the dataset we have stored locally
+                        var _p = $scope.get_project_by_id(data.projects[i]._id);
+                        if (_p == undefined) {
+                            $scope.projects.push(data.projects[i]);
+                        }
+                        else {
+                          _p.status     = data.projects[i].status;
+                          _p.completion = data.projects[i].completion;
+                        }   
+                    }
+                });
+
+
+            // Update dataset status
+                dataset_factory.get_datasets().success(function(data){
+                    for (var i = 0; i < data.datasets.length; i++) {
+
+                        // Get the dataset we have stored locally
+                        var _ds = $scope.get_dataset_by_id(data.datasets[i]._id);
+                        if (_ds == undefined) {
+                            console.log('pushing dataset');
+                            $scope.datasets.push(data.datasets[i]);
+                        }
+                        else {
+                          _ds.status        = data.datasets[i].status;
+                          _ds.patient_count = data.datasets[i].patient_count;
+                        }
+                    }
+                });
+     }, 5000);
+
+     $scope.$on('$destroy', function() {
+        $interval.cancel(timer);
+        timer = undefined;
+    });
+
+     
+
+
   
       /*
        *
@@ -174,16 +244,6 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
          });
 
 
-         $scope.get_dataset_by_id = function(dataset_id) {
-              for (var i = 0; i < $scope.datasets.length; i++) {
-                  if ($scope.datasets[i]._id == dataset_id) {
-                      return $scope.datasets[i];
-                  }
-              }
-
-          return undefined;
-        }
-
         $( "#dataset_name" ).focusout(function() {
               dataset_factory.update_dataset_name($scope.dataset._id, $scope.dataset.name).success(function(data){
               });
@@ -199,7 +259,6 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
 
          $scope.create_dataset = function() {
               dataset_factory.create_dataset($scope.name, $scope.description, $scope.folder).success(function(data) {
-                  $scope.datasets.push(data.dataset);
               });
          }
 
@@ -210,6 +269,9 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
 
           $scope.delete_dataset = function(_dataset_id, _dataset_name, _dataset_index) {
               if(window.confirm('Are you sure you want to delete the dataset ' + _dataset_name + '?')) {
+                    var _ds = $scope.get_dataset_by_id(_dataset_id);
+                    _ds.status = 'Deleting...';
+
                     dataset_factory.delete_dataset(_dataset_id).success(function(data) {
                             $scope.datasets.splice(_dataset_index, 1);
                     });
@@ -396,7 +458,6 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
   	$scope.build_project = function(_project_id) {
   	    $scope.project.status = 'Building (0% complete)';
         hit_factory.create_hits(_project_id).success(function(data){
-                $scope.project.status = 'Active';
         });
 
   	 }
@@ -623,7 +684,7 @@ app.controller('QuestionnaireController', function($scope, $routeParams, questio
 
 
 
-app.controller('WorkController', function($scope, $sce, $location, patient_factory, hit_factory, record_factory, project_factory, questionnaire_factory) {
+app.controller('WorkController', function($scope, $sce, $location, hit_factory, record_factory, project_factory, questionnaire_factory) {
 
 		 $scope.hit = undefined;
 		 $scope.annotation = undefined;
@@ -718,19 +779,12 @@ app.controller('WorkController', function($scope, $sce, $location, patient_facto
 		  		event.preventDefault();
 		  }
 
-		
-		  $scope.validate_patient = function(is_validated, patient_id) {  
-		  		patient_factory.validate_patient(patient_id, is_validated).success(function(data){
-         		 	$scope.selected_patient.validated = is_validated;
-        	});
-
-		  }
 
 		  $scope.get_record = function(record_id, kwic) {
 
 		  		record_factory.get_record(record_id).success(function(data) {
             console.log(data);
-		  			$scope.clinical_note = $sce.trustAsHtml(get_highlighted_text(data.note, $scope.annotation.rel_beg, $scope.annotation.rel_end));
+		  			$scope.clinical_note = $sce.trustAsHtml(get_highlighted_text(data.note, $scope.annotation.abs_beg, $scope.annotation.abs_end));
           		});
 		  }
 

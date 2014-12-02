@@ -813,23 +813,6 @@ app.factory('record_factory', function($http) {
 
 
 
-app.factory('patient_factory', function($http, $upload) {
-
-    var factory = {};
-
-    factory.save = function(file) {
-       return $upload.upload({
-              url: '/patient/save',
-              file: file
-            });
-     }
-
-    return factory;
-});
-
-
-
-
 /*
  *
  *
