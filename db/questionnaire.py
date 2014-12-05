@@ -38,8 +38,8 @@ from bson import ObjectId
     CREATE operations
 '''
 def create_questionnaire():
-    return db.questionnaires.insert({'name'         : 'My Questionnaire', 
-                                     'description'  : 'To do', 
+    return db.questionnaires.insert({'name'         : 'My New Questionnaire', 
+                                     'description'  : 'TODO', 
                                      'questions'    : [], 
                                      'tags'         : []})
 
@@ -48,7 +48,7 @@ def create_uploaded_questionnaire(_questionnaire):
 
 def create_question(_questionnaire_id):
     _id = ObjectId()
-    question = {'_id' : _id, 'question' : 'My question', 'type' : 'radio', 'tag_ids' : [], 'choices' : [], 'triggers' : []}
+    question = {'_id' : _id, 'question' : '', 'type' : 'radio', 'frequency' : 'once', 'tag_ids' : [], 'choices' : [], 'triggers' : []}
     _questionnaire = get_questionnaire(_questionnaire_id)
     _questionnaire['questions'].append(question)
     db.questionnaires.save(_questionnaire)
@@ -153,6 +153,16 @@ def update_question_type(_questionnaire_id, _question_id, _question_type):
     for question in _questionnaire['questions']:
         if _question_id == question['_id']:
             question['type'] = _question_type
+            db.questionnaires.save(_questionnaire)
+            break
+
+
+def update_question_frequency(_questionnaire_id, _question_id, _question_frequency):
+    _questionnaire = get_questionnaire(_questionnaire_id)
+    _question_id = ObjectId(_question_id)
+    for question in _questionnaire['questions']:
+        if _question_id == question['_id']:
+            question['frequency'] = _question_frequency
             db.questionnaires.save(_questionnaire)
             break
 
