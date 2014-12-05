@@ -157,25 +157,48 @@
             <div class="modal-body">
                  
                    <div class="row">
-                      <h4>Question</h4>
+                 		<b>Type the question you want to ask an analyst about a patient here</b>
+                 		<br/>
                         <textarea id="question_text" style="width: 400px" class="form-control" rows="2" ng-model="question.question"></textarea>
                     </div>
 		           
 		           <br/>
 		           <br/>
-		          
-		          	
-		            <div class="row">
-		            	<h4>Type</h4>
-		            	<select ng-change="update_question_type()" ng-model="question.type" style="width: 200px" class="form-control" ng-options="answer_type for answer_type in answer_types"></select>
-		        	</div>
 
+                    <div class="row">
+		           	  <b>Does this question apply to a patient once or multiple times?</b>
+                 	  <br/>
+                        <div class="btn-group">
+                        	<a ng-repeat="question_frequency in question_frequencies" href="javascript:void(0)" ng-click="update_question_frequency(question_frequency)" ng-class="{ 'active' : question_frequency.value == question.frequency}" class="btn btn-default">
+                        		{{question_frequency.name}}
+                        	</a>
+						</div>
+                    </div>
+
+
+
+
+                    <br/>
+                    <br/>
+
+
+                    <div class="row">
+		           	  <b>Should the analyst answer with free text or choose from multiple choice?</b>
+                 	  <br/>
+                        <div class="btn-group">
+                        	<a ng-repeat="question_type in question_types" href="javascript:void(0)" ng-click="update_question_type(question_type)" ng-class="{ 'active' : question_type.value == question.type}" class="btn btn-default">
+                        		{{question_type.name}}
+                        	</a>
+						</div>
+                    </div>
+
+		          
 		        	<br/>
 		        	<br/>
 
 
 		        	<div class="row" ng-if="question.type == 'radio'">
-		        	<h4>Choices</h4>
+		        		<b>Edit your multiple choice selection here</b>
 		        		<table style="width: 400px" class="table table-striped">
 						    <tr>
 						    	<th>Name</th>
@@ -195,53 +218,15 @@
 					    <div style="width: 250px"  class="input-group">
 						    <input type="text" class="form-control" ng-model="choice_name">
 						    <span class="input-group-btn">
-						      <button class="btn btn-default" type="button" ng-click="create_question_choice(choice_name)">Add Answer</button>
+						      <button class="btn btn-default" type="button" ng-click="create_question_choice(choice_name)">Add Choice</button>
 						    </span>
 						</div>
-
-						<br/>
-
 					</div>
 
 		        	<br/>
-		        	<br/>
 
-
-
-
-		        	<!-- This section is for editing tags -->
-		        	<div class="row">
-		        	<h4>Tags</h4>
-		        		<table style="width: 400px" class="table table-striped">
-						    <tr>
-						    	<th>Name</th>
-						    	<th></th>
-						    </tr>
-
-						    <tr ng-repeat="tag_id in question.tag_ids">
-						      <td>
-						      	<p class="label label-default">{{get_tag_by_id(tag_id).name}}</p>
-						      </td>
-						      <td>
-						          <a ng-click="delete_question_tag(tag_id, $index)">Delete</a></td>
-						      </td>
-						  	</tr>
-					    </table>
-					</div>
-
-					<div class="row">
-		            	<p>Add Tag</p>
-		            	<select ng-change="create_question_tag(tag)" ng-model="tag" style="width: 200px" class="form-control" ng-options="tag.name for tag in questionnaire.tags"></select>
-				      </button>
-		        	</div>
-
-		        	<br/>
-		        	<br/>
-		        	<br/>
-
-		      
 		           	<div class="row">
-		           		<h4>Triggers</h4>
+		           		<b>Add triggers here:</b>
 
 
 		            	<table class="table table-striped">
@@ -272,8 +257,38 @@
         						<button ng-click="create_question_trigger(trigger)" class="btn btn-default" type="button">Create</button>
       						</span>
       					</div>
+      				</div>
+      				<br/>
+      				<br/>
+      				<br/>
+      				<br/>
 
-		        	</div> 
+      					<!-- This section is for editing tags -->
+			        	<div class="row">
+			        		<b><i>(optional)</i> Add tags here</b>
+			        		<table style="width: 400px" class="table table-striped">
+							    <tr>
+							    	<th>Name</th>
+							    	<th></th>
+							    </tr>
+
+							    <tr ng-repeat="tag_id in question.tag_ids">
+							      <td>
+							      	<p class="label label-default">{{get_tag_by_id(tag_id).name}}</p>
+							      </td>
+							      <td>
+							          <a ng-click="delete_question_tag(tag_id, $index)">Delete</a></td>
+							      </td>
+							  	</tr>
+						    </table>
+						</div>
+
+						<div class="row">
+			            	<p>Add Tag</p>
+			            	<select ng-change="create_question_tag(tag)" ng-model="tag" style="width: 200px" class="form-control" ng-options="tag.name for tag in questionnaire.tags"></select>
+					      </button>
+			        	</div>
+
 
 		        	<br/>
 		        	<br/>

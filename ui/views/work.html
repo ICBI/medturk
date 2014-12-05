@@ -20,6 +20,7 @@
 
 <div ng-if="!is_project_complete && projects.length > 0" class="row area">
         <h3>{{question.question}}</h3>
+        <p ng-if="question.frequency == 'multiple'"><i>( You should answer this question for each clinical note. Thus, for this patient, there are {{hit.annotations.length}} questions to answer )</i></p>
             <br/>
             <br/>
         <div ng-hide="hide_timeline">
@@ -50,6 +51,12 @@
                             <div ng-if="question.type == 'text'" class="btn-group">
                                 <input type="text" class="form-control" ng-model="text_answer"/>
                                 <button class="btn btn-default" ng-click="create_hit_text(text_answer)">Submit</button>
+                            </div> 
+
+                            <div ng-if="question.frequency == 'multiple'">
+                                <br/>
+                                <br/>
+                                <button class="btn btn-danger" ng-click="create_hit_text(text_answer)">Next Patient >></button>
                             </div> 
                         </form>
                         <br/>
