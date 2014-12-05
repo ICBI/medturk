@@ -208,21 +208,16 @@ display: none;
   fill: #FF8587;
 }
 
-.circle {
-  stroke: gray;
-  fill: gray;
-}
-
-.circle:hover {
-
+.rect {
   stroke: black;
-  fill: black;
-  cursor: pointer;
+  fill: transparent;
+  stroke-width: 2;
 }
 
-.selected_circle {
-  stroke: #930D1A;
+.selected_rect {
   fill: #930D1A;
+  stroke: black;
+  stroke-width: 2;
 }
 
 
