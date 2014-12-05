@@ -290,6 +290,18 @@ app.factory('questionnaire_factory', function($http, $upload) {
      }
 
 
+     factory.update_question_frequency = function(_questionnaire_id, _question_id, _question_frequency) {
+
+          var _json = {
+                          questionnaire_id    : _questionnaire_id, 
+                          question_id         : _question_id, 
+                          question_frequency  : _question_frequency
+                      };
+
+        return $http.post(server + '/questionnaire/question/frequency/update', _json);
+     }
+
+
      factory.update_question_choice_name = function(_questionnaire_id, _question_id, _choice_id, _choice_name) {
 
           var _json = {
@@ -998,7 +1010,7 @@ app.directive("annotationsGraph", function($parse) {
                 var margin = {top: 20, right: 20, bottom: 30, left: 50},
                 width = 960 - margin.left - margin.right,
                 //height = 500 - margin.top - margin.bottom;
-                height = 0;
+                height = 50;
 
                 var x = d3.time.scale()
                 .range([0, width]);
@@ -1036,14 +1048,15 @@ app.directive("annotationsGraph", function($parse) {
                   .attr("transform", "translate(0," + height + ")")
                   .call(xAxis);
                 
-                  svg.selectAll("circle")
+                  svg.selectAll("rect")
                      .data(data)
                      .enter()
-                     .append("circle")
-                     .attr("r", 8.0)
-                     .attr("class", "circle")
-                     .attr("cy", function(d) {
-                        // If this is not done, circles would align on top of each other
+                     .append("rect")
+                     .attr("width", 15.0)
+                     .attr("height", 15.0)
+                     .attr("class", "rect")
+                     .attr("y", function(d) {
+                        // If this is not done, rects would align on top of each other
                         // They need to be perturbed if sharing same x-coordinate
                         _x = x(d.date);
                         var num_repeats = 0;
@@ -1055,16 +1068,13 @@ app.directive("annotationsGraph", function($parse) {
 
                         x_points.push(_x);
 
-                        return height + num_repeats*8;
+                        return height - num_repeats*15.0 - 15.0;
                       })
-                     .attr("cx", function(d) {return x(d.date)})
+                     .attr("x", function(d) {return x(d.date)})
                      .on("mouseover", function(d) {
                           scope.callback({annotation: d});
-
-                          d3.select(".selected_circle").attr("r", 8.0);
-                          d3.select(".selected_circle").attr("class", "circle");
-                          d3.select(this).attr("class", "selected_circle");
-                          d3.select(this).attr("r", 10.0);
+                          d3.select(".selected_rect").attr("class", "rect");
+                          d3.select(this).attr("class", "selected_rect");
                   });
 
 
@@ -1072,193 +1082,6 @@ app.directive("annotationsGraph", function($parse) {
               });
 
 
-      }
-    };
-});
-
-
-
-
-
-
-app.directive("ontologyGraph", function($parse) {
-    return {
-      restrict: "E",
-      replace: false,
-      scope: {data: '=data', callback: '&'},
-      link: function(scope, element, attrs) {
-
-        var data = scope.data;
-
-        / * Watches for updates in data */
-        scope.$watch('data', function (_data) {
-
-
-                if (_data === undefined) {
-                    return;
-                }
-             
-                data = _data;
-                d3.select(element[0]).select("svg").remove();
-
-                var h = 4000;
-                var w = 1200;
-
-                var margin = {top: 20, right: 120, bottom: 20, left: 120},
-                    width = w - margin.right - margin.left,
-                    height = h - margin.top - margin.bottom;
-                    
-                var i = 0,
-                    duration = 750,
-                    root;
-
-                var tree = d3.layout.tree()
-                    .size([height, width]);
-
-                var diagonal = d3.svg.diagonal()
-                    .projection(function(d) { return [d.y, d.x]; });
-
-                var svg = d3.select(element[0]).append("svg")
-                    .attr("width", width + margin.right + margin.left)
-                    .attr("height", height + margin.top + margin.bottom)
-                    .append("g")
-                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-                
-                  
-                root = data;
-                root.x0 = height / 2;
-                root.y0 = 0;
-
-                function collapse(d) {
-                  if (d.children) {
-                    d._children = d.children;
-                    d._children.forEach(collapse);
-                    d.children = null;
-                  }
-                }
-
-                // Uncomment below line if you wish to start the ontology in a collapsed state
-                //root.children.forEach(collapse);
-                update(root);
-                
-
-                d3.select(self.frameElement).style("height", h+"px");
-
-                function update(source) {
-
-                  // Compute the new tree layout.
-                  var nodes = tree.nodes(root).reverse(),
-                      links = tree.links(nodes);
-
-                  // Normalize for fixed-depth.
-                  nodes.forEach(function(d) { d.y = d.depth * 180; });
-
-                  // Update the nodes
-                  var node = svg.selectAll("g.node")
-                      .data(nodes, function(d) { return d.id || (d.id = ++i); });
-
-                  // Enter any new nodes at the parent's previous position.
-                  var nodeEnter = node.enter().append("g")
-                      .attr("class", "node")
-                      .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
-                      .on("click", click);
-
-                  
-                  nodeEnter.append("circle")
-                      .attr("r", 1e-6)
-                      .style("fill", function(d) { return d._children ? "#676767" : "#999999"; });
-                      
-                 nodeEnter.append("text")  
-                      .attr("x", function(d) { return d.children || d._children ? -10 : 10; })
-                      .attr("y", "4")
-                      .attr("text-anchor", function(d) { return d.children || d._children ? "end" : "start"; })
-                      .text(function(d) { return d.name; })
-                      .style("fill-opacity", 1e-6);
-
-                  // Transition nodes to their new position.
-                  var nodeUpdate = node.transition()
-                      .duration(duration)
-                      .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
-
-                  
-                 nodeUpdate.select("circle")
-                      .attr("r", 8.0)
-                      .style("fill", function(d) { return d._children ? "#930D1A" : "#999999"; });
-
-                  nodeUpdate.select("text")
-                      .style("fill-opacity", 1);
-
-                  // Transition exiting nodes to the parent's new position.
-                  var nodeExit = node.exit().transition()
-                      .duration(duration)
-                      .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
-                      .remove();
-                  
-                  nodeExit.select("circle")
-                      .attr("r", 1e-6);
-
-                  nodeExit.select("text")
-                      .style("fill-opacity", 1e-6);
-
-                  // Update the links
-                  var link = svg.selectAll("path.link")
-                      .data(links, function(d) { return d.target.id; });
-
-                  // Enter any new links at the parent's previous position.
-                  link.enter().insert("path", "g")
-                      .attr("class", "link")
-                      .attr("d", function(d) {
-                        var o = {x: source.x0, y: source.y0};
-                        return diagonal({source: o, target: o});
-                      });
-
-                  // Transition links to their new position.
-                  link.transition()
-                      .duration(duration)
-                      .attr("d", diagonal);
-
-                  // Transition exiting nodes to the parent's new position.
-                  link.exit().transition()
-                      .duration(duration)
-                      .attr("d", function(d) {
-                        var o = {x: source.x, y: source.y};
-                        return diagonal({source: o, target: o});
-                      })
-                      .remove();
-
-                  // Stash the old positions for transition.
-                  nodes.forEach(function(d) {
-                    d.x0 = d.x;
-                    d.y0 = d.y;
-                  });
-                }
-
-                // Toggle children on click.
-                function click(d) {
-
-
-
-                  //console.log(Object.keys(d));
-                  //console.log(d._children);
-                  //console.log('');
-                  if (d._children == null || d._children == undefined) {
-                     scope.callback({name: d.name});
-                  }
-                 
-
-                  if (d.children) {
-                    d._children = d.children;
-                    d.children = null;
-                  } else {
-  
-                    d.children = d._children;
-                    d._children = null;
-                  }
-                  update(d);
-                }
-
-          });
       }
     };
 });

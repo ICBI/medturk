@@ -469,13 +469,14 @@ app.controller('HomeController', function($scope, $upload, $interval, user_facto
 
 app.controller('QuestionnaireController', function($scope, $routeParams, questionnaire_factory) {
 
-	var questionnaire_id    = $routeParams.questionnaire_id;
-  $scope.tag              = undefined;
-  $scope.tag_text         = '';
-  $scope.choice_name      = '';
-  $scope.question         = undefined;
-  $scope.binary           = [true, false];
-  $scope.answer_types     = ['radio', 'text'];
+	var questionnaire_id        = $routeParams.questionnaire_id;
+  $scope.tag                  = undefined;
+  $scope.tag_text             = '';
+  $scope.choice_name          = '';
+  $scope.question             = undefined;
+  $scope.binary               = [true, false];
+  $scope.question_frequencies = [{'name' : 'Once', 'value' : 'once'}, {'name' : 'Multiple', 'value' : 'multiple'}];
+  $scope.question_types       = [{'name' : 'Multiple Choice', 'value' : 'radio'}, {'name' : 'Free Text', 'value' : 'text'}];
 
 
   questionnaire_factory.get_questionnaire(questionnaire_id).success(function(data){
@@ -534,7 +535,6 @@ app.controller('QuestionnaireController', function($scope, $routeParams, questio
   $scope.edit_question = function(_question) {
 		  $scope.question = _question;
   }
-
 
 	$scope.create_question = function() {
 
@@ -617,12 +617,23 @@ app.controller('QuestionnaireController', function($scope, $routeParams, questio
   }
 
 
-	$scope.update_question_type = function() {
+  $scope.update_question_type = function(_question_type) {
 
-		questionnaire_factory.update_question_type($scope.questionnaire._id, $scope.question._id, $scope.question.type).success(function(data){
-				
-    	});
-	}
+    $scope.question.type = _question_type.value;
+    questionnaire_factory.update_question_type($scope.questionnaire._id, $scope.question._id, $scope.question.type).success(function(data){
+        
+    });
+  }
+
+
+  $scope.update_question_frequency = function(_question_frequency) {
+
+    $scope.question.frequency = _question_frequency.value;
+    questionnaire_factory.update_question_frequency($scope.questionnaire._id, $scope.question._id, $scope.question.frequency).success(function(data){
+        
+    });
+  }
+
 
 
 	$scope.delete_question_tag = function(_tag_id, _index) {
@@ -796,11 +807,24 @@ app.controller('WorkController', function($scope, $sce, $location, hit_factory, 
 
 	     $scope.create_hit_choice = function(choice) {
 
-	     	hit_factory.create_hit_choice($scope.hit._id, choice._id).success(function(data){
+            if ($scope.question.frequency == 'once') {
+                  hit_factory.create_hit_choice($scope.hit._id, choice._id).success(function(data){
 
-	     		 // Generate a new hit
-         		 $scope.get_hit();
-        	});
+                      // Generate a new hit
+                      $scope.get_hit();
+                  });
+            }
+            else {
+
+              /*
+                hit_factory.create_annotation_choice($scope.hit._id, $scope.annotation._id, choice._id).success(function(data){
+
+                      // Generate a new hit
+                      $scope.get_hit();
+                });*/
+            }
+
+	     	
 	     }
 
 
