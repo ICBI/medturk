@@ -316,6 +316,30 @@ def questionnaire_question_type_update_post():
     return {'status' : 'success'}
 
 
+@app.route('/questionnaire/question/frequency/update', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def questionnaire_question_frequency_update_post():
+    if not user_db.get_user(current_user.get_id())['is_admin']:
+        abort(401)
+
+
+    _questionnaire_id   = request.form.get('questionnaire_id')
+    _question_id        = request.form.get('question_id')
+    _question_frequency = request.form.get('question_frequency')
+
+    questionnaire_db.update_question_frequency(_questionnaire_id, _question_id, _question_frequency)
+
+    return {'status' : 'success'}
+
+
+
 @app.route('/questionnaire/question/choice/name/update', methods=['POST'])
 @mimerender(
             default = 'json',
