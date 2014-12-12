@@ -148,6 +148,7 @@ def create_hits(_project_id):
 
                  # Add record id and date
                 for record_annotation in record_annotations:
+                    record_annotation['_id']       = ObjectId()
                     record_annotation['record_id'] = patient_record['_id']
                     record_annotation['date']      = patient_record['date']
 
@@ -170,8 +171,26 @@ def create_hits(_project_id):
 def create_hit_choice(_hit_id, _choice_id, _user_id):
     db.hits.update({'_id' : ObjectId(_hit_id)}, {'$set' : {'choice_id' : ObjectId(_choice_id), 'answered' : True, 'user_id' : _user_id, 'date' : str(datetime.datetime.now())}})
 
+def create_hit_annotation_choice(_hit_id, _annotation_id, _choice_id, _user_id):
+    _annotation_id = ObjectId(_annotation_id)
+
+    _hit = db.hits.find_one({'_id' : ObjectId(_hit_id)})
+    if _hit != None:
+        for a in _hit['annotations']:
+            if a['_id'] == _annotation_id:
+                a['choice_id'] = ObjectId(_choice_id)
+                a['answered']  = True
+                a['user_id']   = _user_id
+                a['answer_date']      = str(datetime.datetime.now())
+                db.hits.save(_hit)
+                break
+
+
 def create_hit_text(_hit_id, _text, _user_id):
     db.hits.update({'_id' : ObjectId(_hit_id)}, {'$set' : {'text' : _text, 'answered' : True, 'user_id' : _user_id, 'date' : str(datetime.datetime.now())}})
+
+
+
 
 
 
@@ -198,6 +217,16 @@ def get_answer_count(_project_id):
 
 def get_count(_project_id):
     return db.hits.find({'project_id' : ObjectId(_project_id)}).count()
+
+
+
+
+'''
+    UPDATE operations
+'''
+def update_hit_answered(_hit_id, _answered):
+    db.hits.update({'_id' : ObjectId(_hit_id)}, {'$set' : {'answered' : _answered}})
+
 
 
 
