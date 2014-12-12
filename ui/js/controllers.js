@@ -100,7 +100,7 @@ app.controller('HomeController', function($scope, $upload, $interval, user_facto
                         // Get the dataset we have stored locally
                         var _ds = $scope.get_dataset_by_id(data.datasets[i]._id);
                         if (_ds == undefined) {
-                            console.log('pushing dataset');
+                            
                             $scope.datasets.push(data.datasets[i]);
                         }
                         else {
@@ -717,6 +717,17 @@ app.controller('WorkController', function($scope, $sce, $location, hit_factory, 
      }
 
 
+     function get_choice(_choice_id) {
+          for (var i = 0; i < $scope.question.choices.length; i++) {
+                if ($scope.question.choices[i]._id == _choice_id) {
+                    return $scope.question.choices[i];
+                }
+          }
+
+          return undefined;
+     }
+
+
 
   
       project_factory.get_projects().success(function(data){
@@ -794,14 +805,19 @@ app.controller('WorkController', function($scope, $sce, $location, hit_factory, 
 		  $scope.get_record = function(record_id, kwic) {
 
 		  		record_factory.get_record(record_id).success(function(data) {
-            console.log(data);
+            
 		  			$scope.clinical_note = $sce.trustAsHtml(get_highlighted_text(data.note, $scope.annotation.abs_beg, $scope.annotation.abs_end));
           		});
 		  }
 
 		  $scope.set_annotation = function(annotation) {
-	     	
-	     	$scope.annotation = annotation;
+	     	  
+	     	  $scope.annotation = annotation;
+
+          if ($scope.question.frequency == 'multiple' && annotation.answered) {
+              $scope.selected_choice = get_choice($scope.annotation.choice_id); 
+          }
+
 	      	$scope.$apply();
 	     }
 
@@ -816,16 +832,19 @@ app.controller('WorkController', function($scope, $sce, $location, hit_factory, 
             }
             else {
 
-              /*
-                hit_factory.create_annotation_choice($scope.hit._id, $scope.annotation._id, choice._id).success(function(data){
-
-                      // Generate a new hit
-                      $scope.get_hit();
-                });*/
+                hit_factory.create_hit_annotation_choice($scope.hit._id, $scope.annotation._id, choice._id).success(function(data){
+                      $scope.annotation.answered = true;
+                      $scope.annotation.choice_id = choice._id;
+                });
             }
-
-	     	
 	     }
+
+
+       $scope.update_hit_answered = function(_answered) {
+          hit_factory.update_hit_answered($scope.hit._id, _answered).success(function(data){
+                  $scope.get_hit();
+          });
+       }
 
 
        $scope.create_hit_text = function(text) {
