@@ -71,6 +71,27 @@ def hit_choice_create_post():
     hit.create_hit_choice(_hit_id, _choice_id, _user['_id'])
     return {'msg' : 'success'}
 
+@app.route('/hit/annotation/choice/create', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def hit_annotation_choice_create_post():
+
+    _hit_id        = request.form.get('hit_id')
+    _annotation_id = request.form.get('annotation_id')
+    _choice_id     = request.form.get('choice_id')
+
+    _user      = user_db.get_user(current_user.get_id())
+    hit.create_hit_annotation_choice(_hit_id, _annotation_id, _choice_id, _user['_id'])
+    return {'msg' : 'success'}
+
+
+
 @app.route('/hit/text/create', methods=['POST'])
 @mimerender(
             default = 'json',
@@ -142,6 +163,29 @@ def hit_answer_count_get():
     
     count = hit.get_answer_count()
     return {'count' : count}
+
+
+
+
+'''
+    UPDATE operations
+'''
+@app.route('/hit/answered/update', methods=['POST'])
+@mimerender(
+            default = 'json',
+            html = render_html,
+            xml  = render_xml,
+            json = render_json,
+            txt  = render_txt
+            )
+@login_required
+def hit_text_update_post():
+
+    _hit_id    = request.form.get('hit_id')
+    _answered  = request.form.get('answered')
+    hit.update_hit_answered(_hit_id, _answered)
+    return {'msg' : 'success'}
+
 
 
 
