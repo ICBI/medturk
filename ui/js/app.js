@@ -569,22 +569,6 @@ app.factory('user_factory', function($http, $upload) {
 
 
 
-app.factory('annotation_factory', function($http, $upload) {
-
-
-    var factory = {};
-
-    factory.ctakes_save = function(file) {
-       return $upload.upload({
-              url: '/annotation/ctakes/save',
-              file: file
-            });
-     }
-
-     return factory;
-});
-
-
 
 app.factory('project_factory', function($http) {
 
@@ -655,6 +639,7 @@ app.factory('project_factory', function($http) {
 
           return $http.post(server + '/project/description/update', _json);
      }
+
 
 
      factory.update_project_dataset = function(_project_id, _dataset_id) {
@@ -741,6 +726,19 @@ app.factory('hit_factory', function($http) {
      }
 
 
+  
+     factory.create_hit_annotation_choice = function(_hit_id, _annotation_id, _choice_id) {
+        var _json = {
+                        hit_id :        _hit_id,
+                        annotation_id : _annotation_id,
+                        choice_id :     _choice_id
+                    };
+
+
+        return $http.post(server + '/hit/annotation/choice/create', _json);
+     }
+
+
      factory.create_hit_text = function(_hit_id, _text) {
         var _json = {
                         hit_id : _hit_id,
@@ -750,6 +748,28 @@ app.factory('hit_factory', function($http) {
 
         return $http.post(server + '/hit/text/create', _json);
      }
+
+
+
+
+     /*
+     *
+     *     UPDATE operations
+     *   
+     */
+     factory.update_hit_answered = function(_hit_id, _answered) {
+        var _json = {
+                        hit_id   : _hit_id,
+                        answered : _answered
+                    };
+
+
+        return $http.post(server + '/hit/answered/update', _json);
+     }
+
+
+
+
 
 
 
@@ -1035,6 +1055,7 @@ app.directive("annotationsGraph", function($parse) {
 
 
                 var x_points = new Array();
+                var last_selected_annotation = undefined;
 
 
                 var svg = d3.select(element[0]).append("svg")
@@ -1054,7 +1075,9 @@ app.directive("annotationsGraph", function($parse) {
                      .append("rect")
                      .attr("width", 15.0)
                      .attr("height", 15.0)
-                     .attr("class", "rect")
+                     .attr("class", function(d) {
+                          return d.answered ? "answered_rect" : "rect";
+                      })
                      .attr("y", function(d) {
                         // If this is not done, rects would align on top of each other
                         // They need to be perturbed if sharing same x-coordinate
@@ -1072,9 +1095,23 @@ app.directive("annotationsGraph", function($parse) {
                       })
                      .attr("x", function(d) {return x(d.date)})
                      .on("mouseover", function(d) {
+
+                          // Apply styling that depends if user answered question
+                          if (last_selected_annotation != undefined && last_selected_annotation.answered) {
+                              d3.select(".selected_rect").attr("class", "answered_rect");
+                          }
+                          else {
+                              d3.select(".selected_rect").attr("class", "rect");
+                          }
+
+                          // Sends to listener objects
                           scope.callback({annotation: d});
-                          d3.select(".selected_rect").attr("class", "rect");
+                          
+
+                          // Convert current rect into a selected rect
                           d3.select(this).attr("class", "selected_rect");
+
+                          last_selected_annotation = d;
                   });
 
 
