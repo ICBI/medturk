@@ -221,6 +221,13 @@ display: none;
 }
 
 
+.answered_rect {
+  fill: #DE838C;
+  stroke: black;
+  stroke-width: 2;
+}
+
+
 .patient-table {
   border: 2px solid #DBDBDB;
   display: block;
