@@ -46,7 +46,7 @@
                     <td>
                         <form>
                             <div ng-if="question.type == 'radio'" class="btn-group">
-                               <button ng-repeat="choice in question.choices" class="btn btn-default" ng-click="create_hit_choice(choice)">{{choice.name}}</button>
+                               <button type="radio" ng-repeat="choice in question.choices" class="btn btn-default {{annotation.choice_id == choice._id ? 'active' : ''}}" ng-click="create_hit_choice(choice)">{{choice.name}}</button>
                             </div>
                             <div ng-if="question.type == 'text'" class="btn-group">
                                 <input type="text" class="form-control" ng-model="text_answer"/>
@@ -56,7 +56,7 @@
                             <div ng-if="question.frequency == 'multiple'">
                                 <br/>
                                 <br/>
-                                <button class="btn btn-danger" ng-click="create_hit_text(text_answer)">Next Patient >></button>
+                                <button class="btn btn-danger" ng-click="update_hit_answered(true)">Next Patient >></button>
                             </div> 
                         </form>
                         <br/>
