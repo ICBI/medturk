@@ -1,0 +1,15 @@
+{
+  "name": "medturk",
+  "version": "1.0.0",
+  "description": "API for medturk",
+  "main": "server.js",
+  "scripts": {
+    "test": "test.js"
+  },
+  "repository" : {
+  	"type" : "git",
+  	"url"  : "git://github.com/icbi/medturk.git"
+  },
+  "author": "Robert M. Johnson",
+  "license": "GNU General Public License"
+}
