@@ -209,10 +209,10 @@ describe('/projects', function() {
 
 
 
-describe('/datasets', function() {
+describe('/datasets/create', function() {
 	
 
-	it('/datasets                      GET - Creates a project', function(done) {
+	it('/datasets/create                      GET - Creates a project', function(done) {
 
 			var EventSource = require('eventsource')
 			var eventSourceInitDict = {rejectUnauthorized: false}
