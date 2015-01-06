@@ -37,7 +37,7 @@ function get_highlighted_text(text, beg, end) {
 }
 
 
-app.controller('HomeController', function($scope, $upload, $interval, user_factory, project_factory, questionnaire_factory, dataset_factory, hit_factory) {
+app.controller('HomeController', function($scope, $upload, user_factory, project_factory, questionnaire_factory, dataset_factory, hit_factory) {
 
   	 $scope.project = undefined;
   	 $scope.dataset = undefined;
@@ -73,6 +73,7 @@ app.controller('HomeController', function($scope, $upload, $interval, user_facto
      }
 
 
+/*
 
      var timer = $interval(function() {
 
@@ -111,11 +112,12 @@ app.controller('HomeController', function($scope, $upload, $interval, user_facto
                 });
      }, 5000);
 
+
      $scope.$on('$destroy', function() {
         $interval.cancel(timer);
         timer = undefined;
     });
-
+    */
      
 
 
@@ -139,7 +141,7 @@ app.controller('HomeController', function($scope, $upload, $interval, user_facto
 
        // Gets all users
   	   user_factory.get_users().success(function(data){
-             $scope.users = data.users;
+             $scope.users = data;
         });
 
 
@@ -160,8 +162,8 @@ app.controller('HomeController', function($scope, $upload, $interval, user_facto
 
 
        // Update user name of the user being edited
-       $( "#edit_user_email" ).focusout(function() {
-    			user_factory.update_user_email($scope.edit_user._id, $scope.edit_user.id).success(function(data){
+       $( "#edit_username" ).focusout(function() {
+    			user_factory.update_user_email($scope.edit_user._id, $scope.edit_user.username).success(function(data){
     		  });
   	   });
 
@@ -194,7 +196,7 @@ app.controller('HomeController', function($scope, $upload, $interval, user_facto
       // Create new user
       $scope.create_user = function(new_user_email, new_user_password, new_user_is_admin) {
         user_factory.create_user(new_user_email, new_user_password, new_user_is_admin).success(function(data) {
-          $scope.users.push(data.user);
+          $scope.users.push(data);
         });
 
        }
@@ -235,12 +237,12 @@ app.controller('HomeController', function($scope, $upload, $interval, user_facto
          *  
          */
          dataset_factory.get_datasets().success(function(data) {
-              $scope.datasets = data.datasets;
+              $scope.datasets = data;
          });
 
 
          dataset_factory.get_raw_datasets().success(function(data) {
-              $scope.raw_datasets = data.datasets;
+              $scope.raw_datasets = data;
          });
 
 
@@ -259,6 +261,39 @@ app.controller('HomeController', function($scope, $upload, $interval, user_facto
 
          $scope.create_dataset = function() {
               dataset_factory.create_dataset($scope.name, $scope.description, $scope.folder).success(function(data) {
+
+
+                  console.log('******CALLED*****')
+                 
+
+                  // Remove 'data' word
+                  /*
+                  var data = _data.substr(6).trim()
+
+                  console.log(data)
+
+                  var x = jQuery.parseJSON(data)
+                  console.log(x)
+                  */
+                  console.log(data)
+
+                  //var x = data.substr(5).trim()
+                  //console.log(x)
+                  //console.log(jQuery.parseJSON(x))
+
+                  // Given the dataset id, see if it's in our present list; If not get it;
+                  var ds = $scope.get_dataset_by_id(data._id);
+                  if (ds == undefined) {
+
+                      dataset_factory.get_dataset(data._id).success(function(data) {
+                          $scope.datasets.push(data);
+                      });
+
+                  }
+                  else {
+                      ds.status = data.status;
+                      ds.num_patients = data.num_patients
+                  }
               });
          }
 
@@ -297,7 +332,7 @@ app.controller('HomeController', function($scope, $upload, $interval, user_facto
          *  
          */
          questionnaire_factory.get_questionnaires().success(function(data) {
-              $scope.questionnaires = data.questionnaires;
+              $scope.questionnaires = data;
          });
 
 
@@ -314,13 +349,13 @@ app.controller('HomeController', function($scope, $upload, $interval, user_facto
 
 
          $scope.edit_questionnaire = function(_questionnaire_id) {
-            window.location.replace(server + "/medturk/index.html#/questionnaire?questionnaire_id=" + _questionnaire_id);
+            window.location.replace(server + "/index.html#/questionnaire?questionnaire_id=" + _questionnaire_id);
          }
 
          $scope.create_questionnaire = function() {
 
             questionnaire_factory.create_questionnaire().success(function(data){
-                $scope.edit_questionnaire(data.questionnaire_id);
+                $scope.edit_questionnaire(data._id);
             });
           }
 
@@ -330,7 +365,7 @@ app.controller('HomeController', function($scope, $upload, $interval, user_facto
                 var file = $files[0];
 
                 questionnaire_factory.upload_questionnaire(file).success(function(data){
-                  window.location.replace(server + "/medturk/index.html");
+                  window.location.replace(server + "/index.html");
                 }).progress(function(evt) {
                         console.log('percent: ' + parseInt(100.0 * evt.loaded / evt.total));
                 });
@@ -385,15 +420,15 @@ app.controller('HomeController', function($scope, $upload, $interval, user_facto
 
   	  	// Gets all of the available projects
   	     project_factory.get_projects().success(function(data){
-           	$scope.projects = data.projects;
+           	$scope.projects = data;
      	 });
 
 
   	     // Creates a new project
   	     $scope.create_project = function() {
         	    	project_factory.create_project().success(function(data){
-        	    		$scope.projects.push(data.project);
-        	    		$scope.project = data.project;
+        	    		$scope.projects.push(data);
+        	    		$scope.project               = data;
         	    		$scope.project_dataset 	     = undefined;
         					$scope.project_questionnaire = undefined;
       			 });
@@ -427,7 +462,7 @@ app.controller('HomeController', function($scope, $upload, $interval, user_facto
 			       });
   	 	 }
 
-  	 	 // Updates the dataset the project is linked to
+  	 	 // Updates the questionnaire the project is linked to
   	     $scope.update_project_questionnaire = function(_project_id, _project_questionnaire) {
   	    	  project_factory.update_project_questionnaire(_project_id, _project_questionnaire._id).success(function(data){
 			       });
@@ -446,11 +481,6 @@ app.controller('HomeController', function($scope, $upload, $interval, user_facto
   		 		         project_factory.delete_project(project_id).success(function(data) {
   		 			            $scope.projects.splice(project_index, 1);
 				           });
-
-                   hit_factory.delete_hits(project_id).success(function(data) {
-                          
-                   });
-
   		 	    }
   	 }
 
@@ -471,6 +501,7 @@ app.controller('QuestionnaireController', function($scope, $routeParams, questio
 
 	var questionnaire_id        = $routeParams.questionnaire_id;
   $scope.tag                  = undefined;
+  $scope.case_sensitive       = false;
   $scope.tag_text             = '';
   $scope.choice_name          = '';
   $scope.question             = undefined;
@@ -480,7 +511,7 @@ app.controller('QuestionnaireController', function($scope, $routeParams, questio
 
 
   questionnaire_factory.get_questionnaire(questionnaire_id).success(function(data){
-      $scope.questionnaire = data.questionnaire;
+      $scope.questionnaire = data;
   });
 
 
@@ -539,8 +570,8 @@ app.controller('QuestionnaireController', function($scope, $routeParams, questio
 	$scope.create_question = function() {
 
   	    	questionnaire_factory.create_question($scope.questionnaire._id).success(function(data){
-  	    			$scope.questionnaire.questions.push(data.question);
-  	    			$scope.question = data.question;
+  	    			$scope.questionnaire.questions.push(data);
+  	    			$scope.question = data;
 			});
   	 }
 
@@ -572,7 +603,7 @@ app.controller('QuestionnaireController', function($scope, $routeParams, questio
 
 	
 		      questionnaire_factory.create_question_choice($scope.questionnaire._id, $scope.question._id, _choice_name).success(function(data){
-    			       $scope.question.choices.push({'_id' : data.choice._id, 'name' : data.choice.name});
+    			       $scope.question.choices.push(data);
     			       $scope.choice_name = '';
 		      });	
   	}
@@ -608,10 +639,8 @@ app.controller('QuestionnaireController', function($scope, $routeParams, questio
 		    }
 
 
-
-		
     		questionnaire_factory.create_question_trigger($scope.questionnaire._id, $scope.question._id, _trigger, $scope.case_sensitive).success(function(data){
-    			     $scope.question.triggers.push(data.trigger);
+    			     $scope.question.triggers.push(data);
       			   $scope.trigger = '';
     		});
   }
@@ -681,7 +710,7 @@ app.controller('QuestionnaireController', function($scope, $routeParams, questio
 
         
         		questionnaire_factory.create_questionnaire_tag(_questionnaire._id, _tag_name).success(function(data){
-        		  	$scope.questionnaire.tags.push(data.tag);
+        		  	$scope.questionnaire.tags.push(data);
         		  	$scope.tag_name = '';
             });
 	  }
@@ -731,11 +760,11 @@ app.controller('WorkController', function($scope, $sce, $location, hit_factory, 
 
   
       project_factory.get_projects().success(function(data){
-             $scope.projects = data.projects;
+             $scope.projects = data;
              $scope.project = $scope.projects[0];
 
              questionnaire_factory.get_questionnaire($scope.project.questionnaire_id).success(function(data){
-                  $scope.questionnaire = data.questionnaire;
+                  $scope.questionnaire = data;
                   $scope.get_hit();
              });
 
@@ -752,7 +781,7 @@ app.controller('WorkController', function($scope, $sce, $location, hit_factory, 
 		 $scope.on_change_project = function(project) {
 		 		$scope.project = project;
         questionnaire_factory.get_questionnaire($scope.project.questionnaire_id).success(function(data){
-                $scope.questionnaire = data.questionnaire;
+                $scope.questionnaire = data;
         });
 	      $scope.get_hit();
 		 }

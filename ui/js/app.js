@@ -26,7 +26,8 @@
 
 
 
-var server = 'http://127.0.0.1:5000';
+//var server = 'http://127.0.0.1:5000';
+var server = 'https://localhost';
 
 function redirect_to_login() {
     window.location.replace(server + "/medturk/login.html");
@@ -35,9 +36,11 @@ function redirect_to_login() {
 
 var app = angular.module('medTurkApp', ['angularFileUpload', 'ngRoute', 'ngSanitize'], function($httpProvider){
 
+  /*
+
   // Use x-www-form-urlencoded Content-Type
   $httpProvider.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=utf-8';
- 
+  */
   /**
    * This solution was found at http://victorblog.com/2012/12/20/make-angularjs-http-service-behave-like-jquery-ajax/
    *
@@ -47,6 +50,8 @@ var app = angular.module('medTurkApp', ['angularFileUpload', 'ngRoute', 'ngSanit
    * @param {Object} obj
    * @return {String}
    */ 
+
+   /*
   var param = function(obj) {
     var query = '', name, value, fullSubName, subName, subValue, innerObj, i;
       
@@ -82,6 +87,8 @@ var app = angular.module('medTurkApp', ['angularFileUpload', 'ngRoute', 'ngSanit
   $httpProvider.defaults.transformRequest = [function(data) {
     return angular.isObject(data) && String(data) !== '[object File]' ? param(data) : data;
   }];
+
+  */
 });
 
 /*
@@ -153,72 +160,71 @@ app.factory('questionnaire_factory', function($http, $upload) {
      */
     factory.upload_questionnaire = function(file) {
        return $upload.upload({
-              url: '/questionnaire/upload',
+              url: '/questionnaires/upload',
               file: file
             });
      }
 
      factory.create_questionnaire = function() {
-        return $http.post(server + '/questionnaire/create');
+        return $http.post(server + '/questionnaires');
      }
 
-     factory.create_question_choice = function(_questionnaire_id, _question_id, _choice_name) {
+     factory.create_question_choice = function(_id, _question_id, _name) {
 
         var _json = {
-                        questionnaire_id : _questionnaire_id, 
-                        question_id      : _question_id, 
-                        choice_name      : _choice_name
+                        id          : _id, 
+                        question_id : _question_id, 
+                        name        : _name
                     };
 
-        return $http.post(server + '/questionnaire/question/choice/create', _json);
+        return $http.post(server + '/questionnaires/id/questions/id/choice', _json);
      }
 
 
-     factory.create_question_trigger = function(_questionnaire_id, _question_id, _trigger_name, _case_sensitive) {
+     factory.create_question_trigger = function(_id, _question_id, _name, _case_sensitive) {
 
         var _json = {
-                        questionnaire_id       : _questionnaire_id, 
-                        question_id            : _question_id, 
-                        trigger_name           : _trigger_name, 
-                        trigger_case_sensitive : _case_sensitive
+                        id             : _id, 
+                        question_id    : _question_id, 
+                        name           : _name,
+                        case_sensitive : _case_sensitive
                     };
 
-
-        return $http.post(server + '/questionnaire/question/trigger/create', _json);
+        return $http.post(server + '/questionnaires/id/questions/id/trigger', _json);
      }
 
 
-     factory.create_questionnaire_tag = function(_questionnaire_id, _tag_name) {
+     factory.create_questionnaire_tag = function(_id, _name) {
       
       
         var _json = {
-                        questionnaire_id    : _questionnaire_id, 
-                        tag_name            : _tag_name
+                        id    : _id, 
+                        name  : _name
                     };
 
-        return $http.post(server + '/questionnaire/tag/create', _json);
+        return $http.post(server + '/questionnaires/id/tag', _json);
      }
 
 
-     factory.create_question_tag = function(_questionnaire_id, _question_id, _tag_id) {
+     factory.create_question_tag = function(_id, _question_id, _tag_id) {
 
         var _json = {
-                        questionnaire_id  : _questionnaire_id, 
-                        question_id       : _question_id, 
-                        tag_id            : _tag_id
+                        id            : _id, 
+                        question_id   : _question_id, 
+                        tag_id        : _tag_id
                     };
 
-        return $http.post(server + '/questionnaire/question/tag/create', _json);
+        return $http.post(server + '/questionnaires/id/questions/id/tag', _json);
      }
 
 
-     factory.create_question = function(_questionnaire_id) {
+     factory.create_question = function(_id) {
 
         var _json = {
-                        questionnaire_id : _questionnaire_id
+                        id : _id
                     };
 
-        return $http.post(server + '/questionnaire/question/create', _json);
+        return $http.post(server + '/questionnaires/id/question', _json);
      }
 
 
@@ -233,23 +239,17 @@ app.factory('questionnaire_factory', function($http, $upload) {
      *     READ operations
      *   
      */
-     factory.download_questionnaire = function(_questionnaire_id) {
-        window.open(server + '/questionnaire/download?questionnaire_id=' + _questionnaire_id, '_blank', '');
+     factory.download_questionnaire = function(_id) {
+        window.open(server + '/questionnaires/id/download?id=' + _id, '_blank', '');
      }
 
-     factory.get_questionnaire = function(_questionnaire_id) {
-      
-         return $http({
-            url: server + '/questionnaire', 
-            method: "GET",
-            params: {questionnaire_id : _questionnaire_id}
-        });
-
+     factory.get_questionnaire = function(_id) {
+         return $http.get(server + '/questionnaires/id?id=' + _id); 
      }
 
 
      factory.get_questionnaires = function() {
-       return $http.get(server + '/questionnaire/all');
+       return $http.get(server + '/questionnaires');
      }
 
 
@@ -265,91 +265,90 @@ app.factory('questionnaire_factory', function($http, $upload) {
      *     UPDATE operations
      *   
      */
-     factory.update_questionnaire_tag_name = function(_questionnaire_id, _tag_id, _tag_name) {
+     factory.update_questionnaire_tag_name = function(_id, _tag_id, _name) {
 
         var _json = {
-                        questionnaire_id : _questionnaire_id, 
-                        tag_id           : _tag_id, 
-                        tag_name         : _tag_name
+                        id        : _id, 
+                        tag_id    : _tag_id, 
+                        name      : _name
                     };
 
                     
-        return $http.post(server + '/questionnaire/tag/name/update', _json);
+        return $http.post(server + '/questionnaires/id/tag/name', _json);
      }
 
 
-    factory.update_question_type = function(_questionnaire_id, _question_id, _question_type) {
+    factory.update_question_type = function(_id, _question_id, _type) {
 
           var _json = {
-                          questionnaire_id : _questionnaire_id, 
-                          question_id      : _question_id, 
-                          question_type    : _question_type
+                          id            : _id, 
+                          question_id   : _question_id, 
+                          type          : _type
                       };
 
-        return $http.post(server + '/questionnaire/question/type/update', _json);
+        return $http.post(server + '/questionnaires/id/questions/id/type', _json);
      }
 
 
-     factory.update_question_frequency = function(_questionnaire_id, _question_id, _question_frequency) {
+     factory.update_question_frequency = function(_id, _question_id, _frequency) {
 
           var _json = {
-                          questionnaire_id    : _questionnaire_id, 
-                          question_id         : _question_id, 
-                          question_frequency  : _question_frequency
+                          id          : _id, 
+                          question_id : _question_id, 
+                          frequency   : _frequency
                       };
 
-        return $http.post(server + '/questionnaire/question/frequency/update', _json);
+        return $http.post(server + '/questionnaires/id/questions/id/frequency', _json);
      }
 
 
-     factory.update_question_choice_name = function(_questionnaire_id, _question_id, _choice_id, _choice_name) {
+     factory.update_question_choice_name = function(_id, _question_id, _choice_id, _name) {
 
           var _json = {
-                          questionnaire_id : _questionnaire_id, 
-                          question_id      : _question_id,
-                          choice_id        : _choice_id, 
-                          choice_name      : _choice_name
+                          id            : _id, 
+                          question_id   : _question_id,
+                          choice_id     : _choice_id, 
+                          name          : _name
                       };
 
-        return $http.post(server + '/questionnaire/question/choice/name/update', _json);
+        return $http.post(server + '/questionnaires/id/questions/id/choices/id/name', _json);
      }
 
 
 
-     factory.update_question_text = function(_questionnaire_id, _question_id, _question_text) {
+     factory.update_question_text = function(_id, _question_id, _question) {
 
         var _json = {
-                        questionnaire_id : _questionnaire_id, 
-                        question_id      : _question_id, 
-                        question_text    : _question_text
+                        id           : _id, 
+                        question_id  : _question_id, 
+                        question     : _question
+                    };
+
+        return $http.post(server + '/questionnaires/id/questions/id/question', _json);
+     }
+
+
+     factory.update_questionnaire_name = function(_id, _name) {
+
+        var _json = {
+                        id   : _id, 
+                        name : _name
                     };
 
 
-        return $http.post(server + '/questionnaire/question/text/update', _json);
+        return $http.post(server + '/questionnaires/id/name', _json);
      }
 
 
-     factory.update_questionnaire_name = function(_questionnaire_id, _questionnaire_name) {
+     factory.update_questionnaire_description = function(_id, _description) {
 
         var _json = {
-                        questionnaire_id   : _questionnaire_id, 
-                        questionnaire_name : _questionnaire_name
+                        id          : _id, 
+                        description : _description
                     };
 
 
-        return $http.post(server + '/questionnaire/name/update', _json);
-     }
-
-
-     factory.update_questionnaire_description = function(_questionnaire_id, _questionnaire_description) {
-
-        var _json = {
-                        questionnaire_id          : _questionnaire_id, 
-                        questionnaire_description : _questionnaire_description
-                    };
-
-
-        return $http.post(server + '/questionnaire/description/update', _json);
+        return $http.post(server + '/questionnaires/id/description', _json);
      }
 
 
@@ -367,64 +366,37 @@ app.factory('questionnaire_factory', function($http, $upload) {
      *     DELETE operations
      *   
      */
-     factory.delete_questionnaire = function(_questionnaire_id) {
-
-          var _json = {
-                        questionnaire_id   : _questionnaire_id
-                      };
-
-          return $http.post(server + '/questionnaire/delete', _json);
+     factory.delete_questionnaire = function(_id) {
+          return $http.delete(server + '/questionnaires/id?id=' + _id);
      }
 
-     factory.delete_questionnaire_tag = function(_questionnaire_id, _tag_id) {
-        var _json = {
-                        questionnaire_id   : _questionnaire_id,
-                        tag_id             : _tag_id
-                    };
-
-        return $http.post(server + '/questionnaire/tag/delete', _json);
-     }
-
-     factory.delete_question_tag = function(_questionnaire_id, _question_id, _tag_id) {
-        var _json = {
-                        questionnaire_id   : _questionnaire_id,
-                        question_id        : _question_id,
-                        tag_id             : _tag_id
-                    };
-
-        return $http.post(server + '/questionnaire/question/tag/delete', _json);
+     factory.delete_questionnaire_tag = function(_id, _tag_id) {
+     
+        return $http.delete(server + '/questionnaires/id/tag?id=' + _id + '&tag_id=' + _tag_id);
      }
 
 
-     factory.delete_question_trigger = function(_questionnaire_id, _question_id, _trigger_id) {
-        var _json = {
-                        questionnaire_id   : _questionnaire_id,
-                        question_id        : _question_id,
-                        trigger_id         : _trigger_id
-                    };
-
-        return $http.post(server + '/questionnaire/question/trigger/delete', _json);
+     factory.delete_question_tag = function(_id, _question_id, _tag_id) {
+ 
+        return $http.delete(server + '/questionnaires/id/questions/id/tags/id?id=' + _id + '&question_id=' + _question_id + '&tag_id=' + _tag_id);
      }
 
 
-     factory.delete_question = function(_questionnaire_id, _question_id) {
-        var _json = {
-                        questionnaire_id   : _questionnaire_id,
-                        question_id        : _question_id
-                    };
 
-        return $http.post(server + '/questionnaire/question/delete', _json);
+     factory.delete_question_trigger = function(_id, _question_id, _trigger_id) {
+ 
+        return $http.delete(server + '/questionnaires/id/questions/id/triggers/id?id=' + _id + '&question_id=' + _question_id + '&trigger_id=' + _trigger_id);
      }
 
 
-     factory.delete_question_choice = function(_questionnaire_id, _question_id, _choice_id) {
-        var _json = {
-                        questionnaire_id   : _questionnaire_id,
-                        question_id        : _question_id,
-                        choice_id          : _choice_id
-                    };
+     factory.delete_question = function(_id, _question_id) {
+        return $http.delete(server + '/questionnaires/id/question?id=' + _id + '&question_id=' + _question_id);
+     }
 
-        return $http.post(server + '/questionnaire/question/choice/delete', _json);
+
+     factory.delete_question_choice = function(_id, _question_id, _choice_id) {
+ 
+        return $http.delete(server + '/questionnaires/id/questions/id/choices/id?id=' + _id + '&question_id=' + _question_id + '&choice_id=' + _choice_id);
      }
           
      
@@ -443,16 +415,9 @@ app.factory('dataset_factory', function($http) {
      *     CREATE operations
      *   
      */
-     factory.create_dataset = function(_dataset_name, _dataset_description, _dataset_folder) {
-
-           var _json = {
-                            dataset_name        : _dataset_name, 
-                            dataset_description : _dataset_description,
-                            dataset_folder      : _dataset_folder
-                        };
-
+     factory.create_dataset = function(_name, _description, _folder) {
           
-          return $http.post(server + '/dataset/create', _json);
+          return $http.get(server + '/datasets/create?name=' + _name + '&description=' + _description + '&folder=' + _folder);
      }
 
 
@@ -464,11 +429,15 @@ app.factory('dataset_factory', function($http) {
      *   
      */
      factory.get_datasets = function() {
-          return $http.get(server + '/dataset/all');
+          return $http.get(server + '/datasets');
+     }
+
+     factory.get_dataset = function(_id) {
+          return $http.get(server + '/datasets/id?id=' + _id);
      }
 
      factory.get_raw_datasets = function() {
-          return $http.get(server + '/dataset/raw/all');
+          return $http.get(server + '/datasets/raw');
      }
 
 
@@ -479,26 +448,26 @@ app.factory('dataset_factory', function($http) {
      *     UPDATE operations
      *   
      */
-     factory.update_dataset_name = function(_dataset_id, _dataset_name) {
+     factory.update_dataset_name = function(_id, _name) {
 
           var _json = {
-                        dataset_id    : _dataset_id, 
-                        dataset_name  : _dataset_name
+                        id    : _id, 
+                        name  : _name
                       };
 
-          return $http.post(server + '/dataset/name/update', _json);
+          return $http.post(server + '/datasets/name', _json);
      }
 
 
 
-     factory.update_dataset_description = function(_dataset_id, _dataset_description) {
+     factory.update_dataset_description = function(_id, _description) {
           var _json = {
-                        dataset_id           : _dataset_id, 
-                        dataset_description  : _dataset_description
-                    };
+                        id           : _id, 
+                        description  : _description
+                      }
 
 
-          return $http.post(server + '/dataset/description/update', _json);
+          return $http.post(server + '/datasets/description', _json);
      }
 
 
@@ -508,12 +477,8 @@ app.factory('dataset_factory', function($http) {
      *     DELETE operations
      *   
      */
-      factory.delete_dataset = function(_dataset_id) {
-          var _json = {
-                         dataset_id           : _dataset_id
-                      };
-
-          return $http.post(server + '/dataset/delete', _json);
+     factory.delete_dataset = function(_id) {
+          return $http.delete(server + '/datasets?id=' + _id);
      }
      
 
@@ -531,25 +496,25 @@ app.factory('user_factory', function($http, $upload) {
           return $http.post(server + '/user/login', {user_id : _email, password : _password});
      }
 
-     factory.delete_user = function(__id) {
-          return $http.post(server + '/user/delete', {_id : __id});
+     factory.delete_user = function(_id) {
+          return $http.delete(server + '/users?id=' + _id)
      }
 
-     factory.update_user_email = function(__id, _email) {
-        return $http.post(server + '/user/email', {_id : __id, email : _email});
+     factory.update_user_email = function(_id, _email) {
+        return $http.post(server + '/users/username', {id : _id, username : _email});
      }
 
-     factory.update_user_password = function(__id, _password) {
-        return $http.post(server + '/user/password', {_id : __id, password : _password});
+     factory.update_user_password = function(_id, _password) {
+        return $http.post(server + '/users/password', {id : _id, password : _password});
      }
 
-     factory.update_user_is_admin = function(_user_id, _is_admin) {
-        return $http.post(server + '/user/is_admin/update', {user_id : _user_id, is_admin : _is_admin});
+     factory.update_user_is_admin = function(_id, _is_admin) {
+        return $http.post(server + '/users/is_admin', {id : _id, is_admin : _is_admin});
      }
-
 
      factory.create_user = function(_email, _password, _is_admin) {
-          return $http.post(server + '/user/create', {id : _email, password : _password, is_admin : _is_admin});
+
+          return $http.post(server + '/users', {username : _email, password : _password, is_admin : _is_admin});
      }
 
      factory.get_user = function() {
@@ -581,17 +546,17 @@ app.factory('project_factory', function($http) {
      *   
      */
      factory.create_project = function() {
-          return $http.post(server + '/project/create');
+          return $http.post(server + '/projects');
      }
 
-     factory.create_user = function(_project_id, _user_id) {
+     factory.create_user = function(_id, _user_id) {
 
         var _json = {
-                        project_id : _project_id, 
-                        user_id    : _user_id
-                    };
+                        id       : _id, 
+                        user_id  : _user_id
+                    }
 
-        return $http.post(server + '/project/user/create', _json);
+        return $http.post(server + '/projects/id/user', _json);
      }
 
 
@@ -618,51 +583,51 @@ app.factory('project_factory', function($http) {
      *     UPDATE operations
      *   
      */
-     factory.update_project_name = function(_project_id, _name) {
+     factory.update_project_name = function(_id, _name) {
 
           var _json = {
-                        project_id  : _project_id, 
-                        name        : _name
+                        id    : _id, 
+                        name  : _name
                       };
 
 
-          return $http.post(server + '/project/name/update', _json);
+          return $http.post(server + '/projects/id/name', _json);
      }
 
-     factory.update_project_description = function(_project_id, _description) {
+     factory.update_project_description = function(_id, _description) {
 
           var _json = {
-                        project_id  : _project_id, 
+                        id          : _id, 
                         description : _description
                       };
 
 
-          return $http.post(server + '/project/description/update', _json);
+          return $http.post(server + '/projects/id/description', _json);
      }
 
 
 
-     factory.update_project_dataset = function(_project_id, _dataset_id) {
+     factory.update_project_dataset = function(_id, _dataset_id) {
 
           var _json = {
-                        project_id  : _project_id, 
-                        dataset_id : _dataset_id
+                         id         : _id, 
+                         dataset_id : _dataset_id
                       };
 
 
-          return $http.post(server + '/project/dataset/update', _json);
+          return $http.post(server + '/projects/id/dataset_id', _json);
      }
 
 
-     factory.update_project_questionnaire = function(_project_id, _questionnaire_id) {
+     factory.update_project_questionnaire = function(_id, _questionnaire_id) {
 
           var _json = {
-                        project_id          : _project_id, 
-                        questionnaire_id    : _questionnaire_id
+                        id                : _id, 
+                        questionnaire_id  : _questionnaire_id
                       };
 
 
-          return $http.post(server + '/project/questionnaire/update', _json);
+          return $http.post(server + '/projects/id/questionnaire_id', _json);
      }
 
 
@@ -672,23 +637,13 @@ app.factory('project_factory', function($http) {
      *     DELETE operations
      *   
      */
-     factory.delete_project = function(_project_id) {
-          var _json = {
-                        project_id  : _project_id
-                      };
-
-          return $http.post(server + '/project/delete', _json);
+     factory.delete_project = function(_id) {
+          return $http.delete(server + '/projects?id=' + _id);
      }
 
-     factory.delete_user_from_project = function(_project_id, _user_id) {
-          var _json = {
-                        project_id  : _project_id,
-                        user_id     : _user_id
-                      };
-
-          return $http.post(server + '/project/user/delete', _json);
+     factory.delete_user_from_project = function(_id, _user_id) {
+          return $http.delete(server + '/projects/id/user?id=' + _id + '&user_id=' + _user_id);
      }
-
      
 
      return factory;
