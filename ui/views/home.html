@@ -10,7 +10,7 @@
           <h2>Analysts</h2>
           <tr><th>E-mail</th><th>Is Admin?</th><th></th></tr>
           <tr ng-repeat="user in users">
-            <td>{{user.id}}</td>
+            <td>{{user.username}}</td>
             <td>{{user.is_admin ? "Yes" : "No"}}</td>
             <td><a ng-click="set_edit_user(user)" data-target="#edit_user_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_user(user._id, $index)">Delete</td>
           </tr>
@@ -32,7 +32,7 @@
             <td>{{dataset.name}}</td>
             <td>{{dataset.description}}</td>
             <td>{{dataset.status}}</td>
-            <td>{{dataset.patient_count}}</td>
+            <td>{{dataset.num_patients}}</td>
             <td>{{dataset.date}}</td>
             <td><a ng-click="set_dataset(dataset)" data-target="#dataset_edit_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_dataset(dataset._id, dataset.name, $index)">Delete</td>
           </tr>
@@ -180,7 +180,7 @@
             <div class="modal-body">
                   <div class="row">
                       <h4>Edit E-mail</h4>
-                      <input id="edit_user_email" style="width: 400px" type="text" class="form-control" ng-model="edit_user.id"/>
+                      <input id="edit_username" style="width: 400px" type="text" class="form-control" ng-model="edit_user.username"/>
                     </div>
                   <br/>
                   <br/>
