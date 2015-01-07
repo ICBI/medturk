@@ -661,12 +661,12 @@ app.factory('hit_factory', function($http) {
      *     CREATE operations
      *   
      */
-     factory.create_hits = function(_project_id) {
+     factory.create_hits = function(_id) {
         var _json = {
-                        project_id : _project_id
+                        id : _id
                     };
 
-        return $http.post(server + '/hit/all/create', _json);
+        return $http.post(server + '/hits', _json);
      }
 
 
