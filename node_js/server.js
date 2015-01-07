@@ -63,6 +63,115 @@ app.post('/projects', jsonParser, function(req, res) {
 })
 
 
+
+
+
+
+
+
+
+
+
+
+
+function get_questionnaire(questionnaire_id, callback) {
+		
+		var arg1 = {'_id' : new mongoskin.ObjectID(questionnaire_id)}
+
+		db.collection('questionnaires').findOne(arg1, function(err, questionnaire) {
+			if (err) throw err
+
+			if (questionnaire) {
+				callback(questionnaire)
+			}
+			else {
+				console.log('questionnaire not found')
+				res.sendStatus(404)
+			}
+		})
+	}
+
+
+function get_project(project_id, callback) {
+
+	var arg1 = {'_id' : new mongoskin.ObjectID(project_id)}
+
+	db.collection('projects').findOne(arg1, function(err, project) {
+		if (err) throw err
+
+		if (project) {
+			callback(project)
+		}
+		else {
+			console.log('project not found')
+			res.sendStatus(404)
+		}
+	})
+}
+
+function get_records(dataset_id, callback) {
+
+	var arg1 = {'dataset_id' : new mongoskin.ObjectID(dataset_id)}
+
+	db.collection('records').find(arg1, function(err, records) {
+		if (err) throw err
+
+		if (records) {
+			callback(records)
+		}
+		else {
+			console.log('records not found')
+			res.sendStatus(404)
+		}
+	})
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // curl -v -H "Content-Type: application/json" -XPOST --data "{\"project_id\" : \"548b49fbf694066a0779dd50\", \"user_id\" : \"123\"}" https://localhost/projects/user --insecure
 app.post('/projects/id/user', jsonParser, function(req, res) {
 
@@ -440,7 +549,7 @@ app.get('/datasets/create', jsonParser, function(req, res) {
 							// After every 'k' patients, update the dataset status
 							var update_frequency = 5
 
-							var json_files = new Array()
+							var json_files = []
 
 							// Need to figure out how many json files are present in order to calculate
 							// update an update status. This loop is blocking and filters out 
@@ -2007,6 +2116,172 @@ app.delete('/questionnaires/id/questions/id/tags/id', jsonParser, function(req, 
 		})
 	}
 })
+
+
+
+
+
+
+
+
+app.post('/hits', jsonParser, function(req, res) {
+
+
+	var project       = undefined
+	var questionnaire = undefined
+	var flank_size    = 200
+	var lookup        = {}
+
+
+	// Original function written by 
+	// @Nasser: See http://stackoverflow.com/questions/18677834/javascript-find-all-occurrences-of-word-in-text-document
+	// I modified it a bit
+	function get_matches(needle, haystack, case_sensitive, callback) {
+	    var myRe      = new RegExp("\\b" + needle + "\\b((?!\\W(?=\\w))|(?=\\s))", "g" + (case_sensitive ? "" : "i"))
+	    var myArray   = []
+	    var myResult  = []
+	    while ((myArray = myRe.exec(haystack)) !== null) {
+	        myResult.push(myArray.index)
+	    }
+
+	    callback(myResult)
+	}
+
+
+	function get_annotations(_trigger, _case_sensitive, _note, _callback) {
+		
+		var _annotations = []
+		var _kwic = ''
+		
+		get_matches(_trigger, _note, _case_sensitive, function(_indices) {
+
+			if(_indices.length > 0) {
+
+				_indices.forEach(function(_abs_beg) {
+
+					var _kwic_beg = _abs_beg - flank_size
+					if (_kwic_beg < 0) {
+						_kwic_beg = 0
+					}
+
+					var _kwic     = _note.substr(_kwic_beg, 2*flank_size + _trigger.length)
+					var _rel_beg  = _abs_beg - _kwic_beg
+
+					_annotations.push({ 
+										'abs_beg' : _abs_beg,  
+								        'rel_beg' : _rel_beg,
+								        'trigger' : _trigger,
+								        'kwic'    : _kwic
+					})
+
+					// If true, we have covered every index
+					if (_indices.length == _annotations.length) {
+						_callback(_annotations)
+					}
+				})
+			}
+			else {
+
+			}
+		})
+	}
+
+	
+	function process_record(_record) {
+		questionnaire.questions.forEach(function(_question) {
+			// Use all triggers to look for hits within this record
+			_question.triggers.forEach(function(_trigger) {
+				get_annotations(_trigger.name, _trigger.case_sensitive, _record.note, function(_annotations) {
+					// Now we have annotations
+					_annotations.forEach(function(_annotation) {
+						// Now, insert this into mongodb
+						// Does this annotation have a hit it needs to be inserted into? Or should we create a hit for it?
+
+
+						var _key = _record.patient_id + _question._id
+						
+						
+						if (lookup[_key]) {
+							console.log('ALREADY CREATED. See: ' + lookup[_key])
+						}
+						else {
+
+							_annotation._id       = new mongoskin.ObjectID()
+							_annotation.record_id = new mongoskin.ObjectID(_record._id)
+							_annotation.date      = _record.date
+
+							_hit = {
+								    '_id'         : new mongoskin.ObjectID(),
+									'patient_id'  : _record.patient_id,
+									'dataset_id'  : new mongoskin.ObjectID(project._dataset_id),
+									'project_id'  : new mongoskin.ObjectID(project._id),
+									'question_id' : new mongoskin.ObjectID(_question._id),
+									'tag_ids'     : _question.tag_ids,
+									'annotations' : [_annotation]
+							       }
+
+							// Insert and return inserted document to user
+							db.collection('hits').insert(_hit, function(err, result) {
+									if (err) throw err
+
+									if(result) {
+										lookup[_key] = _hit._id
+										console.log('CREATED')
+										console.log(lookup)
+									}	
+							})
+						}
+					})
+				})
+			})
+		})
+	}
+
+
+	function get_records_callback(_records) {
+		_records.each(function (err, _record) {
+			if (_record) {
+				process_record(_record)
+			}
+		})
+	}
+
+
+	function get_questionnaire_callback(_questionnaire) {
+		questionnaire = _questionnaire
+		get_records(project.dataset_id, get_records_callback)
+	}
+
+
+	function get_project_callback(_project) {
+		project = _project
+		get_questionnaire(project.questionnaire_id, get_questionnaire_callback)
+	}
+
+	if (!req.body.id) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else {
+		// Our chain of events is started by getting a project
+		project_id = req.body.id
+		get_project(project_id, get_project_callback)
+	}	
+})
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
