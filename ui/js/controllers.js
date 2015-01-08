@@ -793,7 +793,7 @@ app.controller('WorkController', function($scope, $sce, $location, hit_factory, 
 		 	
 		 	hit_factory.get_hit($scope.project._id).success(function(data){
             
-              $scope.hit = data.hit;
+              $scope.hit = data;
               $scope.question = get_question($scope.hit.question_id);
            	
             	if ($scope.hit) {
@@ -801,7 +801,7 @@ app.controller('WorkController', function($scope, $sce, $location, hit_factory, 
 
             		// Highlights all triggers
             		for (var i = 0; i < $scope.hit.annotations.length; i++) {
-            			$scope.hit.annotations[i].kwic = $sce.trustAsHtml(get_highlighted_text($scope.hit.annotations[i].kwic, $scope.hit.annotations[i].rel_beg, $scope.hit.annotations[i].rel_end));
+            			$scope.hit.annotations[i].kwic = $sce.trustAsHtml(get_highlighted_text($scope.hit.annotations[i].kwic, $scope.hit.annotations[i].rel_beg, $scope.hit.annotations[i].rel_beg + $scope.hit.annotations[i].trigger.length));
             		}
 
             		// Set first annotation as default annotation
@@ -835,7 +835,7 @@ app.controller('WorkController', function($scope, $sce, $location, hit_factory, 
 
 		  		record_factory.get_record(record_id).success(function(data) {
             
-		  			$scope.clinical_note = $sce.trustAsHtml(get_highlighted_text(data.note, $scope.annotation.abs_beg, $scope.annotation.abs_end));
+		  			$scope.clinical_note = $sce.trustAsHtml(get_highlighted_text(data.note, $scope.annotation.abs_beg, $scope.annotation.abs_beg + $scope.annotation.trigger.length));
           		});
 		  }
 
@@ -869,8 +869,8 @@ app.controller('WorkController', function($scope, $sce, $location, hit_factory, 
 	     }
 
 
-       $scope.update_hit_answered = function(_answered) {
-          hit_factory.update_hit_answered($scope.hit._id, _answered).success(function(data){
+       $scope.update_hit_answered = function() {
+          hit_factory.update_hit_answered($scope.hit._id).success(function(data){
                   $scope.get_hit();
           });
        }

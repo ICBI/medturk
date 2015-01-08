@@ -670,27 +670,27 @@ app.factory('hit_factory', function($http) {
      }
 
 
-    factory.create_hit_choice = function(_hit_id, _choice_id) {
+    factory.create_hit_choice = function(_id, _choice_id) {
         var _json = {
-                        hit_id :    _hit_id,
+                        id :        _id,
                         choice_id : _choice_id
                     };
 
 
-        return $http.post(server + '/hit/choice/create', _json);
+        return $http.post(server + '/hits/choice_id', _json);
      }
 
 
   
-     factory.create_hit_annotation_choice = function(_hit_id, _annotation_id, _choice_id) {
+     factory.create_hit_annotation_choice = function(_id, _annotation_id, _choice_id) {
         var _json = {
-                        hit_id :        _hit_id,
+                        id            : _id,
                         annotation_id : _annotation_id,
-                        choice_id :     _choice_id
+                        choice_id     : _choice_id
                     };
 
 
-        return $http.post(server + '/hit/annotation/choice/create', _json);
+        return $http.post(server + '/hits/annotations/choice_id', _json);
      }
 
 
@@ -712,14 +712,13 @@ app.factory('hit_factory', function($http) {
      *     UPDATE operations
      *   
      */
-     factory.update_hit_answered = function(_hit_id, _answered) {
+     factory.update_hit_answered = function(_id) {
         var _json = {
-                        hit_id   : _hit_id,
-                        answered : _answered
+                        id : _id,
                     };
 
 
-        return $http.post(server + '/hit/answered/update', _json);
+        return $http.post(server + '/hits/id/answered', _json);
      }
 
 
@@ -735,13 +734,7 @@ app.factory('hit_factory', function($http) {
      *   
      */
      factory.get_hit = function(_project_id) {
- 
-       return $http({
-          url: server + '/hit', 
-          method: "GET",
-          params: {project_id : _project_id}
-       });
-
+       return $http.get(server + '/hits?project_id=' + _project_id);
      }
 
      factory.get_count = function() {
@@ -786,13 +779,7 @@ app.factory('record_factory', function($http) {
 
 
      factory.get_record = function(record_id) {
-      
-       return $http({
-          url: server + '/record', 
-          method: "GET",
-          params: {id : record_id}
-      });
-
+       return $http.get(server + '/records/id?id=' + record_id)
      }
 
      return factory;
