@@ -67,13 +67,6 @@ app.post('/projects', jsonParser, function(req, res) {
 
 
 
-
-
-
-
-
-
-
 function get_questionnaire(questionnaire_id, callback) {
 		
 		var arg1 = {'_id' : new mongoskin.ObjectID(questionnaire_id)}
@@ -109,30 +102,22 @@ function get_project(project_id, callback) {
 	})
 }
 
-function get_records(dataset_id, callback) {
 
-	var arg1 = {'dataset_id' : new mongoskin.ObjectID(dataset_id)}
 
-	db.collection('records').find(arg1, function(err, records) {
+function get_documents(_collection, _query, _callback, passthrough) {
+
+	db.collection(_collection).find(_query, function(err, result) {
 		if (err) throw err
 
-		if (records) {
-			callback(records)
+		if (result) {
+			_callback(result, passthrough)
 		}
 		else {
-			console.log('records not found')
+			console.log('Not found')
 			res.sendStatus(404)
 		}
 	})
 }
-
-
-
-
-
-
-
-
 
 
 
@@ -353,13 +338,35 @@ app.delete('/projects', jsonParser, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
+		var calls_completed   = 0
+		var calls_to_complete = 2
 
 		var arg = {'_id' : new mongoskin.ObjectID(req.query.id)}
 		db.collection('projects').remove(arg, function(err, result) {
 			if (err) throw err
 
 			if (result) {
-				res.sendStatus(200)
+				calls_completed += 1
+				if (calls_to_complete == calls_completed) {
+					res.sendStatus(200)
+				}
+			}
+			else {
+				res.sendStatus(404)
+			}
+			
+		})
+
+
+		var arg = {'project_id' : new mongoskin.ObjectID(req.query.id)}
+		db.collection('hits').remove(arg, function(err, result) {
+			if (err) throw err
+
+			if (result) {
+				calls_completed += 1
+				if (calls_to_complete == calls_completed) {
+					res.sendStatus(200)
+				}
 			}
 			else {
 				res.sendStatus(404)
@@ -823,17 +830,17 @@ app.delete('/datasets', jsonParser, function(req, res) {
 
 
 
-app.get('/records', function(req, res) {
+app.get('/records/id', function(req, res) {
 
-	if (!req.body.id) {
+	if (!req.query.id) {
 		return res.sendStatus(400)
 	}
-	else if (req.body.id.trim().length == 0) {
+	else if (req.query.id.trim().length == 0) {
 		return res.sendStatus(400)
 	}
 	else {
 
-		var arg = { '_id' : record_id}
+		var arg = { '_id' : new mongoskin.ObjectID(req.query.id)}
 
 		db.collection('records').findOne(arg, function(err, result) {
 	    	if (err) {
@@ -2121,6 +2128,134 @@ app.delete('/questionnaires/id/questions/id/tags/id', jsonParser, function(req, 
 
 
 
+app.get('/hits', function(req, res) {
+
+	if (!req.query.project_id) {
+		return res.sendStatus(400)
+	}
+	else if (req.query.project_id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else {
+		var arg1 = {'project_id' : new mongoskin.ObjectID(req.query.project_id), 'annotations.0' : {$exists : true}, 'answered' : {$exists : false} }
+
+		db.collection('hits').findOne(arg1, function(err, hit) {
+			if (err) throw err
+
+			if (hit) {
+				return res.json(hit)
+			}
+			else {
+				return res.sendStatus(404)
+			}
+		})
+	}
+})
+
+
+
+app.post('/hits/choice_id', jsonParser, function(req, res) {
+
+	if (!req.body.id) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else if (!req.body.choice_id) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.choice_id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else {
+
+		arg1 = {'_id' : mongoskin.ObjectID(req.body.id)}
+		arg2 = {$set : {'choice_id' :  mongoskin.ObjectID(req.body.choice_id), 'answered' : true, 'user_id' : 'todo', 'date' : Date()}}
+
+		db.collection('hits').update(arg1, arg2, function(err, result) {
+			if (err) throw err
+			
+			if (result) {
+				res.sendStatus(200)
+			}
+			else {
+				res.sendStatus(404)
+			}
+		})
+	}
+})
+
+
+
+
+
+app.post('/hits/id/answered', jsonParser, function(req, res) {
+
+	if (!req.body.id) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else {
+
+		arg1 = {'_id' : mongoskin.ObjectID(req.body.id)}
+		arg2 = {$set : {'answered' : true, 'user_id' : 'todo', 'date' : Date()}}
+
+		db.collection('hits').update(arg1, arg2, function(err, result) {
+			if (err) throw err
+			
+			if (result) {
+				res.sendStatus(200)
+			}
+			else {
+				res.sendStatus(404)
+			}
+		})
+	}
+})
+
+
+
+app.post('/hits/annotations/choice_id', jsonParser, function(req, res) {
+
+	if (!req.body.id) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else if (!req.body.annotation_id) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.annotation_id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else if (!req.body.choice_id) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.choice_id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else {
+
+		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id), 'annotations' : {$elemMatch : {'_id' : new mongoskin.ObjectID(req.body.annotation_id)}}}
+		var arg2 = { $set: {'annotations.$.choice_id' : new mongoskin.ObjectID(req.body.choice_id) } }
+
+		db.collection('hits').update(arg1, arg2, function(err, result) {
+			if (err) throw err
+
+			if (result) {
+				return res.sendStatus(200)
+			}	
+			else {
+				return res.sendStatus(400)
+			}
+		})
+	}
+})
+
 
 
 
@@ -2187,71 +2322,84 @@ app.post('/hits', jsonParser, function(req, res) {
 	}
 
 	
-	function process_record(_record) {
-		questionnaire.questions.forEach(function(_question) {
-			// Use all triggers to look for hits within this record
-			_question.triggers.forEach(function(_trigger) {
-				get_annotations(_trigger.name, _trigger.case_sensitive, _record.note, function(_annotations) {
-					// Now we have annotations
-					_annotations.forEach(function(_annotation) {
-						// Now, insert this into mongodb
-						// Does this annotation have a hit it needs to be inserted into? Or should we create a hit for it?
+	function process_record(_record, _passthrough) {
 
+		// Use all triggers to look for hits within this record
+	
+		for(var i = 0; i < _passthrough.question.triggers.length; i++) {
 
-						var _key = _record.patient_id + _question._id
-						
-						
-						if (lookup[_key]) {
-							console.log('ALREADY CREATED. See: ' + lookup[_key])
-						}
-						else {
+			var _trigger = _passthrough.question.triggers[i]
 
-							_annotation._id       = new mongoskin.ObjectID()
-							_annotation.record_id = new mongoskin.ObjectID(_record._id)
-							_annotation.date      = _record.date
+			get_annotations(_trigger.name, _trigger.case_sensitive, _record.note, function(_annotations) {
+				// Now we have annotations
 
-							_hit = {
-								    '_id'         : new mongoskin.ObjectID(),
-									'patient_id'  : _record.patient_id,
-									'dataset_id'  : new mongoskin.ObjectID(project._dataset_id),
-									'project_id'  : new mongoskin.ObjectID(project._id),
-									'question_id' : new mongoskin.ObjectID(_question._id),
-									'tag_ids'     : _question.tag_ids,
-									'annotations' : [_annotation]
-							       }
+				_annotations.forEach(function(_annotation) {
+					// Now, insert this into mongodb
+					// Does this annotation have a hit it needs to be inserted into? Or should we create a hit for it?
+					_annotation._id       = new mongoskin.ObjectID()
+					_annotation.record_id = new mongoskin.ObjectID(_record._id)
+					_annotation.date      = _record.date
 
-							// Insert and return inserted document to user
-							db.collection('hits').insert(_hit, function(err, result) {
-									if (err) throw err
+					var arg1 = {'_id' : new mongoskin.ObjectID(_passthrough.hit_id)}
+					var arg2 = {'$push' : {'annotations' : _annotation}}
+					db.collection('hits').update(arg1, arg2, function(err, result) {
+						if (err) throw err
 
-									if(result) {
-										lookup[_key] = _hit._id
-										console.log('CREATED')
-										console.log(lookup)
-									}	
-							})
-						}
 					})
 				})
 			})
-		})
+		}
 	}
 
 
-	function get_records_callback(_records) {
+	function get_records_callback(_records, _passthrough) {
+		
+
 		_records.each(function (err, _record) {
+			
 			if (_record) {
-				process_record(_record)
+				process_record(_record, _passthrough)
 			}
 		})
 	}
 
 
-	function get_questionnaire_callback(_questionnaire) {
-		questionnaire = _questionnaire
-		get_records(project.dataset_id, get_records_callback)
+	function create_hit(_patient, _question) {
+
+			_hit = {
+						'patient_id'  : new mongoskin.ObjectID(_patient._id),
+						'dataset_id'  : new mongoskin.ObjectID(project.dataset_id),
+						'project_id'  : new mongoskin.ObjectID(project._id),
+						'question_id' : new mongoskin.ObjectID(_question._id),
+						'tag_ids'     : _question.tag_ids,
+						'annotations' : []
+       			   }
+
+			// Insert and return inserted document to user
+			db.collection('hits').insert(_hit, function(err, result) {
+					if (err) throw err
+
+					if(result) {
+						get_documents('records', {'dataset_id' : new mongoskin.ObjectID(project.dataset_id), 'patient_id' : _patient.id}, get_records_callback, {'question' : _question, 'hit_id' : result[0]._id})
+					}	
+			})
 	}
 
+
+	function get_patients_callback(_patients, passthrough) {
+		_patients.each(function (err, _patient) {
+			if(_patient) {
+				for (var i = 0; i < questionnaire.questions.length; i++) {
+					create_hit(_patient, questionnaire.questions[i])
+				}
+			}
+		})
+	}
+	
+	function get_questionnaire_callback(_questionnaire) {
+		questionnaire = _questionnaire
+		get_documents('patients', {'dataset_id' : new mongoskin.ObjectID(project.dataset_id)}, get_patients_callback, undefined)
+	}
 
 	function get_project_callback(_project) {
 		project = _project
@@ -2267,6 +2415,7 @@ app.post('/hits', jsonParser, function(req, res) {
 	else {
 		// Our chain of events is started by getting a project
 		project_id = req.body.id
+
 		get_project(project_id, get_project_callback)
 	}	
 })
