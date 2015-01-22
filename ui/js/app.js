@@ -30,7 +30,7 @@
 var server = 'https://localhost';
 
 function redirect_to_login() {
-    window.location.replace(server + "/medturk/login.html");
+    window.location.replace(server + "/login.html")
 }
 
 
@@ -522,7 +522,7 @@ app.factory('user_factory', function($http, $upload) {
     var factory = {};
 
      factory.login = function(_email, _password) {
-          return $http.post(server + '/user/login', {user_id : _email, password : _password});
+          return $http.post(server + '/users/login', {username : _email, password : _password});
      }
 
      factory.delete_user = function(_id) {
@@ -547,7 +547,7 @@ app.factory('user_factory', function($http, $upload) {
      }
 
      factory.get_user = function() {
-         return $http.get(server + '/user');
+         return $http.get(server + '/users/session');
      }
 
      factory.get_users = function() {

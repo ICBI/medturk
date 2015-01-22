@@ -719,10 +719,13 @@ app.controller('WorkController', function($scope, $sce, $location, hit_factory, 
              $scope.projects = data;
              $scope.project = $scope.projects[0];
 
-             questionnaire_factory.get_questionnaire($scope.project.questionnaire_id).success(function(data){
-                  $scope.questionnaire = data;
-                  $scope.get_hit();
-             });
+             if ($scope.project) {
+
+                questionnaire_factory.get_questionnaire($scope.project.questionnaire_id).success(function(data){
+                    $scope.questionnaire = data;
+                    $scope.get_hit();
+                });
+            }
 
            }).error(function(data, status, headers, config){
             if (status == '401') {
