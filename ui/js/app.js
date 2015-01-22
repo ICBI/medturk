@@ -415,12 +415,41 @@ app.factory('dataset_factory', function($http) {
      *     CREATE operations
      *   
      */
-     factory.create_dataset = function(_name, _description, _folder) {
+
+    factory.create_dataset = function(_name, _description, _folder, _callback) {
           
-          return $http.get(server + '/datasets/create?name=' + _name + '&description=' + _description + '&folder=' + _folder);
+          // If undefined, field will not show up on server
+          if (!_description) {
+              _description = ''
+          }
+
+
+          var _json = {
+                        name        : _name, 
+                        description : _description,
+                        folder      : _folder
+                      };
+
+          return $http.post(server + '/datasets', _json);
      }
 
+  
+     factory.build_dataset = function(_id, _callback) {
+     
+          var es = new EventSource(server + '/datasets/id/build?id=' + _id)
+          es.onmessage = function (event) {
 
+              console.log(event)
+              var _json = JSON.parse(event.data);
+
+              // Know when to close the connection!
+              if (_json.status == "Active") {
+                  es.close()
+              }   
+
+              _callback(_json);
+          }
+     }
 
 
     /*
@@ -661,13 +690,15 @@ app.factory('hit_factory', function($http) {
      *     CREATE operations
      *   
      */
-     factory.create_hits = function(_id) {
-        var _json = {
-                        id : _id
-                    };
+     factory.build_hits = function(_id, _callback) {
 
-        return $http.post(server + '/hits', _json);
+          var es = new EventSource(server + '/hits/project_id/build?id=' + _id)
+          es.onmessage = function (event) {
+              _callback( JSON.parse(event.data))
+          }
      }
+
+
 
 
     factory.create_hit_choice = function(_id, _choice_id) {

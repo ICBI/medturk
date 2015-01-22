@@ -25,6 +25,7 @@
 */
 
 
+
 function get_highlighted_text(text, beg, end) {
 
 	var html  = text.substring(0, beg);
@@ -51,6 +52,17 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
      $scope.new_user_is_admin = false;
 
 
+     $scope.get_dataset_index_by_id = function(dataset_id) {
+              for (var i = 0; i < $scope.datasets.length; i++) {
+                  if ($scope.datasets[i]._id == dataset_id) {
+                      return i;
+                  }
+              }
+
+          return -1;
+     }
+
+
      $scope.get_dataset_by_id = function(dataset_id) {
               for (var i = 0; i < $scope.datasets.length; i++) {
                   if ($scope.datasets[i]._id == dataset_id) {
@@ -73,51 +85,6 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
      }
 
 
-/*
-
-     var timer = $interval(function() {
-
-
-            // Update project status
-                project_factory.get_projects().success(function(data){
-                    for (var i = 0; i < data.projects.length; i++) {
-                        // Get the dataset we have stored locally
-                        var _p = $scope.get_project_by_id(data.projects[i]._id);
-                        if (_p == undefined) {
-                            $scope.projects.push(data.projects[i]);
-                        }
-                        else {
-                          _p.status     = data.projects[i].status;
-                          _p.completion = data.projects[i].completion;
-                        }   
-                    }
-                });
-
-
-            // Update dataset status
-                dataset_factory.get_datasets().success(function(data){
-                    for (var i = 0; i < data.datasets.length; i++) {
-
-                        // Get the dataset we have stored locally
-                        var _ds = $scope.get_dataset_by_id(data.datasets[i]._id);
-                        if (_ds == undefined) {
-                            
-                            $scope.datasets.push(data.datasets[i]);
-                        }
-                        else {
-                          _ds.status        = data.datasets[i].status;
-                          _ds.patient_count = data.datasets[i].patient_count;
-                        }
-                    }
-                });
-     }, 5000);
-
-
-     $scope.$on('$destroy', function() {
-        $interval.cancel(timer);
-        timer = undefined;
-    });
-    */
      
 
 
@@ -260,46 +227,30 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
 
 
          $scope.create_dataset = function() {
+
+              var _dataset;
+
+              function on_build_dataset_callback(_json) {
+                  
+                    _dataset.status       = _json.status
+                    _dataset.num_patients = _json.num_patients
+                    $scope.$apply();
+              }
+
               dataset_factory.create_dataset($scope.name, $scope.description, $scope.folder).success(function(data) {
+                   _dataset = data
+                   $scope.datasets.push(_dataset);
 
-
-                  console.log('******CALLED*****')
-                 
-
-                  // Remove 'data' word
-                  /*
-                  var data = _data.substr(6).trim()
-
-                  console.log(data)
-
-                  var x = jQuery.parseJSON(data)
-                  console.log(x)
-                  */
-                  console.log(data)
-
-                  //var x = data.substr(5).trim()
-                  //console.log(x)
-                  //console.log(jQuery.parseJSON(x))
-
-                  // Given the dataset id, see if it's in our present list; If not get it;
-                  var ds = $scope.get_dataset_by_id(data._id);
-                  if (ds == undefined) {
-
-                      dataset_factory.get_dataset(data._id).success(function(data) {
-                          $scope.datasets.push(data);
-                      });
-
-                  }
-                  else {
-                      ds.status = data.status;
-                      ds.num_patients = data.num_patients
-                  }
-              });
+                  // Now that we have it, let's begin the uploading process
+                   dataset_factory.build_dataset(_dataset._id, on_build_dataset_callback)
+              })
          }
+
 
           $scope.set_dataset = function(dataset) {
               $scope.dataset = dataset;
           }
+
 
 
           $scope.delete_dataset = function(_dataset_id, _dataset_name, _dataset_index) {
@@ -484,13 +435,18 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
   		 	    }
   	 }
 
+     $scope.build_project = function() {
 
-  	$scope.build_project = function(_project_id) {
-  	    $scope.project.status = 'Building (0% complete)';
-        hit_factory.create_hits(_project_id).success(function(data){
-        });
+            $scope.project.status = 'Building (0% complete)';
 
-  	 }
+            function on_build_hits_callback(_json) {
+                
+                  $scope.project.status  = _json.status
+                  $scope.$apply();
+            }
+
+            hit_factory.build_hits($scope.project._id, on_build_hits_callback)
+     }
 
 
 		
