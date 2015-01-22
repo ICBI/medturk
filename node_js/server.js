@@ -8,7 +8,11 @@ var passport   = require('passport')
 var config     = require('./config.js')
 var mongoskin  = require('mongoskin')
 var multipart  = require('connect-multiparty')
+var FileQueue  = require('filequeue')
+var spawn      = require('child_process').spawn  
 
+
+var fq         = new FileQueue(200)
 var db         = mongoskin.db(config.db_url)
 var app        = express()
 var jsonParser = bodyParser.json()
@@ -43,24 +47,7 @@ curl -v -H "Content-Type: application/json" -XPOST --data "{\"project_name\" : \
 app.use(express.static(config.ui_path))
 
 
-app.post('/projects', jsonParser, function(req, res) {
 
-	// Create document to insert
-	doc = {
-			  'name'              : 'My New Project', 
-			  'description'       : '',
-			  'dataset_id'        : null,
-			  'questionnaire_id'  : null,
-			  'user_ids'          : [],
-			  'status'            : 'Needs Building'
-	      }
-
-	// Insert and return inserted document to user
-	db.collection('projects').insert(doc, function(err, result) {
-		if (err) throw err
-		res.json(result[0])
-	})
-})
 
 
 
@@ -98,6 +85,56 @@ function get_project(project_id, callback) {
 		else {
 			console.log('project not found')
 			res.sendStatus(404)
+		}
+	})
+}
+
+
+
+
+function update_document(_collection, _query, _update_query, _callback, _error_callback, _passthrough) {
+
+	db.collection(_collection).update(_query, _update_query, function(err, result) {
+		if (err) throw err
+
+		if (result) {
+			_callback(_passthrough)
+		}
+		else {
+			_error_callback(err, _passthrough)
+		}
+	})
+}
+
+
+
+function insert_document(_collection, _document, _callback, _error_callback, _passthrough) {
+
+	db.collection(_collection).insert(_document, function(err, result) {
+		if (err) throw err
+
+		if (result) {
+			_callback(result[0], _passthrough)
+		}
+		else {
+			_error_callback(err, _passthrough)
+		}
+	})
+}
+
+
+
+
+function get_document(_collection, _query, _callback, _error_callback, _passthrough) {
+
+	db.collection(_collection).findOne(_query, function(err, result) {
+		if (err) throw err
+
+		if (result) {
+			_callback(result, _passthrough)
+		}
+		else {
+			_error_callback(err, _passthrough)
 		}
 	})
 }
@@ -147,12 +184,24 @@ function get_documents(_collection, _query, _callback, passthrough) {
 
 
 
+app.post('/projects', jsonParser, function(req, res) {
 
+	// Create document to insert
+	doc = {
+			  'name'              : 'My New Project', 
+			  'description'       : '',
+			  'dataset_id'        : null,
+			  'questionnaire_id'  : null,
+			  'user_ids'          : [],
+			  'status'            : 'Needs Building'
+	      }
 
-
-
-
-
+	// Insert and return inserted document to user
+	db.collection('projects').insert(doc, function(err, result) {
+		if (err) throw err
+		res.json(result[0])
+	})
+})
 
 
 
@@ -486,62 +535,36 @@ app.get('/datasets/id', function(req, res) {
 
 
 
+app.post('/datasets', jsonParser, function(req, res) {
 
 
-
-app.get('/datasets/create', jsonParser, function(req, res) {
-
-
-	if (!req.query.name) {
+	if (!req.body.name) {
 		return res.sendStatus(400)
 	}
-	else if (req.query.name.trim().length == 0) {
+	else if (req.body.name.trim().length == 0) {
 		return res.sendStatus(400)
 	}
-	if (req.query.folder == null) {
+	if (req.body.folder == null) {
 		return res.sendStatus(400)
 	}
-	else if (req.query.folder.trim().length == 0) {
+	else if (req.body.folder.trim().length == 0) {
 		return res.sendStatus(400)
 	}
-	else if (!req.query.description) {
+	else if (req.body.description == null) {
 		return res.sendStatus(400)
 	}
 	else {
-	
-		var progress = 0
-		var patient_count = 0
-		var status = 'Building (0% complete)'
-		req.socket.setTimeout(Infinity)
-
-		res.writeHead(200, 
-						{
-								"Content-Type"  : "text/event-stream", 
-								"Cache-Control" : "no-cache", 
-								"Connection"    : "keep-alive"
-						})
 
 
-		var dataset_id = new mongoskin.ObjectID
-		
 		doc = {
-				  '_id'				  : dataset_id,
-				  'name'              : req.query.name, 
-				  'description'       : req.query.description,
-				  'status'            : status,
-				  'num_patients'	  : patient_count,
+				  'name'              : req.body.name, 
+				  'description'       : req.body.description,
+				  'folder'            : req.body.folder,
+				  'status'            : 'Building (0% complete)',
+				  'num_patients'	  : 0,
 				  'date'              : Date()
 		      }
 
-		update_doc = {
-			'_id'    : dataset_id,
-			'status' : status,
-			'num_patients' : patient_count
-		}
-
-		var dir_name = config.datasets_path + req.query.folder + '/'
-
-		res.write('data: ' + JSON.stringify(update_doc) + '\n\n')
 
 		db.collection('datasets').insert(doc, function(err, result) {
 				if (err) {
@@ -549,96 +572,74 @@ app.get('/datasets/create', jsonParser, function(req, res) {
 					return res.sendStatus(500)
 				}
 				else {
-						fs.readdir(dir_name, function(err, files) {
-
-							var num_patients = 0
-
-							// After every 'k' patients, update the dataset status
-							var update_frequency = 5
-
-							var json_files = []
-
-							// Need to figure out how many json files are present in order to calculate
-							// update an update status. This loop is blocking and filters out 
-							// files for ones that have extension '.json'
-							for (var i = 0; i < files.length; i++) {
-								if (files[i].slice(-5).toLowerCase() == '.json') {
-									json_files.push(files[i])
-								}
-							}
-
-							json_files.forEach(function(file) {
-								
-								fs.readFile(dir_name + file, 'utf8', function(err, data) {
-
-									// JSON of patient
-									patient = JSON.parse(data)
-
-									patient.records.forEach(function (record) {
-										record.patient_id = patient.id
-										record.dataset_id = dataset_id
-										
-										// Insert clinical note
-										db.collection('records').insert(record, function(err, result) {
-											if (err) throw err
-										})
-									})
-
-									// Remove records from patient
-	    							delete patient.records
-
-	    							// Add the dataset id
-	    							patient['dataset_id'] = dataset_id
-
-									// Insert patient record
-									db.collection('patients').insert(patient, function(err, result) {
-											if (err) {
-												throw err
-											}
-											else {
-												
-												num_patients += 1
-
-												if (num_patients == json_files.length) {
-													update_doc.status = 'Active'
-													update_doc.patient_count = num_patients
-													res.write('data: ' + JSON.stringify(update_doc) + '\n\n')
-													res.end()
-													console.log('finished!')
-
-													// Now, update the dataset collection about our progress
-													var arg1 = {'_id' : update_doc._id}
-													var arg2 = {'$set' : {'status' : update_doc.status, 'num_patients' : num_patients}}
-
-													db.collection('datasets').update(arg1, arg2, function(err, result) {
-														if (err) throw err
-													})
-
-												}
-												else {
-													var progress = Math.round((num_patients/json_files.length)*100.0)
-													update_doc.status = 'Building (' + progress + '% (' + num_patients + '/' + json_files.length + ') complete)'
-													update_doc.patient_count = num_patients
-													res.write('data: ' + JSON.stringify(update_doc) + '\n\n')
-
-													// Now, update the dataset collection about our progress
-													var arg1 = {'_id' : update_doc._id}
-													var arg2 = {'$set' : {'status' : update_doc.status, 'num_patients' : num_patients}}
-
-													db.collection('datasets').update(arg1, arg2, function(err, result) {
-														if (err) throw err
-													})
-												}
-											}
-									})
-
-								})
-								
-							})
-						})
+					res.send(result[0])
 				}
 		})
 
+	}
+})
+
+
+
+
+
+
+app.get('/datasets/id/build', jsonParser, function(req, res) {
+	/*
+		Reads in patient .json files and stores them in the db.patients and db.records
+		The OS has an upper limit on how many file descriptors can exist at once.
+		"ulimit -n" is the command that reports what this upper limit is.
+
+	*/
+
+	function send_json_to_user(_json, _callback) {
+		//console.log(JSON.stringify(_json))
+		res.write('data: ' + _json + '\n\n')
+		_callback()
+	}
+
+
+	// Used for SSE (server sent events)
+	req.socket.setTimeout(Infinity)
+
+	
+	res.writeHead(200, 
+						{
+								"Content-Type"  : "text/event-stream", 
+								"Cache-Control" : "no-cache", 
+								"Connection"    : "keep-alive"
+						})
+
+	
+	if (!req.query.id) {
+		return res.sendStatus(400)
+	}
+	else if (req.query.id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else {
+	
+		_child_process = spawn('node', ['build_dataset.js', req.query.id])
+		
+		_child_process.stdout.on('data', function(data) {
+			
+			_json = JSON.parse(data)
+			
+			send_json_to_user(data, function() {
+				
+				if (_json.status == 'Active') {
+					_child_process.kill('SIGINT')
+				}
+			})
+		})
+		
+		_child_process.stderr.on('data', function(data) {
+		   
+		})
+
+		_child_process.on('close', function(code) {
+		    
+		})
 	}
 })
 
@@ -781,9 +782,6 @@ app.delete('/datasets', jsonParser, function(req, res) {
 		})
 	}
 })
-
-
-
 
 
 
@@ -2259,174 +2257,62 @@ app.post('/hits/annotations/choice_id', jsonParser, function(req, res) {
 
 
 
-app.post('/hits', jsonParser, function(req, res) {
 
+app.get('/hits/project_id/build', jsonParser, function(req, res) {
+	/*
+		Reads in patient .json files and stores them in the db.patients and db.records
+		The OS has an upper limit on how many file descriptors can exist at once.
+		"ulimit -n" is the command that reports what this upper limit is.
 
-	var project       = undefined
-	var questionnaire = undefined
-	var flank_size    = 200
-	var lookup        = {}
+	*/
 
-
-	// Original function written by 
-	// @Nasser: See http://stackoverflow.com/questions/18677834/javascript-find-all-occurrences-of-word-in-text-document
-	// I modified it a bit
-	function get_matches(needle, haystack, case_sensitive, callback) {
-	    var myRe      = new RegExp("\\b" + needle + "\\b((?!\\W(?=\\w))|(?=\\s))", "g" + (case_sensitive ? "" : "i"))
-	    var myArray   = []
-	    var myResult  = []
-	    while ((myArray = myRe.exec(haystack)) !== null) {
-	        myResult.push(myArray.index)
-	    }
-
-	    callback(myResult)
+	function send_json_to_user(_json, _callback) {
+		//console.log(JSON.stringify(_json))
+		res.write('data: ' + _json + '\n\n')
+		_callback()
 	}
 
 
-	function get_annotations(_trigger, _case_sensitive, _note, _callback) {
-		
-		var _annotations = []
-		var _kwic = ''
-		
-		get_matches(_trigger, _note, _case_sensitive, function(_indices) {
-
-			if(_indices.length > 0) {
-
-				_indices.forEach(function(_abs_beg) {
-
-					var _kwic_beg = _abs_beg - flank_size
-					if (_kwic_beg < 0) {
-						_kwic_beg = 0
-					}
-
-					var _kwic     = _note.substr(_kwic_beg, 2*flank_size + _trigger.length)
-					var _rel_beg  = _abs_beg - _kwic_beg
-
-					_annotations.push({ 
-										'abs_beg' : _abs_beg,  
-								        'rel_beg' : _rel_beg,
-								        'trigger' : _trigger,
-								        'kwic'    : _kwic
-					})
-
-					// If true, we have covered every index
-					if (_indices.length == _annotations.length) {
-						_callback(_annotations)
-					}
-				})
-			}
-			else {
-
-			}
-		})
-	}
+	// Used for SSE (server sent events)
+	req.socket.setTimeout(Infinity)
 
 	
-	function process_record(_record, _passthrough) {
-
-		// Use all triggers to look for hits within this record
-	
-		for(var i = 0; i < _passthrough.question.triggers.length; i++) {
-
-			var _trigger = _passthrough.question.triggers[i]
-
-			get_annotations(_trigger.name, _trigger.case_sensitive, _record.note, function(_annotations) {
-				// Now we have annotations
-
-				_annotations.forEach(function(_annotation) {
-					// Now, insert this into mongodb
-					// Does this annotation have a hit it needs to be inserted into? Or should we create a hit for it?
-					_annotation._id       = new mongoskin.ObjectID()
-					_annotation.record_id = new mongoskin.ObjectID(_record._id)
-					_annotation.date      = _record.date
-
-					var arg1 = {'_id' : new mongoskin.ObjectID(_passthrough.hit_id)}
-					var arg2 = {'$push' : {'annotations' : _annotation}}
-					db.collection('hits').update(arg1, arg2, function(err, result) {
-						if (err) throw err
-
-					})
-				})
-			})
-		}
-	}
+	res.writeHead(200, 
+						{
+								"Content-Type"  : "text/event-stream", 
+								"Cache-Control" : "no-cache", 
+								"Connection"    : "keep-alive"
+						})
 
 
-	function get_records_callback(_records, _passthrough) {
-		
-
-		_records.each(function (err, _record) {
-			
-			if (_record) {
-				process_record(_record, _passthrough)
-			}
-		})
-	}
 
 
-	function create_hit(_patient, _question) {
-
-			_hit = {
-						'patient_id'  : new mongoskin.ObjectID(_patient._id),
-						'dataset_id'  : new mongoskin.ObjectID(project.dataset_id),
-						'project_id'  : new mongoskin.ObjectID(project._id),
-						'question_id' : new mongoskin.ObjectID(_question._id),
-						'tag_ids'     : _question.tag_ids,
-						'annotations' : []
-       			   }
-
-			// Insert and return inserted document to user
-			db.collection('hits').insert(_hit, function(err, result) {
-					if (err) throw err
-
-					if(result) {
-						get_documents('records', {'dataset_id' : new mongoskin.ObjectID(project.dataset_id), 'patient_id' : _patient.id}, get_records_callback, {'question' : _question, 'hit_id' : result[0]._id})
-					}	
-			})
-	}
-
-
-	function get_patients_callback(_patients, passthrough) {
-		_patients.each(function (err, _patient) {
-			if(_patient) {
-				for (var i = 0; i < questionnaire.questions.length; i++) {
-					create_hit(_patient, questionnaire.questions[i])
-				}
-			}
-		})
-	}
-	
-	function get_questionnaire_callback(_questionnaire) {
-		questionnaire = _questionnaire
-		get_documents('patients', {'dataset_id' : new mongoskin.ObjectID(project.dataset_id)}, get_patients_callback, undefined)
-	}
-
-	function get_project_callback(_project) {
-		project = _project
-		get_questionnaire(project.questionnaire_id, get_questionnaire_callback)
-	}
-
-	if (!req.body.id) {
+	if (!req.query.id) {
 		return res.sendStatus(400)
 	}
-	else if (req.body.id.trim().length == 0) {
+	else if (req.query.id.trim().length == 0) {
 		return res.sendStatus(400)
 	}
 	else {
-		// Our chain of events is started by getting a project
-		project_id = req.body.id
+		_child_process = spawn('node', ['build_hits.js', req.query.id])
+		
+		_child_process.stdout.on('data', function(data) {
 
-		get_project(project_id, get_project_callback)
-	}	
+			console.log('data: ' + data)
+
+			send_json_to_user(data, function() {
+			})
+		})
+		
+		_child_process.stderr.on('data', function(data) {
+			console.log('error: ' + data)
+		})
+
+		_child_process.on('close', function(code) {
+		    console.log('close: ' + code)
+		})
+	}
 })
-
-
-
-
-
-
-
-
 
 
 
