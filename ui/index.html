@@ -119,32 +119,30 @@
     <script src="js/app.js"></script>
     <script src="js/controllers.js"></script>
     <script>
+    
 
-      // var server = 'http://127.0.0.1:5000';
       var server = 'https://localhost';
 
-      $('#home').show();
-/* Once security is working again, we can uncomment this
-
-            var get_user = $.ajax({
-                            url:        server + '/user',
-                            xhrFields: { withCredentials: true },
-                            crossDomain: true,
-                            type:       'GET',
-                            dataType:   'json',
-                            success:    function(data) {
-
-                               $("#user_name").text(data.user.id);
-                               if(data.user.is_admin) {
-                                   $('#home').show();
-                               }
-                            },
-                            error:      function(jqXHR, textStatus, errorThrown) { 
-                                window.location.replace(server + "/medturk/login.html");
-                            }
-                        });
-
-  */
+      var get_user = $.ajax({
+                      url:        server + '/users/session',
+                      xhrFields: { withCredentials: true },
+                      crossDomain: true,
+                      type:       'GET',
+                      dataType:   'json',
+                      success:    function(data) {
+                        
+                         $("#user_name").text(data.username);
+                         if(data.is_admin) {
+                             $('#home').show();
+                         }
+                         else {
+                            $('#home').hide();
+                         }
+                      },
+                      error:      function(jqXHR, textStatus, errorThrown) { 
+                          window.location.replace(server + "/login.html");
+                      }
+                  });
 
 
 
@@ -155,12 +153,13 @@
             var new_password     = $("#new_password").val();
 
             var posturl = $.ajax({
-                            url:        server + '/user/password/self/update',
+                            url:        server + '/users/self/password',
                             xhrFields: { withCredentials: true },
                             crossDomain: true,
                             type:       'POST',
-                            data:       {'new_password' : new_password, 'current_password' : current_password},
                             dataType:   'json',
+                            contentType: 'application/json',
+                            data:       JSON.stringify({'new_password' : new_password, 'current_password' : current_password}),
                             success:    function(data) { 
                                   console.log(data);
                                   if (data.success) {
@@ -179,6 +178,7 @@
 
                             },
                             error:      function(jqXHR, textStatus, errorThrown) { 
+                                
                                 $( "#msg" ).show();
                                 $("#msg").text("Uh oh. medTurk isn't working correctly");
                                 $( "#msg" ).fadeOut(6000);
@@ -193,19 +193,16 @@
 
       $("#sign_out").click(function() {
 
-            var posturl = $.ajax({
-                            url:        server + '/user/logout',
-                            xhrFields: { withCredentials: true },
+            var geturl = $.ajax({
+                            url:        server + '/users/logout',
                             crossDomain: true,
                             type:       'GET',
-                            dataType:   'json',
                             success:    function(data) { 
-                              window.location.replace(server + "/medturk/login.html");
+                              window.location.replace(server + "/login.html");
 
                             },
                             error:      function(jqXHR, textStatus, errorThrown) { 
-
-                             window.location.replace(server + "/medturk/login.html");
+                             window.location.replace(server + "/login.html");
                             }
                         });
         });
