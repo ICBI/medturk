@@ -1,15 +1,21 @@
-var express    = require('express')
-var https      = require('https')
-var http       = require('http')
-var fs 		   = require('fs')
-var path       = require('path')
-var bodyParser = require('body-parser')
-var passport   = require('passport')
-var config     = require('./config.js')
-var mongoskin  = require('mongoskin')
-var multipart  = require('connect-multiparty')
-var FileQueue  = require('filequeue')
-var spawn      = require('child_process').spawn  
+var express       = require('express')
+var https         = require('https')
+var http          = require('http')
+var fs 		      = require('fs')
+var path          = require('path')
+var bodyParser    = require('body-parser')
+var passport      = require('passport')
+var config        = require('./config.js')
+var mongoskin     = require('mongoskin')
+var multipart     = require('connect-multiparty')
+var FileQueue     = require('filequeue')
+var spawn         = require('child_process').spawn
+var passport      = require('passport')
+var LocalStrategy = require('passport-local').Strategy
+var cookieParser  = require('cookie-parser')
+var session		  = require('express-session')
+var user          = require('./user.js')
+var bcrypt        = require('bcrypt-nodejs');
 
 
 var fq         = new FileQueue(200)
@@ -25,6 +31,76 @@ var options = {
   cert: fs.readFileSync('./security/medturk-cert.pem')
 }
 
+
+
+get_hash = function(_password) {
+    return bcrypt.hashSync(_password, bcrypt.genSaltSync(8));
+}
+
+compare_passwords = function(_password, _hashed_password) {
+    return bcrypt.compareSync(_password, _hashed_password)
+};
+
+
+
+passport.serializeUser(function(_user, _done) {
+  	_done(null, _user._id)
+})
+
+passport.deserializeUser(function(_id, _done) {
+  	
+	function get_user_callback(_user, _passthrough) {
+		return _done(null, _user)
+	}
+
+	function get_user_error_callback(_err, _passthrough) {
+		return _done(null, false)
+	}
+
+	user.get_by_id(_id, get_user_callback, get_user_error_callback) 
+})
+
+
+passport.use(new LocalStrategy( {usernameField: 'username'}, function(_username, _password, _done) {
+
+		function get_user_callback(_user, _passthrough) {
+			// TODO: Validate password now
+			if (compare_passwords(_password, _user.password)) {
+				return _done(null, _user)
+			}
+			else {
+				return _done(null, false)
+			}
+			
+		}
+
+		function get_user_error_callback(_err, _passthrough) {
+			return _done(null, false, { message: 'Invalid login' })
+		}
+
+		user.get_by_username(_username, get_user_callback, get_user_error_callback)    
+  }
+))
+
+
+function basic_role(req, res, next) {
+
+  if (req.isAuthenticated()) { 
+  	return next() 
+  }
+
+  res.redirect('/login.html')
+}
+
+
+function admin_role(req, res, next) {
+
+  if (req.isAuthenticated() && req.user.is_admin) { 
+  	return next() 
+  }
+
+  res.redirect('/login.html')
+}
 
 
 
@@ -47,114 +123,275 @@ curl -v -H "Content-Type: application/json" -XPOST --data "{\"project_name\" : \
 app.use(express.static(config.ui_path))
 
 
+app.use(cookieParser())
+app.use(session({ secret: config.secret_key}))
+app.use(passport.initialize())
+app.use(passport.session())
 
 
+app.post('/users/login', jsonParser, function(req, res) {
 
-
-
-
-
-function get_questionnaire(questionnaire_id, callback) {
+		passport.authenticate('local', function(_err, _user, _message) {
 		
-		var arg1 = {'_id' : new mongoskin.ObjectID(questionnaire_id)}
-
-		db.collection('questionnaires').findOne(arg1, function(err, questionnaire) {
-			if (err) throw err
-
-			if (questionnaire) {
-				callback(questionnaire)
+			if (_err) {
+				res.send({'success' : false, 'is_admin' : false})
+			}
+			else if(!_user) {
+				res.send({'success' : false, 'is_admin' : true})
 			}
 			else {
-				console.log('questionnaire not found')
+				req.logIn(_user, function(_err) {
+					res.send({'success' : true, 'is_admin' : _user.is_admin})
+				})
+			}
+
+		})(req, res)
+ })
+
+
+app.get('/users/logout', function(req, res) {
+	console.log('/users/logout')
+	req.logout()
+	res.sendStatus(200)
+})
+
+
+
+app.get('/users/session', function(req, res) {
+
+	function get_user_callback(_user, _passthrough) {
+			res.json(_user)
+	}
+
+	function get_user_error_callback(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
+	if (req.user) {
+		user.get_by_username(req.user.username, get_user_callback, get_user_error_callback) 
+	}
+	else {
+		res.sendStatus(404)
+	}
+
+	 
+})
+
+
+
+
+
+
+
+
+
+app.post('/users', admin_role, jsonParser, function(req, res) {
+
+	if (req.body.username == null) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.username.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.password == null) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.password.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.is_admin == null) {
+		return res.sendStatus(400)
+	}
+	else {
+
+		// Create user to insert
+		doc = {
+				  'username'          : req.body.username, 
+				  'password'		  : get_hash(req.body.password),
+				  'is_admin'          : (req.body.is_admin == 'true'),
+		      }
+
+		// Insert and return inserted document to user
+		db.collection('users').insert(doc, function(err, result) {
+			if (err) throw err
+			res.json(result[0])
+		})
+	}
+})
+
+
+app.get('/users', admin_role, function(req, res) {
+
+	// Fetch all datasets
+	db.collection('users').find().toArray(function(err, result) {
+		if (err) throw err
+		res.json(result)
+	})
+})
+
+
+app.post('/users/username', admin_role, jsonParser, function(req, res) {
+
+	if (req.body.id == null) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.username == null) {
+		return res.sendStatus(400)
+	} 
+	else if (req.body.username.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else {
+
+		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id)}
+		var arg2 = {'$set' : {'username' : req.body.username}}
+		db.collection('users').update(arg1, arg2, function(err, result) {
+			if (err) throw err
+
+			if (result) {
+				res.sendStatus(200)
+			}
+			else {
 				res.sendStatus(404)
 			}
+			
 		})
+	}
+})
+
+
+
+app.post('/users/password', admin_role, jsonParser, function(req, res) {
+
+	if (req.body.id == null) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.password == null) {
+		return res.sendStatus(400)
+	} 
+	else if (req.body.password.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else {
+
+		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id)}
+		var arg2 = {'$set' : {'password' : get_hash(req.body.password)}}
+		db.collection('users').update(arg1, arg2, function(err, result) {
+			if (err) throw err
+
+			if (result) {
+				res.sendStatus(200)
+			}
+			else {
+				res.sendStatus(404)
+			}
+			
+		})
+	}
+})
+
+
+
+
+app.post('/users/self/password', basic_role, jsonParser, function(req, res) {
+
+	function update_password_callback(_user, _passthrough) {
+		return res.send({'success' : true})
 	}
 
 
-function get_project(project_id, callback) {
+	function update_password_error_callback(_err, _passthrough) {
+		return res.sendStatus(400)
+	}
 
-	var arg1 = {'_id' : new mongoskin.ObjectID(project_id)}
 
-	db.collection('projects').findOne(arg1, function(err, project) {
-		if (err) throw err
+	if (req.body.current_password == null) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.current_password.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.new_password == null) {
+		return res.sendStatus(400)
+	} 
+	else if (req.body.new_password.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else {
 
-		if (project) {
-			callback(project)
+		// Is the current password correct?
+		if(compare_passwords(req.body.current_password, req.user.password)) {
+			user.update_password(req.user._id, get_hash(req.body.new_password), update_password_callback, update_password_error_callback)
 		}
 		else {
-			console.log('project not found')
-			res.sendStatus(404)
+			return res.send({'success' : false})
 		}
-	})
-}
+	}
+})
 
 
 
+app.post('/users/is_admin', admin_role, jsonParser, function(req, res) {
 
-function update_document(_collection, _query, _update_query, _callback, _error_callback, _passthrough) {
+	if (req.body.id == null) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.is_admin == null) {
+		return res.sendStatus(400)
+	} 
+	else {
 
-	db.collection(_collection).update(_query, _update_query, function(err, result) {
-		if (err) throw err
+		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id)}
+		var arg2 = {'$set' : {'is_admin' : req.body.is_admin}}
+		db.collection('users').update(arg1, arg2, function(err, result) {
+			if (err) throw err
 
-		if (result) {
-			_callback(_passthrough)
-		}
-		else {
-			_error_callback(err, _passthrough)
-		}
-	})
-}
-
-
-
-function insert_document(_collection, _document, _callback, _error_callback, _passthrough) {
-
-	db.collection(_collection).insert(_document, function(err, result) {
-		if (err) throw err
-
-		if (result) {
-			_callback(result[0], _passthrough)
-		}
-		else {
-			_error_callback(err, _passthrough)
-		}
-	})
-}
+			if (result) {
+				res.sendStatus(200)
+			}
+			else {
+				res.sendStatus(404)
+			}
+			
+		})
+	}
+})
 
 
 
+app.delete('/users', admin_role, jsonParser, function(req, res) {
+	
+	if (req.query.id == null) {
+		return res.sendStatus(400)
+	}
+	else if (req.query.id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else {
 
-function get_document(_collection, _query, _callback, _error_callback, _passthrough) {
+		var arg = {'_id' : new mongoskin.ObjectID(req.query.id)}
+		db.collection('users').remove(arg, function(err, result) {
+			if (err) throw err
 
-	db.collection(_collection).findOne(_query, function(err, result) {
-		if (err) throw err
-
-		if (result) {
-			_callback(result, _passthrough)
-		}
-		else {
-			_error_callback(err, _passthrough)
-		}
-	})
-}
-
-
-
-function get_documents(_collection, _query, _callback, passthrough) {
-
-	db.collection(_collection).find(_query, function(err, result) {
-		if (err) throw err
-
-		if (result) {
-			_callback(result, passthrough)
-		}
-		else {
-			console.log('Not found')
-			res.sendStatus(404)
-		}
-	})
-}
+			if (result) {
+				res.sendStatus(200)
+			}
+			else {
+				res.sendStatus(404)
+			}
+			
+		})
+	}
+})
 
 
 
@@ -174,17 +411,7 @@ function get_documents(_collection, _query, _callback, passthrough) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-app.post('/projects', jsonParser, function(req, res) {
+app.post('/projects', admin_role, jsonParser, function(req, res) {
 
 	// Create document to insert
 	doc = {
@@ -207,7 +434,7 @@ app.post('/projects', jsonParser, function(req, res) {
 
 
 // curl -v -H "Content-Type: application/json" -XPOST --data "{\"project_id\" : \"548b49fbf694066a0779dd50\", \"user_id\" : \"123\"}" https://localhost/projects/user --insecure
-app.post('/projects/id/user', jsonParser, function(req, res) {
+app.post('/projects/id/user', admin_role, jsonParser, function(req, res) {
 
 
 	if (!req.body.id) {
@@ -242,7 +469,7 @@ app.post('/projects/id/user', jsonParser, function(req, res) {
 
 
 
-app.post('/projects/id/name', jsonParser, function(req, res) {
+app.post('/projects/id/name', admin_role, jsonParser, function(req, res) {
 
 	if (!req.body.id) {
 		return res.sendStatus(400)
@@ -277,7 +504,7 @@ app.post('/projects/id/name', jsonParser, function(req, res) {
 
 
 
-app.post('/projects/id/description', jsonParser, function(req, res) {
+app.post('/projects/id/description', admin_role, jsonParser, function(req, res) {
 
 	if (!req.body.id) {
 		return res.sendStatus(400)
@@ -308,7 +535,7 @@ app.post('/projects/id/description', jsonParser, function(req, res) {
 
 
 
-app.post('/projects/id/dataset_id', jsonParser, function(req, res) {
+app.post('/projects/id/dataset_id', admin_role, jsonParser, function(req, res) {
 
 	if (!req.body.id) {
 		return res.sendStatus(400)
@@ -343,7 +570,7 @@ app.post('/projects/id/dataset_id', jsonParser, function(req, res) {
 
 
 
-app.post('/projects/id/questionnaire_id', jsonParser, function(req, res) {
+app.post('/projects/id/questionnaire_id', admin_role, jsonParser, function(req, res) {
 
 	if (!req.body.id) {
 		return res.sendStatus(400)
@@ -378,7 +605,7 @@ app.post('/projects/id/questionnaire_id', jsonParser, function(req, res) {
 
 
 
-app.delete('/projects', jsonParser, function(req, res) {
+app.delete('/projects', admin_role, jsonParser, function(req, res) {
 
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -426,7 +653,7 @@ app.delete('/projects', jsonParser, function(req, res) {
 })
 
 
-app.delete('/projects/id/user', jsonParser, function(req, res) {
+app.delete('/projects/id/user', admin_role, jsonParser, function(req, res) {
 
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -461,7 +688,7 @@ app.delete('/projects/id/user', jsonParser, function(req, res) {
 
 
 // curl -v -H "Content-Type: application/json" https://localhost/projects --insecure
-app.get('/projects', function(req, res) {
+app.get('/projects', basic_role, function(req, res) {
 
 	// Fetch all projects
 	db.collection('projects').find().toArray(function(err, result) {
@@ -494,7 +721,7 @@ app.get('/projects', function(req, res) {
 
 
 
-app.get('/datasets', function(req, res) {
+app.get('/datasets', admin_role, function(req, res) {
 
 	// Fetch all datasets
 	db.collection('datasets').find().toArray(function(err, result) {
@@ -503,7 +730,7 @@ app.get('/datasets', function(req, res) {
 	})
 })
 
-app.get('/datasets/raw', function(req, res) {
+app.get('/datasets/raw', admin_role, function(req, res) {
 
 	paths = fs.readdirSync(config.datasets_path).filter(function(file) {
 	    return fs.statSync(path.join(config.datasets_path, file)).isDirectory();
@@ -513,7 +740,7 @@ app.get('/datasets/raw', function(req, res) {
 })
 
 
-app.get('/datasets/id', function(req, res) {
+app.get('/datasets/id', admin_role, function(req, res) {
 
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -535,7 +762,7 @@ app.get('/datasets/id', function(req, res) {
 
 
 
-app.post('/datasets', jsonParser, function(req, res) {
+app.post('/datasets', admin_role, jsonParser, function(req, res) {
 
 
 	if (!req.body.name) {
@@ -584,7 +811,7 @@ app.post('/datasets', jsonParser, function(req, res) {
 
 
 
-app.get('/datasets/id/build', jsonParser, function(req, res) {
+app.get('/datasets/id/build', admin_role,admin_role,  jsonParser, function(req, res) {
 	/*
 		Reads in patient .json files and stores them in the db.patients and db.records
 		The OS has an upper limit on how many file descriptors can exist at once.
@@ -645,7 +872,7 @@ app.get('/datasets/id/build', jsonParser, function(req, res) {
 
 
 
-app.post('/datasets/name', jsonParser, function(req, res) {
+app.post('/datasets/name', admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -678,7 +905,7 @@ app.post('/datasets/name', jsonParser, function(req, res) {
 })
 
 
-app.post('/datasets/description', jsonParser, function(req, res) {
+app.post('/datasets/description', admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -711,7 +938,7 @@ app.post('/datasets/description', jsonParser, function(req, res) {
 })
 
 
-app.delete('/datasets', jsonParser, function(req, res) {
+app.delete('/datasets', admin_role, jsonParser, function(req, res) {
 	
 	if (req.query.id == null) {
 		return res.sendStatus(400)
@@ -828,7 +1055,7 @@ app.delete('/datasets', jsonParser, function(req, res) {
 
 
 
-app.get('/records/id', function(req, res) {
+app.get('/records/id', admin_role, function(req, res) {
 
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -878,174 +1105,6 @@ app.get('/records/id', function(req, res) {
 
 
 
-app.post('/users', jsonParser, function(req, res) {
-
-	if (req.body.username == null) {
-		return res.sendStatus(400)
-	}
-	else if (req.body.username.trim().length == 0) {
-		return res.sendStatus(400)
-	}
-	else if (req.body.password == null) {
-		return res.sendStatus(400)
-	}
-	else if (req.body.password.trim().length == 0) {
-		return res.sendStatus(400)
-	}
-	else if (req.body.is_admin == null) {
-		return res.sendStatus(400)
-	}
-	else {
-
-		// Create user to insert
-		doc = {
-				  'username'          : req.body.username, 
-				  'password'		  : req.body.password,
-				  'is_admin'          : (req.body.is_admin == 'true'),
-		      }
-
-		// Insert and return inserted document to user
-		db.collection('users').insert(doc, function(err, result) {
-			if (err) throw err
-			res.json(result[0])
-		})
-	}
-})
-
-
-app.get('/users', function(req, res) {
-
-	// Fetch all datasets
-	db.collection('users').find().toArray(function(err, result) {
-		if (err) throw err
-		res.json(result)
-	})
-})
-
-
-app.post('/users/username', jsonParser, function(req, res) {
-
-	if (req.body.id == null) {
-		return res.sendStatus(400)
-	}
-	else if (req.body.id.trim().length == 0) {
-		return res.sendStatus(400)
-	}
-	else if (req.body.username == null) {
-		return res.sendStatus(400)
-	} 
-	else if (req.body.username.trim().length == 0) {
-		return res.sendStatus(400)
-	}
-	else {
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id)}
-		var arg2 = {'$set' : {'username' : req.body.username}}
-		db.collection('users').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
-	}
-})
-
-
-
-app.post('/users/password', jsonParser, function(req, res) {
-
-	if (req.body.id == null) {
-		return res.sendStatus(400)
-	}
-	else if (req.body.id.trim().length == 0) {
-		return res.sendStatus(400)
-	}
-	else if (req.body.password == null) {
-		return res.sendStatus(400)
-	} 
-	else if (req.body.password.trim().length == 0) {
-		return res.sendStatus(400)
-	}
-	else {
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id)}
-		var arg2 = {'$set' : {'password' : req.body.password}}
-		db.collection('users').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
-	}
-})
-
-
-
-app.post('/users/is_admin', jsonParser, function(req, res) {
-
-	if (req.body.id == null) {
-		return res.sendStatus(400)
-	}
-	else if (req.body.id.trim().length == 0) {
-		return res.sendStatus(400)
-	}
-	else if (req.body.is_admin == null) {
-		return res.sendStatus(400)
-	} 
-	else {
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id)}
-		var arg2 = {'$set' : {'is_admin' : req.body.is_admin}}
-		db.collection('users').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
-	}
-})
-
-
-
-app.delete('/users', jsonParser, function(req, res) {
-	
-	if (req.query.id == null) {
-		return res.sendStatus(400)
-	}
-	else if (req.query.id.trim().length == 0) {
-		return res.sendStatus(400)
-	}
-	else {
-
-		var arg = {'_id' : new mongoskin.ObjectID(req.query.id)}
-		db.collection('users').remove(arg, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
-	}
-})
 
 
 
@@ -1076,10 +1135,7 @@ app.delete('/users', jsonParser, function(req, res) {
 
 
 
-
-
-
-app.post('/questionnaires', jsonParser, function(req, res) {
+app.post('/questionnaires', admin_role, jsonParser, function(req, res) {
 
 	var doc = {'name' : 'New Questionnaire', 'description' : '', 'questions' : [], 'tags' : []}
 
@@ -1094,7 +1150,7 @@ app.post('/questionnaires', jsonParser, function(req, res) {
 
 
 
-app.post('/questionnaires/id/question', jsonParser, function(req, res) {
+app.post('/questionnaires/id/question', admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1125,7 +1181,7 @@ app.post('/questionnaires/id/question', jsonParser, function(req, res) {
 
 
 
-app.post('/questionnaires/id/questions/id/choice', jsonParser, function(req, res) {
+app.post('/questionnaires/id/questions/id/choice', admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1173,7 +1229,7 @@ app.post('/questionnaires/id/questions/id/choice', jsonParser, function(req, res
 
 
 
-app.post('/questionnaires/id/questions/id/tag', jsonParser, function(req, res) {
+app.post('/questionnaires/id/questions/id/tag', admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1220,7 +1276,7 @@ app.post('/questionnaires/id/questions/id/tag', jsonParser, function(req, res) {
 
 
 
-app.post('/questionnaires/id/questions/id/trigger', jsonParser, function(req, res) {
+app.post('/questionnaires/id/questions/id/trigger', admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1270,7 +1326,7 @@ app.post('/questionnaires/id/questions/id/trigger', jsonParser, function(req, re
 
 
 
-app.post('/questionnaires/id/tag', jsonParser, function(req, res) {
+app.post('/questionnaires/id/tag', admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1313,7 +1369,7 @@ app.post('/questionnaires/id/tag', jsonParser, function(req, res) {
 
 
 
-app.get('/questionnaires', function(req, res) {
+app.get('/questionnaires', basic_role, function(req, res) {
 
 	// Fetch all datasets
 	db.collection('questionnaires').find().toArray(function(err, result) {
@@ -1325,7 +1381,7 @@ app.get('/questionnaires', function(req, res) {
 
 
 
-app.get('/questionnaires/id/download', function(req, res) {
+app.get('/questionnaires/id/download', admin_role, function(req, res) {
 	
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -1357,7 +1413,7 @@ app.get('/questionnaires/id/download', function(req, res) {
 
 
 
-app.get('/questionnaires/id', function(req, res) {
+app.get('/questionnaires/id', basic_role, function(req, res) {
 	
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -1381,7 +1437,7 @@ app.get('/questionnaires/id', function(req, res) {
 
 
 
-app.post('/questionnaires/upload', multipartMiddleware, function(req, res) {
+app.post('/questionnaires/upload', admin_role, multipartMiddleware, function(req, res) {
 	
 	var file = req.files.file
 
@@ -1411,7 +1467,7 @@ app.post('/questionnaires/upload', multipartMiddleware, function(req, res) {
 
 
 
-app.get('/questionnaires/download', function(req, res) {
+app.get('/questionnaires/download', admin_role, function(req, res) {
 
 	// Fetch all datasets
 	db.collection('questionnaires').find().toArray(function(err, result) {
@@ -1423,7 +1479,7 @@ app.get('/questionnaires/download', function(req, res) {
 
 
 
-app.post('/questionnaires/id/name', jsonParser, function(req, res) {
+app.post('/questionnaires/id/name', admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1456,7 +1512,7 @@ app.post('/questionnaires/id/name', jsonParser, function(req, res) {
 })
 
 
-app.post('/questionnaires/id/description', jsonParser, function(req, res) {
+app.post('/questionnaires/id/description', admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1487,7 +1543,7 @@ app.post('/questionnaires/id/description', jsonParser, function(req, res) {
 
 
 
-app.post('/questionnaires/id/tag/name', jsonParser, function(req, res) {
+app.post('/questionnaires/id/tag/name', admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1530,7 +1586,7 @@ app.post('/questionnaires/id/tag/name', jsonParser, function(req, res) {
 })
 
 
-app.post('/questionnaires/id/questions/id/question', jsonParser, function(req, res) {
+app.post('/questionnaires/id/questions/id/question', admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1574,7 +1630,7 @@ app.post('/questionnaires/id/questions/id/question', jsonParser, function(req, r
 })
 
 
-app.post('/questionnaires/id/questions/id/choices/id/name', jsonParser, function(req, res) {
+app.post('/questionnaires/id/questions/id/choices/id/name', admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1668,7 +1724,7 @@ app.post('/questionnaires/id/questions/id/choices/id/name', jsonParser, function
 
 
 
-app.post('/questionnaires/id/questions/id/frequency', jsonParser, function(req, res) {
+app.post('/questionnaires/id/questions/id/frequency', admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1713,7 +1769,7 @@ app.post('/questionnaires/id/questions/id/frequency', jsonParser, function(req, 
 
 
 
-app.post('/questionnaires/id/questions/id/type', jsonParser, function(req, res) {
+app.post('/questionnaires/id/questions/id/type', admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1756,7 +1812,7 @@ app.post('/questionnaires/id/questions/id/type', jsonParser, function(req, res) 
 	}
 })
 
-app.delete('/questionnaires/id/question', jsonParser, function(req, res) {
+app.delete('/questionnaires/id/question', admin_role, jsonParser, function(req, res) {
 
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -1792,7 +1848,7 @@ app.delete('/questionnaires/id/question', jsonParser, function(req, res) {
 
 
 
-app.delete('/questionnaires/id/tag', jsonParser, function(req, res) {
+app.delete('/questionnaires/id/tag', admin_role, jsonParser, function(req, res) {
 
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -1827,7 +1883,7 @@ app.delete('/questionnaires/id/tag', jsonParser, function(req, res) {
 })
 
 
-app.delete('/questionnaires/id', jsonParser, function(req, res) {
+app.delete('/questionnaires/id', admin_role, jsonParser, function(req, res) {
 
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -1853,7 +1909,7 @@ app.delete('/questionnaires/id', jsonParser, function(req, res) {
 })
 
 
-app.delete('/questionnaires/id/questions/id/choices/id', jsonParser, function(req, res) {
+app.delete('/questionnaires/id/questions/id/choices/id', admin_role, jsonParser, function(req, res) {
 
 	if (req.query.id == null) {
 		return res.sendStatus(400)
@@ -1944,7 +2000,7 @@ app.delete('/questionnaires/id/questions/id/choices/id', jsonParser, function(re
 
 
 
-app.delete('/questionnaires/id/questions/id/triggers/id', jsonParser, function(req, res) {
+app.delete('/questionnaires/id/questions/id/triggers/id', admin_role, jsonParser, function(req, res) {
 
 	if (req.query.id == null) {
 		return res.sendStatus(400)
@@ -2036,7 +2092,7 @@ app.delete('/questionnaires/id/questions/id/triggers/id', jsonParser, function(r
 
 
 
-app.delete('/questionnaires/id/questions/id/tags/id', jsonParser, function(req, res) {
+app.delete('/questionnaires/id/questions/id/tags/id', admin_role, jsonParser, function(req, res) {
 
 	if (req.query.id == null) {
 		return res.sendStatus(400)
@@ -2126,7 +2182,7 @@ app.delete('/questionnaires/id/questions/id/tags/id', jsonParser, function(req, 
 
 
 
-app.get('/hits', function(req, res) {
+app.get('/hits', basic_role, function(req, res) {
 
 	if (!req.query.project_id) {
 		return res.sendStatus(400)
@@ -2152,7 +2208,7 @@ app.get('/hits', function(req, res) {
 
 
 
-app.post('/hits/choice_id', jsonParser, function(req, res) {
+app.post('/hits/choice_id', basic_role, jsonParser, function(req, res) {
 
 	if (!req.body.id) {
 		return res.sendStatus(400)
@@ -2188,7 +2244,7 @@ app.post('/hits/choice_id', jsonParser, function(req, res) {
 
 
 
-app.post('/hits/id/answered', jsonParser, function(req, res) {
+app.post('/hits/id/answered', basic_role, jsonParser, function(req, res) {
 
 	if (!req.body.id) {
 		return res.sendStatus(400)
@@ -2216,7 +2272,7 @@ app.post('/hits/id/answered', jsonParser, function(req, res) {
 
 
 
-app.post('/hits/annotations/choice_id', jsonParser, function(req, res) {
+app.post('/hits/annotations/choice_id', basic_role, jsonParser, function(req, res) {
 
 	if (!req.body.id) {
 		return res.sendStatus(400)
@@ -2258,7 +2314,7 @@ app.post('/hits/annotations/choice_id', jsonParser, function(req, res) {
 
 
 
-app.get('/hits/project_id/build', jsonParser, function(req, res) {
+app.get('/hits/project_id/build', admin_role, jsonParser, function(req, res) {
 	/*
 		Reads in patient .json files and stores them in the db.patients and db.records
 		The OS has an upper limit on how many file descriptors can exist at once.
