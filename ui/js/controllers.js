@@ -42,10 +42,9 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
 
   	 $scope.project = undefined;
   	 $scope.dataset = undefined;
-  	 $scope.analysts = [];
+  	 $scope.users = [];
   	 $scope.project_name = '';
   	 $scope.questionnaire_id = '';
-  	 $scope.workers = []; 
   	 $scope.project_description = '';
   	 $scope.datasets = [];
   	 $scope.questionnaires = [];
@@ -171,7 +170,7 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
        $scope.get_user_name = function(_user_id) {
             for (var i = 0; i < $scope.users.length; i++) {
               if ($scope.users[i]._id == _user_id) {
-                return $scope.users[i].id;
+                return $scope.users[i].username;
               }
             }
 
