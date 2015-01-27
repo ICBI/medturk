@@ -5,6 +5,11 @@ var db         = mongoskin.db(config.db_url)
 
 module.exports = {
 
+	generate_id: function() {
+		return new mongoskin.ObjectID()
+	},
+
+
 	get: function(_dataset_id, _callback, _error_callback, _passthrough) {
 
 		var _query  = {'_id' : new mongoskin.ObjectID(_dataset_id)}
@@ -20,6 +25,7 @@ module.exports = {
 			}
 		})
 	},
+
 
 	insert: function(_document, _callback, _error_callback, _passthrough) {
 

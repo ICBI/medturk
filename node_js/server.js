@@ -15,7 +15,8 @@ var LocalStrategy = require('passport-local').Strategy
 var cookieParser  = require('cookie-parser')
 var session		  = require('express-session')
 var user          = require('./user.js')
-var bcrypt        = require('bcrypt-nodejs');
+var bcrypt        = require('bcrypt-nodejs')
+var project       = require('./project.js')
 
 
 var fq         = new FileQueue(200)
@@ -124,7 +125,10 @@ app.use(express.static(config.ui_path))
 
 
 app.use(cookieParser())
-app.use(session({ secret: config.secret_key}))
+app.use(session({ secret: config.secret_key, 
+				  saveUninitialized: true,
+				  resave: true 
+				}))
 app.use(passport.initialize())
 app.use(passport.session())
 
@@ -420,7 +424,9 @@ app.post('/projects', admin_role, jsonParser, function(req, res) {
 			  'dataset_id'        : null,
 			  'questionnaire_id'  : null,
 			  'user_ids'          : [],
-			  'status'            : 'Needs Building'
+			  'status'            : 'Needs Building',
+			  'num_hits'		  : 0,
+			  'num_answers'		  : 0
 	      }
 
 	// Insert and return inserted document to user
@@ -686,15 +692,43 @@ app.delete('/projects/id/user', admin_role, jsonParser, function(req, res) {
 })
 
 
-
-// curl -v -H "Content-Type: application/json" https://localhost/projects --insecure
 app.get('/projects', basic_role, function(req, res) {
 
-	// Fetch all projects
-	db.collection('projects').find().toArray(function(err, result) {
-		if (err) throw err
-		res.json(result)
-	})
+	function get_projects_callback(_projects, _passthrough) {
+
+		res.json(_projects)
+	}
+
+	function get_projects_error_callback(_projects, _passthrough) {
+
+	}
+
+	project.get(get_projects_callback, get_projects_error_callback)
+})
+
+
+
+app.get('/projects/id', basic_role, function(req, res) {
+
+	function get_project_callback(_project, _passthrough) {
+		res.json(_project)
+	}
+
+	function get_project_error_callback(_project, _passthrough) {
+
+	}
+
+	if (!req.query.id) {
+		return res.sendStatus(400)
+	}
+	else if (req.query.id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else {
+
+		project.get_by_project_id(req.query.id, get_project_callback, get_project_error_callback)
+	}
+
 })
 
 
@@ -2193,11 +2227,11 @@ app.get('/hits', basic_role, function(req, res) {
 	else {
 		var arg1 = {'project_id' : new mongoskin.ObjectID(req.query.project_id), 'annotations.0' : {$exists : true}, 'answered' : {$exists : false} }
 
-		db.collection('hits').findOne(arg1, function(err, hit) {
+		db.collection('hits').findOne(arg1, function(err, _hit) {
 			if (err) throw err
 
-			if (hit) {
-				return res.json(hit)
+			if (_hit) {
+				return res.json(_hit)
 			}
 			else {
 				return res.sendStatus(404)
@@ -2210,10 +2244,25 @@ app.get('/hits', basic_role, function(req, res) {
 
 app.post('/hits/choice_id', basic_role, jsonParser, function(req, res) {
 
-	if (!req.body.id) {
+	function increment_num_answers_callback(_passthrough) {
+		res.sendStatus(200)
+	}
+
+	function increment_num_answers_error_callback(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
+
+	if (!req.body.hit_id) {
 		return res.sendStatus(400)
 	}
-	else if (req.body.id.trim().length == 0) {
+	else if (req.body.hit_id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else if (!req.body.project_id) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.project_id.trim().length == 0) {
 		return res.sendStatus(400)
 	}
 	else if (!req.body.choice_id) {
@@ -2224,14 +2273,14 @@ app.post('/hits/choice_id', basic_role, jsonParser, function(req, res) {
 	}
 	else {
 
-		arg1 = {'_id' : mongoskin.ObjectID(req.body.id)}
+		arg1 = {'_id' : mongoskin.ObjectID(req.body.hit_id)}
 		arg2 = {$set : {'choice_id' :  mongoskin.ObjectID(req.body.choice_id), 'answered' : true, 'user_id' : 'todo', 'date' : Date()}}
 
 		db.collection('hits').update(arg1, arg2, function(err, result) {
 			if (err) throw err
 			
 			if (result) {
-				res.sendStatus(200)
+				project.increment_num_answers(req.body.project_id, increment_num_answers_callback, increment_num_answers_error_callback)
 			}
 			else {
 				res.sendStatus(404)
@@ -2246,22 +2295,37 @@ app.post('/hits/choice_id', basic_role, jsonParser, function(req, res) {
 
 app.post('/hits/id/answered', basic_role, jsonParser, function(req, res) {
 
-	if (!req.body.id) {
+
+	function increment_num_answers_callback(_passthrough) {
+		res.sendStatus(200)
+	}
+
+	function increment_num_answers_error_callback(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
+	if (!req.body.hit_id) {
 		return res.sendStatus(400)
 	}
-	else if (req.body.id.trim().length == 0) {
+	else if (req.body.hit_id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else if (!req.body.project_id) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.project_id.trim().length == 0) {
 		return res.sendStatus(400)
 	}
 	else {
 
-		arg1 = {'_id' : mongoskin.ObjectID(req.body.id)}
+		arg1 = {'_id' : mongoskin.ObjectID(req.body.hit_id)}
 		arg2 = {$set : {'answered' : true, 'user_id' : 'todo', 'date' : Date()}}
 
 		db.collection('hits').update(arg1, arg2, function(err, result) {
 			if (err) throw err
 			
 			if (result) {
-				res.sendStatus(200)
+				project.increment_num_answers(req.body.project_id, increment_num_answers_callback, increment_num_answers_error_callback)
 			}
 			else {
 				res.sendStatus(404)
@@ -2353,8 +2417,6 @@ app.get('/hits/project_id/build', admin_role, jsonParser, function(req, res) {
 		_child_process = spawn('node', ['build_hits.js', req.query.id])
 		
 		_child_process.stdout.on('data', function(data) {
-
-			console.log('data: ' + data)
 
 			send_json_to_user(data, function() {
 			})

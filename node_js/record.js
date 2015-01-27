@@ -29,12 +29,7 @@ module.exports = {
 			if (err) throw err
 
 			if (result) {
-				result.each(function(err, _document) {
-			
-					if (_document) {
-        				_callback(_document, _passthrough)
-        			}
-    			})
+				_callback(result, _passthrough)
 			}
 			else {
 				_error_callback(err, _passthrough)
