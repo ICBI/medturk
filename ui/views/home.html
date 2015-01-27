@@ -82,7 +82,7 @@
                   </p>
               </td>
               <td>{{project.status}}</td>
-              <td>{{project.completion}}</td>
+              <td>{{project.num_answers}}/{{project.num_hits}}</td>
               <td>
                   <a ng-click="download(project._id)">Download</a>&nbsp;&nbsp;&nbsp;<a ng-click="set_project(project)" data-target="#project_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_project(project._id, project.name, $index)">Delete</a></td>
               </td>
