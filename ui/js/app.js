@@ -601,6 +601,10 @@ app.factory('project_factory', function($http) {
         return $http.get(server + '/projects');
      }
 
+     factory.get_project = function(_project_id) {
+        return $http.get(server + '/projects/id?id=' + _project_id);
+     }
+
      factory.get_answer_file = function(_project_id) {
        window.open(server + '/project/data?id=' + _project_id, '_blank', '');
      }
@@ -701,10 +705,11 @@ app.factory('hit_factory', function($http) {
 
 
 
-    factory.create_hit_choice = function(_id, _choice_id) {
+    factory.create_hit_choice = function(_project_id, _hit_id, _choice_id) {
         var _json = {
-                        id :        _id,
-                        choice_id : _choice_id
+                        project_id : _project_id,
+                        hit_id     : _hit_id,
+                        choice_id  : _choice_id
                     };
 
 
@@ -713,9 +718,9 @@ app.factory('hit_factory', function($http) {
 
 
   
-     factory.create_hit_annotation_choice = function(_id, _annotation_id, _choice_id) {
+     factory.create_hit_annotation_choice = function(_hit_id, _annotation_id, _choice_id) {
         var _json = {
-                        id            : _id,
+                        id            : _hit_id,
                         annotation_id : _annotation_id,
                         choice_id     : _choice_id
                     };
@@ -743,9 +748,10 @@ app.factory('hit_factory', function($http) {
      *     UPDATE operations
      *   
      */
-     factory.update_hit_answered = function(_id) {
+     factory.update_hit_answered = function(_project_id, _hit_id) {
         var _json = {
-                        id : _id,
+                        hit_id : _hit_id,
+                        project_id : _project_id
                     };
 
 

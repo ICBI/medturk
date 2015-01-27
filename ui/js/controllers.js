@@ -441,7 +441,9 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
 
             function on_build_hits_callback(_json) {
                 
-                  $scope.project.status  = _json.status
+                  $scope.project.status      = _json.status
+                  $scope.project.num_hits    = _json.num_hits
+                  $scope.project.num_answers = _json.num_answers
                   $scope.$apply();
             }
 
@@ -749,6 +751,13 @@ app.controller('WorkController', function($scope, $sce, $location, hit_factory, 
 
 
 		 $scope.get_hit = function() {
+
+      // Update status information
+      project_factory.get_project($scope.project._id).success(function(data){
+             $scope.project.num_answers = data.num_answers
+      })
+
+
 		 	
 		 	hit_factory.get_hit($scope.project._id).success(function(data){
             
@@ -812,7 +821,7 @@ app.controller('WorkController', function($scope, $sce, $location, hit_factory, 
 	     $scope.create_hit_choice = function(choice) {
 
             if ($scope.question.frequency == 'once') {
-                  hit_factory.create_hit_choice($scope.hit._id, choice._id).success(function(data){
+                  hit_factory.create_hit_choice($scope.project._id, $scope.hit._id, choice._id).success(function(data){
 
                       // Generate a new hit
                       $scope.get_hit();
@@ -829,7 +838,7 @@ app.controller('WorkController', function($scope, $sce, $location, hit_factory, 
 
 
        $scope.update_hit_answered = function() {
-          hit_factory.update_hit_answered($scope.hit._id).success(function(data){
+          hit_factory.update_hit_answered($scope.project._id, $scope.hit._id).success(function(data){
                   $scope.get_hit();
           });
        }
