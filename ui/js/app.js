@@ -439,7 +439,6 @@ app.factory('dataset_factory', function($http) {
           var es = new EventSource(server + '/datasets/id/build?id=' + _id)
           es.onmessage = function (event) {
 
-              console.log(event)
               var _json = JSON.parse(event.data);
 
               // Know when to close the connection!
@@ -730,14 +729,15 @@ app.factory('hit_factory', function($http) {
      }
 
 
-     factory.create_hit_text = function(_hit_id, _text) {
+     factory.create_hit_text = function(_project_id, _hit_id, _text) {
         var _json = {
-                        hit_id : _hit_id,
-                        text   : _text
+                        hit_id     : _hit_id,
+                        project_id : _project_id,
+                        text       : _text
                     };
 
 
-        return $http.post(server + '/hit/text/create', _json);
+        return $http.post(server + '/hits/text', _json);
      }
 
 

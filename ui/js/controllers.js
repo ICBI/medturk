@@ -845,7 +845,7 @@ app.controller('WorkController', function($scope, $sce, $location, hit_factory, 
 
        $scope.create_hit_text = function(text) {
        
-        hit_factory.create_hit_text($scope.hit._id, text).success(function(data){
+        hit_factory.create_hit_text($scope.project._id, $scope.hit._id, text).success(function(data){
 
            // Generate a new hit
              $scope.get_hit();
