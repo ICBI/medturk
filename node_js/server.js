@@ -17,6 +17,7 @@ var session		  = require('express-session')
 var user          = require('./user.js')
 var bcrypt        = require('bcrypt-nodejs')
 var project       = require('./project.js')
+var hit           = require('./hit.js')
 
 
 var fq         = new FileQueue(200)
@@ -102,6 +103,16 @@ function admin_role(req, res, next) {
 
   res.redirect('/login.html')
 }
+
+/*
+Indexes to ensure:
+
+db.records.ensureIndex({'patient_id' : 1, 'dataset_id' : 1})
+db.users.ensureIndex({'username' : 1})
+db.patients.ensureIndex({'dataset_id' : 1})
+*/
+
+
 
 
 
@@ -613,6 +624,43 @@ app.post('/projects/id/questionnaire_id', admin_role, jsonParser, function(req, 
 
 app.delete('/projects', admin_role, jsonParser, function(req, res) {
 
+	var calls_completed   = 0
+	var calls_to_complete = 2
+
+
+	function on_callback() {
+		calls_completed += 1
+		if (calls_completed == calls_to_complete) {
+			return res.sendStatus(200)
+		}
+	}
+
+
+
+	function hit_delete_callback(_passthrough) {
+		on_callback()
+
+	}
+
+
+	function hit_delete_error_callback(_err, _passthrough) {
+		on_callback()
+	}
+
+
+
+	function project_delete_callback(_passthrough) {
+		on_callback()
+	}
+
+
+	function project_delete_error_callback(_err, _passthrough) {
+		on_callback()
+	}
+
+
+
+
 	if (!req.query.id) {
 		return res.sendStatus(400)
 	}
@@ -620,41 +668,9 @@ app.delete('/projects', admin_role, jsonParser, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
-		var calls_completed   = 0
-		var calls_to_complete = 2
 
-		var arg = {'_id' : new mongoskin.ObjectID(req.query.id)}
-		db.collection('projects').remove(arg, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				calls_completed += 1
-				if (calls_to_complete == calls_completed) {
-					res.sendStatus(200)
-				}
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
-
-
-		var arg = {'project_id' : new mongoskin.ObjectID(req.query.id)}
-		db.collection('hits').remove(arg, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				calls_completed += 1
-				if (calls_to_complete == calls_completed) {
-					res.sendStatus(200)
-				}
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
+		project.delete(req.query.id, project_delete_callback, project_delete_error_callback)
+		hit.delete_by_project_id(req.query.id, hit_delete_callback, hit_delete_error_callback)
 	}
 })
 
@@ -702,8 +718,13 @@ app.get('/projects', basic_role, function(req, res) {
 	function get_projects_error_callback(_projects, _passthrough) {
 
 	}
-
-	project.get(get_projects_callback, get_projects_error_callback)
+	
+	if (req.user.is_admin) {
+		project.get(get_projects_callback, get_projects_error_callback)
+	}
+	else {
+		project.get_by_user_id(req.user._id, get_projects_callback, get_projects_error_callback)
+	}
 })
 
 
@@ -2274,7 +2295,57 @@ app.post('/hits/choice_id', basic_role, jsonParser, function(req, res) {
 	else {
 
 		arg1 = {'_id' : mongoskin.ObjectID(req.body.hit_id)}
-		arg2 = {$set : {'choice_id' :  mongoskin.ObjectID(req.body.choice_id), 'answered' : true, 'user_id' : 'todo', 'date' : Date()}}
+		arg2 = {$set : {'choice_id' :  mongoskin.ObjectID(req.body.choice_id), 'answered' : true, 'user_id' : req.user._id, 'date' : Date()}}
+
+		db.collection('hits').update(arg1, arg2, function(err, result) {
+			if (err) throw err
+			
+			if (result) {
+				project.increment_num_answers(req.body.project_id, increment_num_answers_callback, increment_num_answers_error_callback)
+			}
+			else {
+				res.sendStatus(404)
+			}
+		})
+	}
+})
+
+
+
+app.post('/hits/text', basic_role, jsonParser, function(req, res) {
+
+	function increment_num_answers_callback(_passthrough) {
+		res.sendStatus(200)
+	}
+
+	function increment_num_answers_error_callback(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
+	if (!req.body.hit_id) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.hit_id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else if (!req.body.project_id) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.project_id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else if (!req.body.text) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.text.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else {
+
+		var _text = req.body.text.trim()
+
+		arg1 = {'_id' : mongoskin.ObjectID(req.body.hit_id)}
+		arg2 = {$set : {'text' : _text, 'answered' : true, 'user_id' : req.user._id, 'date' : Date()}}
 
 		db.collection('hits').update(arg1, arg2, function(err, result) {
 			if (err) throw err
@@ -2319,7 +2390,7 @@ app.post('/hits/id/answered', basic_role, jsonParser, function(req, res) {
 	else {
 
 		arg1 = {'_id' : mongoskin.ObjectID(req.body.hit_id)}
-		arg2 = {$set : {'answered' : true, 'user_id' : 'todo', 'date' : Date()}}
+		arg2 = {$set : {'answered' : true, 'user_id' : req.user._id, 'date' : Date()}}
 
 		db.collection('hits').update(arg1, arg2, function(err, result) {
 			if (err) throw err

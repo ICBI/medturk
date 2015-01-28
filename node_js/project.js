@@ -36,6 +36,23 @@ module.exports = {
 	},
 
 
+	get_by_user_id: function(_user_id, _callback, _error_callback, _passthrough) {
+
+		var _query = {'user_ids' : { '$in' : [new mongoskin.ObjectID(_user_id)]}}
+
+		db.collection('projects').find(_query).toArray(function(err, result) {
+			if (err) throw err
+
+			if (result) {
+				_callback(result, _passthrough)
+			}
+			else {
+				_error_callback(err, _passthrough)
+			}
+		})
+	},
+
+
 	increment_num_answers: function(_project_id, _callback,_error_callback, _passthrough) {
 		var _query        = {'_id' : new mongoskin.ObjectID(_project_id)}
 		var _update_query = {'$inc' : {'num_answers' : 1}}
@@ -59,6 +76,22 @@ module.exports = {
 		var _update_query = {'$set' : {'status' : _status, 'num_answers' : _num_answers, 'num_hits' : _num_hits}}
 
 		db.collection('projects').update(_query, _update_query, function(err, result) {
+			if (err) throw err
+
+			if (result) {
+				_callback(_passthrough)
+			}
+			else {
+				_error_callback(err, _passthrough)
+			}
+		})
+	},
+
+
+	delete: function(_project_id, _callback, _error_callback, _passthrough) {
+		var _query = {'_id' : new mongoskin.ObjectID(_project_id)}
+
+		db.collection('projects').remove(_query, function(err, result) {
 			if (err) throw err
 
 			if (result) {

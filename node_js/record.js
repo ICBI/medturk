@@ -25,7 +25,7 @@ module.exports = {
 
 		var _query = {'dataset_id' : new mongoskin.ObjectID(_dataset_id), 'patient_id' : new mongoskin.ObjectID(_patient_id)}
 		
-		db.collection('records').find(_query, function(err, result) {
+		db.collection('records').find(_query).toArray( function(err, result) {
 			if (err) throw err
 
 			if (result) {

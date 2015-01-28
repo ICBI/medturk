@@ -61,6 +61,22 @@ module.exports = {
 				_error_callback(err, _passthrough)
 			}
 		})
+	},
+
+
+	delete_by_project_id: function(_project_id, _callback, _error_callback, _passthrough) {
+		var _query = {'project_id' : new mongoskin.ObjectID(_project_id)}
+
+		db.collection('hits').remove(_query, function(err, result) {
+			if (err) throw err
+
+			if (result) {
+				_callback(_passthrough)
+			}
+			else {
+				_error_callback(err, _passthrough)
+			}
+		})
 	}
 }
 
