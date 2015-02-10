@@ -1,0 +1,79 @@
+<div class="row">
+
+	<h2>{{project.name}}</h2>
+	<table class="table table-striped">
+	    <tr>
+	    	<th>Name</th>
+	    	<th>Description</th>
+	    	<th></th>
+	    </tr>
+	    <tr>
+	      <td>{{project.name}}</td>
+	      <td>{{project.description}}</td>
+	      <td>
+	         <a data-target="#project_modal" data-toggle="modal">Edit</a></td>
+	      </td>
+	    </tr>
+	</table>
+</div>
+
+
+
+<br/>
+<br/>
+
+
+
+<div class="row">
+	  <h2>Analysts</h2>
+	    <table style="width: 400px" class="table table-striped">
+	    <tr>
+	      <th>Name</th>
+	      <th></th>
+	    </tr>
+
+	    <tr ng-repeat="user_id in project.user_ids">
+	      <td>
+	        <p class="label label-default">{{get_user_name(user_id)}}</p>
+	      </td>
+	      <td>
+	          <a ng-click="delete_user_from_project(user_id, $index)">Delete</a></td>
+	      </td>
+	    </tr>
+	  </table>
+	</div>
+
+	<div class="row">
+	    <p>Add Analyst</p>
+	    <select ng-change="add_user_to_project(selected_item._id)" ng-model="selected_item" style="width: 200px" class="form-control" ng-options="user.username for user in users"></select>
+	</button>
+</div>
+
+
+<!-- Modal for editing project attributes -->
+<div class="modal fade" id="project_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="myModalLabel">Project Editor</h4>
+            </div>
+            <div class="modal-body">
+                  <div class="row">
+	                    <h4>Name</h4>
+	                    	<input id="project_name" style="width: 400px" type="text" class="form-control" ng-model="project.name"/>
+	                    </div>
+	                <br/>
+                    <br/>
+                    <div class="row">
+                    	<h4>Description</h4>
+    					<textarea id="project_description" style="width: 400px" class="form-control" rows="3" ng-model="project.description"></textarea>
+                    </div>
+            </div>
+            <div class="modal-footer">
+                <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+

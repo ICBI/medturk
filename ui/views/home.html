@@ -55,7 +55,7 @@
               <td>{{q.description}}</td>
               <td>{{q.questions.length}}</td>
               <td>
-                  <a ng-click="download_questionnaire(q._id)">Download</a>&nbsp;&nbsp;&nbsp;<a ng-click="edit_questionnaire(q._id)" data-target="#questionnaire_edit_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_questionnaire(q._id, q.name)">Delete</a></td>
+                  <a ng-click="download_questionnaire(q._id)">Download</a>&nbsp;&nbsp;&nbsp;<a ng-click="edit_questionnaire(q._id)">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_questionnaire(q._id, q.name)">Delete</a></td>
               </td>
           </tr>
          </table>
@@ -84,7 +84,7 @@
               <td>{{project.status}}</td>
               <td>{{project.num_answers}}/{{project.num_hits}}</td>
               <td>
-                  <a ng-click="download(project._id)">Download</a>&nbsp;&nbsp;&nbsp;<a ng-click="set_project(project)" data-target="#project_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_project(project._id, project.name, $index)">Delete</a></td>
+                  <a ng-click="download(project._id)">Download</a>&nbsp;&nbsp;&nbsp;<a ng-click="edit_project(project._id)">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_project(project._id, project.name, $index)">Delete</a></td>
               </td>
           </tr>
          </table>
@@ -320,7 +320,7 @@
 
             </div>
             <div class="modal-footer">
-                <button id="close" ng-click="build_project(project._id)" type="button" class="btn btn-danger" data-dismiss="modal">Build</button>
+                <button ng-hide="project.status == 'Active'" id="close" ng-click="build_project(project._id)" type="button" class="btn btn-danger" data-dismiss="modal">Build</button>
             </div>
         </div>
     </div>

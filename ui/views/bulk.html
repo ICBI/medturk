@@ -1,0 +1,58 @@
+<img style="width: 240px; height: 200px; float: left; padding-right: 30px" class="featurette-image img-responsive" data-src="holder.js/500x500/auto" src="img/medkit.png" alt="Generic placeholder image">
+
+<div ng-if="projects.length > 0" class="row">
+        <br/>
+        <h4>Select a project to work on here:</h4>
+        <select ng-change="on_change_project(project)" ng-model="project" style="width: 400px" class="form-control" ng-options="p.name for p in projects"></select>
+        <br/>
+        <p>{{project.description}}</p>
+        <h4>Select a question to answer on:</h4>
+        <select ng-change="on_change_question(question)" ng-model="question" style="width: 400px" class="form-control" ng-options="question.question for question in questionnaire.questions"></select>
+        <br/>
+        <br/>
+</div>
+
+<div ng-if="projects.length == 0">
+    <h3>No projects available</h3>
+</div>
+
+<div ng-if="is_project_complete">
+    <h1>The {{project.name}} is finished</h1>
+</div>
+
+
+
+<div ng-if="!is_project_complete && projects.length > 0" class="row">
+        <table class="table table-striped">
+            <tr>
+                <th>Phrase</th>
+                <th>Number of Notes Affected</th>
+                <th>Number of Patients Affected</th>
+                <th>Bulk Answer</th>
+                <th></th>
+                <th></th>
+            </tr>
+            <tr ng-repeat="phrase in phrases">
+                <td>{{phrase.phrase}}</td>
+                <td>{{phrase.count}}</td>
+                <td>{{phrase.num_patients}}</td>
+                <td>
+                    <div ng-if="question.type == 'radio'" class="btn-group">
+                         <button type="radio" ng-repeat="choice in question.choices" class="btn btn-default {{annotation.choice_id == choice._id ? 'active' : ''}}" ng-click="create_hit_choice(phrase, choice, $index)">{{choice.name}}</button>
+                    </div>
+                    <div ng-if="question.type == 'text'" class="btn-group">
+                        <input type="text" class="form-control" ng-model="text_answer"/>
+                        <button class="btn btn-default" ng-click="">Submit</button>
+                    </div>
+                </td>
+                <td><a ng-click="ignore_phrase(phrase, $index)">Ignore</a></td>
+                <td><a ng-click="mark_phrase_as_not_relevant(phrase, $index)">Not Relevant</a></td><td>
+            </tr>
+        </table>
+    <button class="btn btn-danger" ng-click="">Reload</button>
+</div> 
+
+
+
+
+     
