@@ -34,62 +34,7 @@ function redirect_to_login() {
 }
 
 
-var app = angular.module('medTurkApp', ['angularFileUpload', 'ngRoute', 'ngSanitize'], function($httpProvider){
-
-  /*
-
-  // Use x-www-form-urlencoded Content-Type
-  $httpProvider.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=utf-8';
-  */
-  /**
-   * This solution was found at http://victorblog.com/2012/12/20/make-angularjs-http-service-behave-like-jquery-ajax/
-   *
-   * Before adding this block of code, RESTful Posts would not serialize data into JSON properly 
-   *
-   * The workhorse; converts an object to x-www-form-urlencoded serialization.
-   * @param {Object} obj
-   * @return {String}
-   */ 
-
-   /*
-  var param = function(obj) {
-    var query = '', name, value, fullSubName, subName, subValue, innerObj, i;
-      
-    for(name in obj) {
-      value = obj[name];
-        
-      if(value instanceof Array) {
-        for(i=0; i<value.length; ++i) {
-          subValue = value[i];
-          fullSubName = name + '[' + i + ']';
-          innerObj = {};
-          innerObj[fullSubName] = subValue;
-          query += param(innerObj) + '&';
-        }
-      }
-      else if(value instanceof Object) {
-        for(subName in value) {
-          subValue = value[subName];
-          fullSubName = name + '[' + subName + ']';
-          innerObj = {};
-          innerObj[fullSubName] = subValue;
-          query += param(innerObj) + '&';
-        }
-      }
-      else if(value !== undefined && value !== null)
-        query += encodeURIComponent(name) + '=' + encodeURIComponent(value) + '&';
-    }
-      
-    return query.length ? query.substr(0, query.length - 1) : query;
-  };
- 
-  // Override $http service's default transformRequest
-  $httpProvider.defaults.transformRequest = [function(data) {
-    return angular.isObject(data) && String(data) !== '[object File]' ? param(data) : data;
-  }];
-
-  */
-});
+var app = angular.module('medTurkApp', ['angularFileUpload', 'ngRoute', 'ngSanitize'])
 
 /*
  *
@@ -120,6 +65,16 @@ app.config(function($routeProvider) {
   {
      controller: 'WorkController',
      templateUrl: 'views/work.html'
+  })
+  .when('/bulk',
+  {
+     controller: 'BulkController',
+     templateUrl: 'views/bulk.html'
+  })
+   .when('/project',
+  {
+     controller: 'ProjectController',
+     templateUrl: 'views/project.html'
   })
   .when('/questionnaire',
   {
@@ -683,6 +638,42 @@ app.factory('project_factory', function($http) {
 
 
 
+
+
+
+app.factory('phrase_factory', function($http) {
+     var factory = {}
+
+     factory.get_phrases_by_project_id_and_question_id = function(_project_id, _question_id) {
+          return $http.get(server + '/phrases?project_id=' + _project_id + '&question_id=' + _question_id);
+     }
+
+     factory.create_hit_choice = function(_phrase_id, _choice_id, _frequency) {
+
+          var _json = {
+                        phrase_id  : _phrase_id, 
+                        choice_id  : _choice_id,
+                        frequency  : _frequency
+                      };
+
+          return $http.post(server + '/phrases/choice_id', _json);
+     }
+
+
+     factory.ignore = function(_phrase_id) {
+          return $http.delete(server + '/phrases/ignore?phrase_id=' + _phrase_id)
+     }
+
+     factory.not_applicable = function(_phrase_id) {
+          return $http.delete(server + '/phrases/not_applicable?phrase_id=' + _phrase_id)
+     }
+
+     return factory;
+})
+
+
+
+
 app.factory('hit_factory', function($http) {
 
 
@@ -842,6 +833,9 @@ app.factory('record_factory', function($http) {
  *
  *
  */
+
+
+
 
 app.directive("timeGraph", function($parse) {
     return {

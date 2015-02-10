@@ -38,6 +38,7 @@ function get_highlighted_text(text, beg, end) {
 }
 
 
+
 app.controller('HomeController', function($scope, $upload, user_factory, project_factory, questionnaire_factory, dataset_factory, hit_factory) {
 
   	 $scope.project = undefined;
@@ -301,6 +302,12 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
          $scope.edit_questionnaire = function(_questionnaire_id) {
             window.location.replace(server + "/index.html#/questionnaire?questionnaire_id=" + _questionnaire_id);
          }
+
+
+         $scope.edit_project = function(_project_id) {
+            window.location.replace(server + "/index.html#/project?project_id=" + _project_id);
+         }
+
 
          $scope.create_questionnaire = function() {
 
@@ -681,15 +688,179 @@ app.controller('QuestionnaireController', function($scope, $routeParams, questio
 
 
 
+
+
+
+
+
+app.controller('ProjectController', function($scope, $routeParams, project_factory, user_factory, questionnaire_factory) {
+
+  var project_id     = $routeParams.project_id;
+
+
+  // Gets all users
+  user_factory.get_users().success(function(data){
+             $scope.users = data;
+  });
+
+
+   $scope.get_user_name = function(_user_id) {
+        for (var i = 0; i < $scope.users.length; i++) {
+          if ($scope.users[i]._id == _user_id) {
+            return $scope.users[i].username;
+          }
+        }
+
+        return '';
+    }
+
+
+  $scope.delete_user_from_project = function(_user_id, user_index) {
+      project_factory.delete_user_from_project($scope.project._id, _user_id).success(function(data){
+            $scope.project.user_ids.splice(user_index, 1);
+        }); 
+    }
+
+
+  $scope.add_user_to_project = function(user_id) {
+
+          if ($scope.project.user_ids.indexOf(user_id) == -1) {
+              project_factory.create_user($scope.project._id, user_id).success(function(data){
+                   $scope.project.user_ids.push(user_id);
+              });
+            }
+          else {
+            alert('User has already been added');
+          } 
+  }
+
+
+  project_factory.get_project(project_id).success(function(data){
+      $scope.project = data;
+
+      // Now we can retrieve the questionnaire
+      questionnaire_factory.get_questionnaire($scope.project.questionnaire_id).success(function(data){
+            $scope.questionnaire = data;
+      });
+  })
+
+  $( "#project_name" ).focusout(function() {
+      project_factory.update_project_name($scope.project._id, $scope.project.name).success(function(data){
+      });
+  });
+
+
+  $( "#project_description" ).focusout(function() {
+      project_factory.update_project_description($scope.project._id, $scope.project.description).success(function(data){
+      });
+  });
+
+});
+
+
+
+
+
+
+
+app.controller('BulkController', function($scope, project_factory, questionnaire_factory, phrase_factory) {
+
+     $scope.is_project_complete = false;
+     $scope.projects = [];
+     $scope.phrases = {}
+
+
+      project_factory.get_projects().success(function(data){
+             $scope.projects = data;
+             $scope.project = $scope.projects[0];
+
+             if ($scope.project) {
+
+                questionnaire_factory.get_questionnaire($scope.project.questionnaire_id).success(function(data){
+                    $scope.questionnaire = data;
+                    $scope.question = $scope.questionnaire.questions[0]
+                    $scope.get_phrases()
+                });
+            }
+
+           }).error(function(data, status, headers, config){
+            if (status == '401') {
+              redirect_to_login();
+            }
+    
+      });
+     
+
+     
+
+     $scope.on_change_project = function(project) {
+        $scope.project = project;
+        questionnaire_factory.get_questionnaire($scope.project.questionnaire_id).success(function(data){
+                $scope.questionnaire = data;
+                $scope.question = $scope.questionnaire.questions[0]
+                $scope.get_phrases()
+        });
+     }
+
+
+     $scope.on_change_question = function(question) {
+        $scope.question = question;
+        $scope.get_phrases()
+     }
+
+
+     $scope.get_phrases_by_project_id_and_question_id_callback = function(data) {
+          if (data.length == 0) {
+              $scope.phrases = []
+          }
+          else {
+              $scope.phrases = data
+          }
+      }
+
+      $scope.get_phrases = function() {
+
+          phrase_factory.get_phrases_by_project_id_and_question_id($scope.project._id, $scope.question._id)
+                  .success($scope.get_phrases_by_project_id_and_question_id_callback)
+      }
+
+
+      $scope.ignore_phrase = function(_phrase, _phrase_index) {
+  
+          phrase_factory.ignore(_phrase._id).success(function(){
+              $scope.phrases.splice(_phrase_index, 1);
+          })
+      }
+
+      $scope.mark_phrase_as_not_relevant = function(_phrase, _phrase_index) {
+
+          phrase_factory.not_applicable(_phrase._id).success(function(){
+              $scope.phrases.splice(_phrase_index, 1);
+          })
+      } 
+
+
+      $scope.create_hit_choice = function(_phrase, _choice, _phrase_index) {
+        
+          phrase_factory.create_hit_choice(_phrase._id, _choice._id, $scope.question.frequency).success(function(){
+              $scope.phrases.splice(_phrase_index, 1);
+          })
+      }
+})
+
+
+
+
+
 app.controller('WorkController', function($scope, $sce, $location, hit_factory, record_factory, project_factory, questionnaire_factory) {
 
 		 $scope.hit = undefined;
 		 $scope.annotation = undefined;
 		 $scope.is_project_complete = false;
 		 $scope.projects = [];
-		 $scope.project = undefined;
+		 //$scope.project = undefined;
      $scope.questionnaire = undefined;
-     $scope.question = undefined;
+     //$scope.question = undefined;
 
 
      function get_question(_question_id) {
