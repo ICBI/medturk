@@ -18,6 +18,7 @@ var user          = require('./user.js')
 var bcrypt        = require('bcrypt-nodejs')
 var project       = require('./project.js')
 var hit           = require('./hit.js')
+var phrase        = require('./phrase.js')
 
 
 var fq         = new FileQueue(200)
@@ -110,6 +111,7 @@ Indexes to ensure:
 db.records.ensureIndex({'patient_id' : 1, 'dataset_id' : 1})
 db.users.ensureIndex({'username' : 1})
 db.patients.ensureIndex({'dataset_id' : 1})
+db.hits.ensureIndex({'annotations.phrase_ids' : 1})
 */
 
 
@@ -2295,7 +2297,7 @@ app.post('/hits/choice_id', basic_role, jsonParser, function(req, res) {
 	else {
 
 		arg1 = {'_id' : mongoskin.ObjectID(req.body.hit_id)}
-		arg2 = {$set : {'choice_id' :  mongoskin.ObjectID(req.body.choice_id), 'answered' : true, 'user_id' : req.user._id, 'date' : Date()}}
+		arg2 = {$set : {'choice_id' :  mongoskin.ObjectID(req.body.choice_id), 'answered' : true, 'user_id' : req.user._id, 'answered_date' : Date()}}
 
 		db.collection('hits').update(arg1, arg2, function(err, result) {
 			if (err) throw err
@@ -2345,7 +2347,7 @@ app.post('/hits/text', basic_role, jsonParser, function(req, res) {
 		var _text = req.body.text.trim()
 
 		arg1 = {'_id' : mongoskin.ObjectID(req.body.hit_id)}
-		arg2 = {$set : {'text' : _text, 'answered' : true, 'user_id' : req.user._id, 'date' : Date()}}
+		arg2 = {$set : {'text' : _text, 'answered' : true, 'user_id' : req.user._id, 'answered_date' : Date()}}
 
 		db.collection('hits').update(arg1, arg2, function(err, result) {
 			if (err) throw err
@@ -2390,7 +2392,7 @@ app.post('/hits/id/answered', basic_role, jsonParser, function(req, res) {
 	else {
 
 		arg1 = {'_id' : mongoskin.ObjectID(req.body.hit_id)}
-		arg2 = {$set : {'answered' : true, 'user_id' : req.user._id, 'date' : Date()}}
+		arg2 = {$set : {'answered' : true, 'user_id' : req.user._id, 'answered_date' : Date()}}
 
 		db.collection('hits').update(arg1, arg2, function(err, result) {
 			if (err) throw err
@@ -2430,7 +2432,7 @@ app.post('/hits/annotations/choice_id', basic_role, jsonParser, function(req, re
 	else {
 
 		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id), 'annotations' : {$elemMatch : {'_id' : new mongoskin.ObjectID(req.body.annotation_id)}}}
-		var arg2 = { $set: {'annotations.$.choice_id' : new mongoskin.ObjectID(req.body.choice_id) } }
+		var arg2 = { $set: {'annotations.$.choice_id' : new mongoskin.ObjectID(req.body.choice_id), 'annotations.$.answered' : true, 'annotations.$.user_id' : req.user._id, 'annotations.$.answered_date' : Date() } } 
 
 		db.collection('hits').update(arg1, arg2, function(err, result) {
 			if (err) throw err
@@ -2443,6 +2445,28 @@ app.post('/hits/annotations/choice_id', basic_role, jsonParser, function(req, re
 			}
 		})
 	}
+})
+
+
+
+
+
+app.get('/hits/session', function(req, res) {
+
+	function get_user_callback(_user, _passthrough) {
+			res.json(_user)
+	}
+
+	function get_user_error_callback(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
+	if (req.user) {
+		user.get_by_username(req.user.username, get_user_callback, get_user_error_callback) 
+	}
+	else {
+		res.sendStatus(404)
+	}	 
 })
 
 
@@ -2504,6 +2528,125 @@ app.get('/hits/project_id/build', admin_role, jsonParser, function(req, res) {
 })
 
 
+
+
+
+app.get('/phrases', function(req, res) {
+
+	function get_phrases_callback(_phrases, _passthrough) {
+		res.json(_phrases)
+	}
+
+	function get_phrases_error_callback(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
+
+	if (req.query.project_id == null) {
+		return res.sendStatus(400)
+	}
+	else if (req.query.project_id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else if (req.query.question_id == null) {
+		return res.sendStatus(400)
+	}
+	else if (req.query.question_id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else {
+		var project_id   = req.query.project_id.trim()
+		var question_id  = req.query.question_id.trim()
+
+		phrase.get_phrases_by_project_id_and_question_id(project_id, question_id, get_phrases_callback, get_phrases_error_callback)
+	} 
+})
+
+
+
+app.post('/phrases/choice_id', basic_role, jsonParser, function(req, res) {
+
+	function bulk_answer_callback() {
+		res.sendStatus(200)
+	}
+
+
+	function bulk_answer_error_callback(_err) {
+		return res.sendStatus(400)
+	}
+
+
+
+	if (!req.body.phrase_id) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.phrase_id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else if (!req.body.choice_id) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.choice_id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else if (!req.body.frequency) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.frequency.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else {
+
+		console.log(req.body)
+		phrase.bulk_answer(req.body.phrase_id, req.body.choice_id, req.body.frequency, req.user._id, bulk_answer_callback, bulk_answer_error_callback)
+	}
+})
+
+
+app.delete('/phrases/not_applicable', basic_role, jsonParser, function(req, res) {
+
+	function delete_phrase_callback(_passthrough) {
+		res.sendStatus(200)
+	}
+
+	function delete_phrase_error_callback(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+	
+	if (req.query.phrase_id == null) {
+		return res.sendStatus(400)
+	}
+	else if (req.query.phrase_id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else {
+		phrase.not_applicable(req.query.phrase_id, delete_phrase_callback, delete_phrase_error_callback)
+	}
+})
+
+
+
+app.delete('/phrases/ignore', basic_role, jsonParser, function(req, res) {
+
+
+	function delete_phrase_callback(_passthrough) {
+		res.sendStatus(200)
+	}
+
+	function delete_phrase_error_callback(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+	
+	if (req.query.phrase_id == null) {
+		return res.sendStatus(400)
+	}
+	else if (req.query.phrase_id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else {
+		phrase.ignore(req.query.phrase_id, delete_phrase_callback, delete_phrase_error_callback)
+	}
+})
 
 
 
