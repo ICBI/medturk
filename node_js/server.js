@@ -18,7 +18,9 @@ var user          = require('./user.js')
 var bcrypt        = require('bcrypt-nodejs')
 var project       = require('./project.js')
 var hit           = require('./hit.js')
+var questionnaire = require('./questionnaire.js')
 var phrase        = require('./phrase.js')
+var csv 		  = require('csv');
 
 
 var fq         = new FileQueue(200)
@@ -112,6 +114,7 @@ db.records.ensureIndex({'patient_id' : 1, 'dataset_id' : 1})
 db.users.ensureIndex({'username' : 1})
 db.patients.ensureIndex({'dataset_id' : 1})
 db.hits.ensureIndex({'annotations.phrase_ids' : 1})
+db.hits.ensureIndex({'project_id' : 1, 'answered' : 1})
 */
 
 
@@ -167,7 +170,6 @@ app.post('/users/login', jsonParser, function(req, res) {
 
 
 app.get('/users/logout', function(req, res) {
-	console.log('/users/logout')
 	req.logout()
 	res.sendStatus(200)
 })
@@ -447,6 +449,31 @@ app.post('/projects', admin_role, jsonParser, function(req, res) {
 		if (err) throw err
 		res.json(result[0])
 	})
+})
+
+
+app.get('/projects/download', admin_role, jsonParser, function(req, res) {
+
+	function generate_csv_callback(_csv_string) {
+		res.attachment('project.csv')
+    	res.setHeader('Content-Type', 'text/csv')
+    	res.end(_csv_string)
+	}
+
+	function generate_csv_error_callback() {
+		return res.sendStatus(400)
+	}
+
+
+	if (!req.query.project_id) {
+		return res.sendStatus(400)
+	}
+	else if (req.query.project_id.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else {
+		project.generate_csv(req.query.project_id, generate_csv_callback, generate_csv_error_callback)
+	}
 })
 
 
@@ -877,7 +904,6 @@ app.get('/datasets/id/build', admin_role,admin_role,  jsonParser, function(req, 
 	*/
 
 	function send_json_to_user(_json, _callback) {
-		//console.log(JSON.stringify(_json))
 		res.write('data: ' + _json + '\n\n')
 		_callback()
 	}
@@ -1498,26 +1524,31 @@ app.post('/questionnaires/upload', admin_role, multipartMiddleware, function(req
 	
 	var file = req.files.file
 
+
+	function on_insert_callback(_id, _passthrough) {
+		res.json({'_id' : _id})
+	}
+
+	function on_insert_error_callback(_id, _passthrough) {
+		return res.sendStatus(400)
+	}
+
 	// Is this a json file?
 	if (file.name.substr(file.name.length-5).toLowerCase() == '.json') {
 
 		fs.readFile(file.path, 'utf8', function (err, data) {
-  			if (err) throw err
-
-  			var doc = JSON.parse(data)
-
-  			// Remove current id and replace with new
-  			delete doc['_id']
-
-  			// Insert and return inserted document to user
-			db.collection('questionnaires').insert(doc, function(err, result) {
-			if (err) throw err
-				
-				res.json({'_id' : result[0]._id})
-			})
-
-
+  			if (err) {
+  				return res.sendStatus(400)
+  			}
+  			else {
+  				// This code blocks the thread
+  				var doc = JSON.parse(data)
+  				questionnaire.insert(doc, on_insert_callback, on_insert_error_callback)
+  			}
 		})
+	}
+	else {
+		return res.sendStatus(400)
 	}
 })
 
@@ -2241,6 +2272,20 @@ app.delete('/questionnaires/id/questions/id/tags/id', admin_role, jsonParser, fu
 
 app.get('/hits', basic_role, function(req, res) {
 
+
+	function on_get_random_hit_callback(_hit, _passthrough) {
+		if (_hit) {
+			return res.json(_hit)
+		}
+		else {
+			return res.sendStatus(404)
+		}
+	}
+
+	function on_get_random_hit_error_callback(_err, _passthrough) {
+		return res.sendStatus(400)
+	}
+
 	if (!req.query.project_id) {
 		return res.sendStatus(400)
 	}
@@ -2248,32 +2293,13 @@ app.get('/hits', basic_role, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
-		var arg1 = {'project_id' : new mongoskin.ObjectID(req.query.project_id), 'annotations.0' : {$exists : true}, 'answered' : {$exists : false} }
-
-		db.collection('hits').findOne(arg1, function(err, _hit) {
-			if (err) throw err
-
-			if (_hit) {
-				return res.json(_hit)
-			}
-			else {
-				return res.sendStatus(404)
-			}
-		})
+		hit.get_random(req.query.project_id, on_get_random_hit_callback, on_get_random_hit_error_callback)
 	}
 })
 
 
 
 app.post('/hits/choice_id', basic_role, jsonParser, function(req, res) {
-
-	function increment_num_answers_callback(_passthrough) {
-		res.sendStatus(200)
-	}
-
-	function increment_num_answers_error_callback(_err, _passthrough) {
-		res.sendStatus(404)
-	}
 
 
 	if (!req.body.hit_id) {
@@ -2303,7 +2329,7 @@ app.post('/hits/choice_id', basic_role, jsonParser, function(req, res) {
 			if (err) throw err
 			
 			if (result) {
-				project.increment_num_answers(req.body.project_id, increment_num_answers_callback, increment_num_answers_error_callback)
+				res.sendStatus(200)
 			}
 			else {
 				res.sendStatus(404)
@@ -2315,14 +2341,6 @@ app.post('/hits/choice_id', basic_role, jsonParser, function(req, res) {
 
 
 app.post('/hits/text', basic_role, jsonParser, function(req, res) {
-
-	function increment_num_answers_callback(_passthrough) {
-		res.sendStatus(200)
-	}
-
-	function increment_num_answers_error_callback(_err, _passthrough) {
-		res.sendStatus(404)
-	}
 
 	if (!req.body.hit_id) {
 		return res.sendStatus(400)
@@ -2347,13 +2365,13 @@ app.post('/hits/text', basic_role, jsonParser, function(req, res) {
 		var _text = req.body.text.trim()
 
 		arg1 = {'_id' : mongoskin.ObjectID(req.body.hit_id)}
-		arg2 = {$set : {'text' : _text, 'answered' : true, 'user_id' : req.user._id, 'answered_date' : Date()}}
+		arg2 = {$set : {'answer_text' : _text, 'answered' : true, 'user_id' : req.user._id, 'answered_date' : Date()}}
 
 		db.collection('hits').update(arg1, arg2, function(err, result) {
 			if (err) throw err
 			
 			if (result) {
-				project.increment_num_answers(req.body.project_id, increment_num_answers_callback, increment_num_answers_error_callback)
+				res.sendStatus(200)
 			}
 			else {
 				res.sendStatus(404)
@@ -2368,14 +2386,6 @@ app.post('/hits/text', basic_role, jsonParser, function(req, res) {
 
 app.post('/hits/id/answered', basic_role, jsonParser, function(req, res) {
 
-
-	function increment_num_answers_callback(_passthrough) {
-		res.sendStatus(200)
-	}
-
-	function increment_num_answers_error_callback(_err, _passthrough) {
-		res.sendStatus(404)
-	}
 
 	if (!req.body.hit_id) {
 		return res.sendStatus(400)
@@ -2398,7 +2408,7 @@ app.post('/hits/id/answered', basic_role, jsonParser, function(req, res) {
 			if (err) throw err
 			
 			if (result) {
-				project.increment_num_answers(req.body.project_id, increment_num_answers_callback, increment_num_answers_error_callback)
+				res.sendStatus(200)
 			}
 			else {
 				res.sendStatus(404)
@@ -2482,7 +2492,6 @@ app.get('/hits/project_id/build', admin_role, jsonParser, function(req, res) {
 	*/
 
 	function send_json_to_user(_json, _callback) {
-		//console.log(JSON.stringify(_json))
 		res.write('data: ' + _json + '\n\n')
 		_callback()
 	}
@@ -2564,7 +2573,7 @@ app.get('/phrases', function(req, res) {
 
 
 
-app.post('/phrases/choice_id', basic_role, jsonParser, function(req, res) {
+app.post('/phrases/answer', basic_role, jsonParser, function(req, res) {
 
 	function bulk_answer_callback() {
 		res.sendStatus(200)
@@ -2583,10 +2592,16 @@ app.post('/phrases/choice_id', basic_role, jsonParser, function(req, res) {
 	else if (req.body.phrase_id.trim().length == 0) {
 		return res.sendStatus(400)
 	}
-	else if (!req.body.choice_id) {
+	else if (!req.body.answer) {
 		return res.sendStatus(400)
 	}
-	else if (req.body.choice_id.trim().length == 0) {
+	else if (req.body.answer.trim().length == 0) {
+		return res.sendStatus(400)
+	}
+	else if (!req.body.type) {
+		return res.sendStatus(400)
+	}
+	else if (req.body.type.trim().length == 0) {
 		return res.sendStatus(400)
 	}
 	else if (!req.body.frequency) {
@@ -2597,8 +2612,7 @@ app.post('/phrases/choice_id', basic_role, jsonParser, function(req, res) {
 	}
 	else {
 
-		console.log(req.body)
-		phrase.bulk_answer(req.body.phrase_id, req.body.choice_id, req.body.frequency, req.user._id, bulk_answer_callback, bulk_answer_error_callback)
+		phrase.bulk_answer(req.body.phrase_id, req.body.answer, req.body.type, req.body.frequency, req.user._id, bulk_answer_callback, bulk_answer_error_callback)
 	}
 })
 

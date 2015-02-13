@@ -158,7 +158,7 @@ function get_annotations(_trigger, _case_sensitive, _note) {
 }
 
 function exit() {
-	project.update_status(g_project_id, 'Active', 0, g_hit_count, update_project_callback, update_project_error_callback)
+	project.update_status(g_project_id, 'Active', update_project_callback, update_project_error_callback)
 }
 
 
@@ -388,6 +388,8 @@ function process_patient() {
 
 	if (g_num_patients_processed == g_num_patients_to_process) {
 		// Now, save all of the phrases found....
+
+		send_update_status({'status' : 'Building aggregate questions...', 'num_hits' : g_hit_count, 'num_answers' : 0})
 		save_phrases()
 	}
 	else {
@@ -440,4 +442,5 @@ function get_project_error_callback(_err, _passthrough) {
 }
 
 send_update_status({'status' : 'Building'})
+
 project.get_by_project_id(g_project_id, get_project_callback, get_project_error_callback)	
