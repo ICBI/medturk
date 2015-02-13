@@ -38,18 +38,18 @@
                 <td>{{phrase.num_patients}}</td>
                 <td>
                     <div ng-if="question.type == 'radio'" class="btn-group">
-                         <button type="radio" ng-repeat="choice in question.choices" class="btn btn-default {{annotation.choice_id == choice._id ? 'active' : ''}}" ng-click="create_hit_choice(phrase, choice, $index)">{{choice.name}}</button>
+                         <button type="radio" ng-repeat="choice in question.choices" class="btn btn-default {{annotation.choice_id == choice._id ? 'active' : ''}}" ng-click="answer(phrase._id, choice._id, $parent.$index)">{{choice.name}}</button>
                     </div>
                     <div ng-if="question.type == 'text'" class="btn-group">
                         <input type="text" class="form-control" ng-model="text_answer"/>
-                        <button class="btn btn-default" ng-click="">Submit</button>
+                        <button class="btn btn-default" ng-click="answer(phrase._id, text_answer, $parent.$index)">Submit</button>
                     </div>
                 </td>
-                <td><a ng-click="ignore_phrase(phrase, $index)">Ignore</a></td>
+                <td><a ng-click="ignore_phrase(phrase, $index)">Not Enough Information</a></td>
                 <td><a ng-click="mark_phrase_as_not_relevant(phrase, $index)">Not Relevant</a></td><td>
             </tr>
         </table>
-    <button class="btn btn-danger" ng-click="">Reload</button>
+    <button class="btn btn-danger" ng-click="get_phrases()">Reload</button>
 </div> 
 
 
