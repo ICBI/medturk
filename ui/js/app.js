@@ -24,9 +24,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-
-//var server = 'http://127.0.0.1:5000';
 var server = 'https://localhost';
 
 function redirect_to_login() {
@@ -560,7 +557,7 @@ app.factory('project_factory', function($http) {
      }
 
      factory.get_answer_file = function(_project_id) {
-       window.open(server + '/project/data?id=' + _project_id, '_blank', '');
+       window.open(server + '/projects/download?project_id=' + _project_id, '_blank', '');
      }
 
 
@@ -648,15 +645,16 @@ app.factory('phrase_factory', function($http) {
           return $http.get(server + '/phrases?project_id=' + _project_id + '&question_id=' + _question_id);
      }
 
-     factory.create_hit_choice = function(_phrase_id, _choice_id, _frequency) {
+     factory.answer = function(_phrase_id, _answer, _type, _frequency) {
 
           var _json = {
                         phrase_id  : _phrase_id, 
-                        choice_id  : _choice_id,
+                        answer     : _answer,
+                        type       : _type,
                         frequency  : _frequency
                       };
 
-          return $http.post(server + '/phrases/choice_id', _json);
+          return $http.post(server + '/phrases/answer', _json);
      }
 
 

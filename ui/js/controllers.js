@@ -44,6 +44,7 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
   	 $scope.project = undefined;
   	 $scope.dataset = undefined;
   	 $scope.users = [];
+     $scope.projects = []
   	 $scope.project_name = '';
   	 $scope.questionnaire_id = '';
   	 $scope.project_description = '';
@@ -840,9 +841,9 @@ app.controller('BulkController', function($scope, project_factory, questionnaire
       } 
 
 
-      $scope.create_hit_choice = function(_phrase, _choice, _phrase_index) {
+      $scope.answer = function(_phrase_id, _answer, _phrase_index) {
         
-          phrase_factory.create_hit_choice(_phrase._id, _choice._id, $scope.question.frequency).success(function(){
+          phrase_factory.answer(_phrase_id, _answer, $scope.question.type, $scope.question.frequency).success(function(){
               $scope.phrases.splice(_phrase_index, 1);
           })
       }
@@ -934,6 +935,7 @@ app.controller('WorkController', function($scope, $sce, $location, hit_factory, 
               $scope.hit = data;
               $scope.question = get_question($scope.hit.question_id);
            	
+              
             	if ($scope.hit) {
             		$scope.is_project_complete = false;
 
