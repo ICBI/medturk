@@ -33,6 +33,8 @@ function redirect_to_login() {
 
 var app = angular.module('medTurkApp', ['angularFileUpload', 'ngRoute', 'ngSanitize'])
 
+
+
 /*
  *
  *
@@ -957,6 +959,62 @@ app.directive("annotationsGraph", function($parse) {
       link: function(scope, element, attrs) {
 
         var data = scope.data;
+        var last_selected_annotation = undefined;
+
+
+        function activate_annotation(_annotation) {
+
+              // Apply styling that depends if user answered question
+              if (last_selected_annotation != undefined && last_selected_annotation.answered) {
+                  $(".selected_rect").attr("class", "answered_rect");
+              }
+              else {
+                  $(".selected_rect").attr("class", "rect");
+              }
+
+              // Sends to listener objects
+              scope.callback({annotation: _annotation});
+              
+              // Convert current rect into a selected rect
+              $('#' + _annotation._id).attr("class", "selected_rect");
+
+              last_selected_annotation = _annotation;
+        }
+
+
+
+        jQuery(document).on('keypress', function(e){
+      
+                // Get current index
+                var _index = parseInt($(".selected_rect").attr("mt-index"))
+        
+                if (e.keyCode === 44) {
+                    // Toggle left
+                    if ((_index + 1) == data.length) {
+                      _index = 0
+                    }
+                    else {
+                      _index += 1
+                    }
+                }
+                else if (e.keyCode == 46) {
+                    // Toggle right
+                    if (_index  == 0) {
+                      _index = data.length - 1
+                    }
+                    else {
+                      _index -= 1
+                    }
+                }
+                else {
+                  // Do nothing
+                  return
+                }
+                
+                activate_annotation(data[_index])
+            })
+
+
 
         /* Watches for updates in data */
         scope.$watch('data', function (_data) {
@@ -965,6 +1023,7 @@ app.directive("annotationsGraph", function($parse) {
           if (_data === undefined) {
                 return;
           }
+
              
           data = _data;
           d3.select(element[0]).select("svg").remove();
@@ -1026,7 +1085,6 @@ app.directive("annotationsGraph", function($parse) {
 
 
                 var x_points = new Array();
-                var last_selected_annotation = undefined;
 
 
                 var svg = d3.select(element[0]).append("svg")
@@ -1044,10 +1102,20 @@ app.directive("annotationsGraph", function($parse) {
                      .data(data)
                      .enter()
                      .append("rect")
+                     .attr("mt-index", function(d, i) {return i})
+                     .attr("id", function(d) {return d._id})
                      .attr("width", 15.0)
                      .attr("height", 15.0)
-                     .attr("class", function(d) {
-                          return d.answered ? "answered_rect" : "rect";
+                     .attr("class", function(d, i) {
+                          if (i == data.length-1) {
+                            return "selected_rect";
+                          }
+                          else if (d.answered) {
+                            return "answered_rect"
+                          }
+                          else {
+                            return "rect"
+                          }
                       })
                      .attr("y", function(d) {
                         // If this is not done, rects would align on top of each other
@@ -1066,23 +1134,7 @@ app.directive("annotationsGraph", function($parse) {
                       })
                      .attr("x", function(d) {return x(d.date)})
                      .on("mouseover", function(d) {
-
-                          // Apply styling that depends if user answered question
-                          if (last_selected_annotation != undefined && last_selected_annotation.answered) {
-                              d3.select(".selected_rect").attr("class", "answered_rect");
-                          }
-                          else {
-                              d3.select(".selected_rect").attr("class", "rect");
-                          }
-
-                          // Sends to listener objects
-                          scope.callback({annotation: d});
-                          
-
-                          // Convert current rect into a selected rect
-                          d3.select(this).attr("class", "selected_rect");
-
-                          last_selected_annotation = d;
+                          activate_annotation(d)
                   });
 
 

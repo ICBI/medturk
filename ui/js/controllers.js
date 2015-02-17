@@ -971,7 +971,7 @@ app.controller('WorkController', function($scope, $sce, $location, hit_factory, 
 		  }
 
 
-		  $scope.get_record = function(record_id, kwic) {
+		  $scope.get_record = function(record_id) {
 
 		  		record_factory.get_record(record_id).success(function(data) {
             
