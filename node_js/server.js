@@ -32,8 +32,8 @@ var multipartMiddleware = multipart()
 
 
 var options = {
-  key:  fs.readFileSync('./security/medturk-key.pem'),
-  cert: fs.readFileSync('./security/medturk-cert.pem')
+  key:  fs.readFileSync(config.key_path),
+  cert: fs.readFileSync(config.cert_path)
 }
 
 
@@ -244,6 +244,12 @@ app.get('/users', admin_role, function(req, res) {
 	// Fetch all datasets
 	db.collection('users').find().toArray(function(err, result) {
 		if (err) throw err
+
+		// Remove passwords before sending
+		for (var i = 0; i < result.length; i++) {
+			delete result[i]['password']
+		}
+
 		res.json(result)
 	})
 })

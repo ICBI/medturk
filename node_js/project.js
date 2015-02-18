@@ -1,6 +1,7 @@
 var config        = require('./config.js')
 var hit           = require('./hit.js')
 var patient       = require('./patient.js')
+var user          = require('./user.js')
 var questionnaire = require('./questionnaire.js')
 var mongoskin     = require('mongoskin')
 var db            = mongoskin.db(config.db_url)
@@ -10,17 +11,17 @@ module.exports = {
 
 	generate_csv: function(_project_id, _callback, _error_callback) {
 
-
 		var g_questionnaire    = undefined
 		var g_question_ids     = []
 		var g_choice_ids       = []
 		var g_number_of_hits = 0
 		var g_number_of_hits_traversed = 0
+		var g_users = {}
+		var g_project = undefined
+		var csv_data = 'Patient Id,medTurk Patient Id,Question Id,Question,Answer,Date,Answered Date,Answered By'
 
-		var csv_data = 'Patient Id,medTurk Patient Id,Question Id,Question,Answer,Date'
 
-
-		function create_csv_record(_hit, _question, _question_index, _date, _patient_id, _json) {
+		function create_csv_record(_hit, _question, _question_index, _date, _answered_date, _answered_by_id, _patient_id, _json) {
 			
 			var _answer = ''
 		
@@ -44,10 +45,12 @@ module.exports = {
 				csv_data += _question._id.toString() + ','
 				csv_data += '"' + _question.question + '",' 
 				csv_data += '"' + _answer + '",'
-				csv_data += '"' + _date
+				csv_data += '"' + _date + '",'
+				csv_data += '"' + _answered_date + '",'
+				csv_data += '"' + g_users[_answered_by_id.toString()] + '"'
 
 				if (_question.csv_tags.length > 0) {
-					csv_data += '",' + _question.csv_tags
+					csv_data += _question.csv_tags
 				}
 
 				csv_data += '\r\n'
@@ -68,14 +71,14 @@ module.exports = {
 
 				for(var i = 0; i < _hit.annotations.length; i++) {
 					if (_hit.annotations[i].answered) {
-						create_csv_record(_hit, _question, question_index, _hit.annotations[i].date, _patient.id, _hit.annotations[i])
+						create_csv_record(_hit, _question, question_index, _hit.annotations[i].date, _hit.annotations[i].answered_date, _hit.annotations[i].user_id, _patient.id, _hit.annotations[i])
 					}
 				}
 			}
-			else if (_question.frequency == 'once') {
-				create_csv_record(_hit, _question, question_index, '', _patient.id, _hit)
-			}
 
+			else if (_question.frequency == 'once') {
+				create_csv_record(_hit, _question, question_index, '', _hit.answered_date, _hit.user_id, _patient.id, _hit)
+			}
 
 			if (g_number_of_hits_traversed == g_number_of_hits) {
 				_callback(csv_data)
@@ -162,10 +165,23 @@ module.exports = {
 		}
 
 
-		function get_project_callback(_project) {
-			// Now, fetch questionnaire
-			questionnaire.get(_project.questionnaire_id, get_questionnaire_callback, get_questionnaire_error_callback)
+		function on_get_users_callback(_users, _passthrough) {
+			
+			for (var i = 0; i < _users.length; i++) {
+				g_users[_users[i]._id.toString()] = _users[i].username
+			}
 
+			questionnaire.get(g_project.questionnaire_id, get_questionnaire_callback, get_questionnaire_error_callback)
+		}
+
+		function on_get_users_error_callback(_err, _passthrough) {
+			_error_callback(_err)
+		}
+
+
+		function get_project_callback(_project) {
+			g_project = _project
+			user.get(on_get_users_callback, on_get_users_error_callback)
 		}
 
 		function get_project_error_callback(_err) {

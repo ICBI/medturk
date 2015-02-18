@@ -22,6 +22,21 @@ module.exports = {
 	},
 
 
+	get: function(_callback, _error_callback, _passthrough) {
+
+		db.collection('users').find().toArray(function(err, result) {
+			if (err) throw err
+
+			if (result) {
+				_callback(result, _passthrough)
+			}
+			else {
+				_error_callback(err, _passthrough)
+			}
+		})
+	},
+
+
 	get_by_id: function(_id, _callback, _error_callback, _passthrough) {
 
 		var _query  = {'_id' : new mongoskin.ObjectID(_id)}
