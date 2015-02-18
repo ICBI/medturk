@@ -48,6 +48,7 @@
     <!-- JavaScript -->
     <script src="js/jquery-1.10.2.js"></script>
     <script src="js/bootstrap.js"></script>
+    <script src="js/config.js"></script>
     <script>
         $("#email").keyup(function(event){
             if(event.keyCode == 13){
@@ -62,9 +63,10 @@
            }
         });
 
+
         $("#login").click(function() {
        
-            var server = 'https://localhost';
+            var server = config.api_url;
             var _email    = $("#email").val();
             var _password = $("#password").val();
 

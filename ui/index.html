@@ -119,13 +119,12 @@
     <script src="js/angular-route.min.js"></script>
     <script src="js/angular-sanitize.min.js"></script>
     <script src="js/d3.v3.min.js" charset="utf-8"></script>
+    <script src="js/config.js"></script>
     <script src="js/app.js"></script>
     <script src="js/controllers.js"></script>
     <script>
     
-
-      var server = 'https://localhost';
-
+      var server = config.api_url;
       var get_user = $.ajax({
                       url:        server + '/users/session',
                       xhrFields: { withCredentials: true },
