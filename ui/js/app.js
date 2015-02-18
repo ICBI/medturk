@@ -24,7 +24,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-var server = 'https://localhost';
+var server = config.api_url;
 
 function redirect_to_login() {
     window.location.replace(server + "/login.html")
