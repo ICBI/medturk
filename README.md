@@ -17,40 +17,7 @@ At any time, an admin of medTurk may download answered data in CSV and obtains a
 
 ![alt tag](images/csv.png)
 
-This file contains structured data of course and can be subject to statistical analysis.
-
-
-
-Installation
+Ready to get started?
 =======
-**1.** TODO: Explain how to install MongodDB
 
-**2.** TODO: Explain how to install NodeJS
-
-**2.** TODO: Explain how to generate certificate
-
-Running medTurk
-=====
-Open terminal and run:
-```sh
-sudo node server.js
-```
-Navigate to **https://localhost** in your web browser. You should see the following
-
-![alt tag](images/home.png)
-
-Use the following credentials to login:
-
-**E-mail:**   admin
-
-**Password:** password
-
-Be sure to change your password upon login.
-
-Admin Page
-=====
-You should now see the following page:
-
-![alt tag](images/admin.png)
-
-This is the *Admin Page*. Only users of role *Admin* are permitted to view this page. Let's try an example.
+Please visit our [wiki page](https://github.com/ICBI/medturk/wiki) to get started.
