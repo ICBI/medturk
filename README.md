@@ -21,7 +21,7 @@ At any time, an admin of medTurk may download answered data in CSV and obtain a 
 ### Quick highlights of medTurk
 
 * Questionnaires are shareable: once they're created, they are downloadable and shareable with others
-* Answered data can be downloaded in [EventFlow(http://www.cs.umd.edu/hcil/eventflow/)] format
+* Answered data can be downloaded in [EventFlow](http://www.cs.umd.edu/hcil/eventflow/) format
 * Standardizes the process of data collection
 * If a patient lacks keywords in their notes relevant to the question, that question will not be generated for that patient
 * A question can be answered for many patients at once in *Bulk Answer* mode
