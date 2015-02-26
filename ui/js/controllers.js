@@ -598,7 +598,7 @@ app.controller('QuestionnaireController', function($scope, $routeParams, questio
 
     		for (var i = 0; i < $scope.question.triggers.length; i++) {
         			if ($scope.question.triggers[i].name == _trigger) {
-        				alert('Trigger already exists');
+        				alert('Keyword already in use');
         				return;
         			}
 		    }
