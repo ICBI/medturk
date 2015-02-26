@@ -11,7 +11,7 @@ Suppose you have clinical notes for cancer survivors and you are interested in e
 
 ![alt tag](images/answer.png)
 
-A curator may view all relevant passages of text over time (all specific to a particular patient) to answer the question. Upon answering, the curator is randomly presented with another question. The **status** field in this screenshot indicates how many more questions must be answered (in this case, 8 of 87 have been answered). 
+A curator may view all relevant passages of text over time (all specific to a particular patient) to answer the question. Upon answering, the curator is randomly presented with another question. The **status** field in this screenshot indicates how many more questions must be answered (in this case, 0 of 100 have been answered). 
 
 At any time, an admin of medTurk may download answered data in CSV and obtain a file such as shown below:
 
