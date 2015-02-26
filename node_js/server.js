@@ -440,7 +440,7 @@ app.post('/projects', admin_role, jsonParser, function(req, res) {
 
 	// Create document to insert
 	doc = {
-			  'name'              : 'My New Project', 
+			  'name'              : 'New Application', 
 			  'description'       : '',
 			  'dataset_id'        : null,
 			  'questionnaire_id'  : null,
