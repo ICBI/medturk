@@ -7,15 +7,15 @@ medTurk (inspired by Amazon's Mechanical Turk) supports clinical research by usi
 It's software (*i.e., a web server*) you host privately. It lets curators answer questions in parallel analogous to the way Amazon Mechanical Turk operates. The answers are then downloadable in CSV for analysis using your favorite software (e.g., R, Excel).
 
 ### Can you give me a quick example?
-Suppose you have clinical notes for cancer survivors and you are interested in every patient's cancer diagnosis. medTurk permits the creation of a *questionnaire* that contains questions such as: **Was this patient diagnosed with ALL?** or **Was this patient diagnosed with astrocytoma?** . You may then assign answer choices such as **Yes**, **No**, and **Not Sure**. Lastly, you assign keywords such as: **acute lymphoblastic leukemia** or **astrocytoma**. medTurk uses these keywords to locate passages of text that are probably relevant to answering the question. After curators are assigned for this particular application, a curator may login and be presented with a question as shown below:
+Suppose you have clinical notes for cancer survivors and you are interested in every patient's cancer diagnosis. medTurk permits the creation of a *questionnaire* that contains questions such as: **Was this patient diagnosed with leukemia?** or **Was this patient diagnosed with neuroblastoma?** . You may then assign answer choices such as **Yes**, **No**, and **Not Sure**. Lastly, you assign keywords such as **neuroblastoma**, **ALL**, or **leukemia**. medTurk uses these keywords to locate passages of text that are probably relevant to answering the question. After curators are assigned for this particular application, a curator may login and be presented with a question as shown below:
 
-![alt tag](images/question.png)
+![alt tag](images/answer.png)
 
 A curator may view all relevant passages of text over time (all specific to a particular patient) to answer the question. Upon answering, the curator is randomly presented with another question. The **status** field in this screenshot indicates how many more questions must be answered (in this case, 8 of 87 have been answered). 
 
 At any time, an admin of medTurk may download answered data in CSV and obtain a file such as shown below:
 
-![alt tag](images/csv.png)
+![alt tag](images/data.png)
 
 
 ### Quick highlights of medTurk
