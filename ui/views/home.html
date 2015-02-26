@@ -7,15 +7,15 @@
 
           <!-- Users Table -->
           <table class="table table-striped" ng-if="users.length > 0">
-          <h2>Analysts</h2>
-          <tr><th>E-mail</th><th>Is Admin?</th><th></th></tr>
+          <h2>Curators</h2>
+          <tr><th>E-mail</th><th>Admin</th><th></th></tr>
           <tr ng-repeat="user in users">
             <td>{{user.username}}</td>
             <td>{{user.is_admin ? "Yes" : "No"}}</td>
             <td><a ng-click="set_edit_user(user)" data-target="#edit_user_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_user(user._id, $index)">Delete</td>
           </tr>
         </table>
-        <button data-target="#new_user_modal" class="btn btn-default" data-toggle="modal"><b>Create</b></button>
+        <button data-target="#new_user_modal" class="btn btn-default" data-toggle="modal"><b>Add Curator</b></button>
 
 
         <br/>
@@ -26,7 +26,7 @@
 
           <!-- Datasets Table -->
           <table class="table table-striped" ng-if="datasets.length > 0">
-          <h2>Datasets</h2>
+          <h2>Clinical Note Sets</h2>
           <tr><th>Name</th><th>Description</th><th>Status</th><th>Number of Patients</th><th>Date Uploaded</th><th></th></tr>
           <tr ng-repeat="dataset in datasets">
             <td>{{dataset.name}}</td>
@@ -37,7 +37,7 @@
             <td><a ng-click="set_dataset(dataset)" data-target="#dataset_edit_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_dataset(dataset._id, dataset.name, $index)">Delete</td>
           </tr>
         </table>
-        <button data-target="#dataset_modal" class="btn btn-default" data-toggle="modal"><b>Create</b></button>
+        <button data-target="#dataset_modal" class="btn btn-default" data-toggle="modal"><b>Add Clinical Note Set</b></button>
 
          <br/>
          <br/>
@@ -59,8 +59,8 @@
               </td>
           </tr>
          </table>
-         <button ng-click="create_questionnaire()" class="btn btn-default"><b>Create</b></button> 
-          <button data-target="#questionnaire_modal" class="btn btn-default" data-toggle="modal"><b>Upload</b></button>
+         <button ng-click="create_questionnaire()" class="btn btn-default"><b>Create Questionnaire</b></button> 
+          <button data-target="#questionnaire_modal" class="btn btn-default" data-toggle="modal"><b>Upload Questionnaire</b></button>
           <br/>
           <br/>
           <br/>
@@ -69,8 +69,8 @@
 
           <!-- Projects Table -->
           <table class="table table-striped" ng-if="projects.length > 0">
-            <h2>Projects</h2>
-            <tr><th>Name</th><th>Description</th><th>Questionnaire</th><th>Analysts</th><th>Status</th><th>Completion</th><th></th></tr>
+            <h2>Applications</h2>
+            <tr><th>Name</th><th>Description</th><th>Questionnaire</th><th>Curators</th><th>Status</th><th>Completion</th><th></th></tr>
 
             <tr ng-repeat="project in projects">
               <td>{{project.name}}</td>
@@ -88,7 +88,7 @@
               </td>
           </tr>
          </table>
-          <button ng-click="create_project()" data-target="#project_modal" class="btn btn-default" data-toggle="modal"><b>Create</b></button>
+          <button ng-click="create_project()" data-target="#project_modal" class="btn btn-default" data-toggle="modal"><b>Create Application</b></button>
         </div>
 
       <!-- /END THE FEATURETTES -->
@@ -107,7 +107,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title" id="myModalLabel">Add Dataset</h4>
+                <h4 class="modal-title" id="myModalLabel">Add Clinical Note Set</h4>
             </div>
             <div class="modal-body">
                   <div class="row">
@@ -175,11 +175,11 @@
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title" id="myModalLabel">Edit Analyst</h4>
+                <h4 class="modal-title" id="myModalLabel">Edit Curator</h4>
             </div>
             <div class="modal-body">
                   <div class="row">
-                      <h4>Edit E-mail</h4>
+                      <h4>Edit Email</h4>
                       <input id="edit_username" style="width: 400px" type="text" class="form-control" ng-model="edit_user.username"/>
                     </div>
                   <br/>
@@ -213,7 +213,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title" id="myModalLabel">Create Analyst</h4>
+                <h4 class="modal-title" id="myModalLabel">New Curator</h4>
             </div>
             <div class="modal-body">
                   <div class="row">
@@ -231,7 +231,7 @@
                   <br/>
 
                   <div class="row">
-                    <h4>Is Admin?</h4>
+                    <h4>Is this curator an admin?</h4>
                   <select ng-model="new_user_is_admin" style="width: 200px" class="form-control" ng-options="t for t in [true, false]"></select>
                 </div>
             </div>
@@ -253,7 +253,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title" id="myModalLabel">Project</h4>
+                <h4 class="modal-title" id="myModalLabel">New Application</h4>
             </div>
             <div class="modal-body">
                   <div class="row">
@@ -269,7 +269,7 @@
                     <br/>
                     <br/>
                     <div class="row">
-                        <h4>Dataset</h4>
+                        <h4>Choose a Clinical Note Set</h4>
 
                         <select ng-change="update_project_dataset(project._id, project_dataset)" ng-model="project_dataset" style="width: 400px" class="form-control" ng-options="ds.name for ds in datasets"></select>
                         
@@ -277,7 +277,7 @@
                     <br/>
                     <br/>
                     <div class="row">
-                        <h4>Questionnaires</h4>
+                        <h4>Choose a Questionnaire</h4>
                         <select ng-change="update_project_questionnaire(project._id, project_questionnaire)" ng-model="project_questionnaire" style="width: 400px" class="form-control" ng-options="questionnaire.name for questionnaire in questionnaires"></select>
                     </div>
                     <br/>
@@ -285,7 +285,7 @@
      
               
                     <div class="row">
-                      <h4>Analysts</h4>
+                      <h4>Curators</h4>
                         <table style="width: 400px" class="table table-striped">
                         <tr>
                           <th>Name</th>
@@ -304,7 +304,7 @@
                   </div>
 
                   <div class="row">
-                        <p>Add Analyst</p>
+                        <p>Add Curator</p>
                         <select ng-change="add_user_to_project(selected_item._id)" ng-model="selected_item" style="width: 200px" class="form-control" ng-options="user.username for user in users"></select>
                     </button>
                     </div>
@@ -334,7 +334,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title" id="myModalLabel">Edit Dataset</h4>
+                <h4 class="modal-title" id="myModalLabel">Clinical Note Set Editor</h4>
             </div>
             <div class="modal-body">
                   <div class="row">

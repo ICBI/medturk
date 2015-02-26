@@ -17,9 +17,44 @@
 	      </td>
 	    </tr>
 	</table>
+</div>
+<br/>
+<br/>
+<div class="row">
 
-	<br/>
-	<br/>
+	<table class="table table-striped">
+	    <h2>Questions</h2>
+	    <tr>
+	    	<th>Question</th>
+	    	<th>Type</th>
+	    	<th>Frequency</th>
+	    	<th>Choices</th>
+	    	<th>Tags</th>
+	    	<th>Keywords</th>
+	    	<th></th>
+	    </tr>
+
+	    <tr ng-repeat="question in questionnaire.questions">
+	      <td>{{question.question}}</td>
+	      <td>{{question.type}}</td>
+	      <td>{{question.frequency}}</td>
+	      <td><span ng-repeat="choice in question.choices">{{choice.name}}, </span></td>
+	      <td>
+	      	<span ng-repeat="tag_id in question.tag_ids">
+	      		<p class="label label-default" >{{get_tag_by_id(tag_id).name}}</p>
+	      	</span>
+	      </td>
+	      <td><span ng-repeat="trigger in question.triggers">{{trigger.name}}, </span></td>
+	      <td>
+	         <a ng-click="edit_question(question)" data-target="#question_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_question(questionnaire._id, question._id, $index)">Delete</a></td>
+	      </td>
+	  </tr>
+	 </table>
+ 	<button ng-click="create_question()" data-target="#question_modal" data-toggle="modal" class="btn btn-default"><b>Create Question</b></button> 
+</div>
+<br/>
+<br/>
+<div class="row">
     <h2>Tags</h2>
 	<table style="width: 400px" class="table table-striped">
 	    <tr>
@@ -37,46 +72,11 @@
     <div style="width: 250px"  class="input-group">
 	    <input type="text" class="form-control" ng-model="tag_name">
 	    <span class="input-group-btn">
-	      <button class="btn btn-default" type="button" ng-click="create_questionnaire_tag(questionnaire, tag_name)"><b>Create</b></button>
+	      <button class="btn btn-default" type="button" ng-click="create_questionnaire_tag(questionnaire, tag_name)"><b>Create Tag</b></button>
 	    </span>
 	</div>
 	<br/>
 </div>
-
-	<br/>
-	<br/>
-
-<div class="row">
-
-	<table class="table table-striped">
-	    <h2>Questions</h2>
-	    <tr>
-	    	<th>Question</th>
-	    	<th>Type</th>
-	    	<th>Choices</th>
-	    	<th>Tags</th>
-	    	<th>Triggers</th>
-	    	<th></th>
-	    </tr>
-
-	    <tr ng-repeat="question in questionnaire.questions">
-	      <td>{{question.question}}</td>
-	      <td>{{question.type}}</td>
-	      <td><span ng-repeat="choice in question.choices">{{choice.name}}, </span></td>
-	      <td>
-	      	<span ng-repeat="tag_id in question.tag_ids">
-	      		<p class="label label-default" >{{get_tag_by_id(tag_id).name}}</p>
-	      	</span>
-	      </td>
-	      <td><span ng-repeat="trigger in question.triggers">{{trigger.name}}, </span></td>
-	      <td>
-	         <a ng-click="edit_question(question)" data-target="#question_modal" data-toggle="modal">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_question(questionnaire._id, question._id, $index)">Delete</a></td>
-	      </td>
-	  </tr>
-	 </table>
- 	<button ng-click="create_question()" data-target="#question_modal" data-toggle="modal" class="btn btn-default"><b>Create</b></button> 
-</div>
-
 
 
 
@@ -152,13 +152,12 @@
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title" id="myModalLabel">Question Editor</h4>
+                <h2 class="modal-title" id="myModalLabel">Question Editor</h2>
             </div> 
             <div class="modal-body">
                  
                    <div class="row">
-                 		<b>Type the question you want to ask an analyst about a patient here</b>
-                 		<br/>
+                 		<h4>What question should a curator answer about a patient?</h4>
                         <textarea id="question_text" style="width: 400px" class="form-control" rows="2" ng-model="question.question"></textarea>
                     </div>
 		           
@@ -166,8 +165,7 @@
 		           <br/>
 
                     <div class="row">
-		           	  <b>Does this question apply to a patient once or multiple times?</b>
-                 	  <br/>
+		           	  <h4>Does this question apply to a patient once or multiple times?</h4>
                         <div class="btn-group">
                         	<a ng-repeat="question_frequency in question_frequencies" href="javascript:void(0)" ng-click="update_question_frequency(question_frequency)" ng-class="{ 'active' : question_frequency.value == question.frequency}" class="btn btn-default">
                         		{{question_frequency.name}}
@@ -183,8 +181,7 @@
 
 
                     <div class="row">
-		           	  <b>Should the analyst answer with free text or choose from multiple choice?</b>
-                 	  <br/>
+		           	  <h4>Should the curator answer with free text or choose from multiple choice?</h4>
                         <div class="btn-group">
                         	<a ng-repeat="question_type in question_types" href="javascript:void(0)" ng-click="update_question_type(question_type)" ng-class="{ 'active' : question_type.value == question.type}" class="btn btn-default">
                         		{{question_type.name}}
@@ -194,17 +191,14 @@
 
 		          
 		        	<br/>
-		        	<br/>
-
+      				<br/>
 
 		        	<div class="row" ng-if="question.type == 'radio'">
-		        		<b>Edit your multiple choice selection here</b>
+		        		<h4>What answer choices should curators should pick from?</h4>
+		        			<p>
+		        			<i> Ensure each choice is a separate entry</i>
+		        			<p/>
 		        		<table style="width: 400px" class="table table-striped">
-						    <tr>
-						    	<th>Name</th>
-						    	<th></th>
-						    </tr>
-
 						    <tr ng-repeat="choice in question.choices">
 						    	<td><input type="text" ng-model="choice.name" ng-blur="update_choice_name(choice._id, choice.name)" /></td>
 						      <td>
@@ -224,9 +218,9 @@
 					</div>
 
 		        	<br/>
-
+      				<br/>
 		           	<div class="row">
-		           		<b>Add triggers here:</b>
+		           		<h4>What keywords in clinical notes are relevant to this question?</h4>
 
 
 		            	<table class="table table-striped">
@@ -254,7 +248,7 @@
 
       						<input ng-model="trigger" type="text" class="form-control">
       						<span class="input-group-btn">
-        						<button ng-click="create_question_trigger(trigger)" class="btn btn-default" type="button">Create</button>
+        						<button ng-click="create_question_trigger(trigger)" class="btn btn-default" type="button">Add Keyword</button>
       						</span>
       					</div>
       				</div>
@@ -265,7 +259,7 @@
 
       					<!-- This section is for editing tags -->
 			        	<div class="row">
-			        		<b><i>(optional)</i> Add tags here</b>
+			        		<h4>What tags do you want associated with this question?</h4>
 			        		<table style="width: 400px" class="table table-striped">
 							    <tr>
 							    	<th>Name</th>
