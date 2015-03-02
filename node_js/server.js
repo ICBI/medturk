@@ -20,7 +20,6 @@ var project       = require('./project.js')
 var hit           = require('./hit.js')
 var questionnaire = require('./questionnaire.js')
 var phrase        = require('./phrase.js')
-var csv 		  = require('csv');
 
 
 var fq         = new FileQueue(200)
