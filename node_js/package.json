@@ -6,10 +6,13 @@
   "scripts": {
     "test": "test.js"
   },
-  "repository" : {
-  	"type" : "git",
-  	"url"  : "git://github.com/icbi/medturk.git"
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/icbi/medturk.git"
   },
   "author": "Robert M. Johnson",
-  "license": "GNU General Public License"
+  "license": "GNU General Public License",
+  "dependencies": {
+    "express": "^4.12.1"
+  }
 }
