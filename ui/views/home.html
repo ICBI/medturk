@@ -8,7 +8,7 @@
           <!-- Users Table -->
           <table class="table table-striped" ng-if="users.length > 0">
           <h2>Curators</h2>
-          <tr><th>E-mail</th><th>Admin</th><th></th></tr>
+          <tr><th>Username</th><th>Admin</th><th></th></tr>
           <tr ng-repeat="user in users">
             <td>{{user.username}}</td>
             <td>{{user.is_admin ? "Yes" : "No"}}</td>
@@ -179,7 +179,7 @@
             </div>
             <div class="modal-body">
                   <div class="row">
-                      <h4>Edit Email</h4>
+                      <h4>Edit Username</h4>
                       <input id="edit_username" style="width: 400px" type="text" class="form-control" ng-model="edit_user.username"/>
                     </div>
                   <br/>
