@@ -1,111 +1,35 @@
-var express       = require('express')
-var https         = require('https')
-var http          = require('http')
-var fs 		      = require('fs')
-var path          = require('path')
-var bodyParser    = require('body-parser')
-var passport      = require('passport')
-var config        = require('./config.js')
-var mongoskin     = require('mongoskin')
-var multipart     = require('connect-multiparty')
-var FileQueue     = require('filequeue')
-var spawn         = require('child_process').spawn
-var passport      = require('passport')
-var LocalStrategy = require('passport-local').Strategy
-var cookieParser  = require('cookie-parser')
-var session		  = require('express-session')
-var user          = require('./user.js')
-var bcrypt        = require('bcrypt-nodejs')
+var express       		= require('express')
+var https         		= require('https')
+var http          		= require('http')
+var fs 		      		= require('fs')
+var path          		= require('path')
+var bodyParser    		= require('body-parser')
+var config        		= require('./config.js')
+var mongoskin     		= require('mongoskin')
+var multipart     		= require('connect-multiparty')
+var FileQueue     		= require('filequeue')
+var spawn         		= require('child_process').spawn
+var fq                  = new FileQueue(200)
+var db                  = mongoskin.db(config.db_url)
+var app                 = express()
+var jsonParser          = bodyParser.json()
+var multipartMiddleware = multipart()
+
+
+app.use(express.static(config.ui_path))
+
+var user 		  = require('./business/user.js')
 var project       = require('./project.js')
 var hit           = require('./hit.js')
 var questionnaire = require('./questionnaire.js')
 var phrase        = require('./phrase.js')
-var csv 		  = require('csv');
-
-
-var fq         = new FileQueue(200)
-var db         = mongoskin.db(config.db_url)
-var app        = express()
-var jsonParser = bodyParser.json()
-var multipartMiddleware = multipart()
 
 
 
-var options = {
-  key:  fs.readFileSync(config.key_path),
-  cert: fs.readFileSync(config.cert_path)
-}
+app = user.modify_app(app)
 
 
 
-get_hash = function(_password) {
-    return bcrypt.hashSync(_password, bcrypt.genSaltSync(8));
-}
-
-compare_passwords = function(_password, _hashed_password) {
-    return bcrypt.compareSync(_password, _hashed_password)
-};
-
-
-
-passport.serializeUser(function(_user, _done) {
-  	_done(null, _user._id)
-})
-
-passport.deserializeUser(function(_id, _done) {
-  	
-	function get_user_callback(_user, _passthrough) {
-		return _done(null, _user)
-	}
-
-	function get_user_error_callback(_err, _passthrough) {
-		return _done(null, false)
-	}
-
-	user.get_by_id(_id, get_user_callback, get_user_error_callback) 
-})
-
-
-passport.use(new LocalStrategy( {usernameField: 'username'}, function(_username, _password, _done) {
-
-		function get_user_callback(_user, _passthrough) {
-			// TODO: Validate password now
-			if (compare_passwords(_password, _user.password)) {
-				return _done(null, _user)
-			}
-			else {
-				return _done(null, false)
-			}
-			
-		}
-
-		function get_user_error_callback(_err, _passthrough) {
-			return _done(null, false, { message: 'Invalid login' })
-		}
-
-		user.get_by_username(_username, get_user_callback, get_user_error_callback)    
-  }
-))
-
-
-function basic_role(req, res, next) {
-
-  if (req.isAuthenticated()) { 
-  	return next() 
-  }
-
-  res.redirect('/login.html')
-}
-
-
-function admin_role(req, res, next) {
-
-  if (req.isAuthenticated() && req.user.is_admin) { 
-  	return next() 
-  }
-
-  res.redirect('/login.html')
-}
 
 /*
 Indexes to ensure:
@@ -120,58 +44,64 @@ db.hits.ensureIndex({'project_id' : 1, 'answered' : 1})
 
 
 
-
 /*
-TUTORIALS:
-
-Login
-http://scotch.io/tutorials/javascript/easy-node-authentication-setup-and-local
-
-EXAMPLES:
-
-How to use curl to run api call:
-curl -v -H "Content-Type: application/json" -XPOST --data "{\"project_name\" : \"test\"}" https://localhost/project/create --insecure
-
+curl -v -H "Content-Type: application/json" -XPOST --data "{\"username\" : \"rmj49\", \"password\" : \"password\"}" https://10.129.21.4/users/ldap/login --insecure
 */
 
 
 
-// Let's front-end content be accessed by users
-app.use(express.static(config.ui_path))
 
 
-app.use(cookieParser())
-app.use(session({ secret: config.secret_key, 
-				  saveUninitialized: true,
-				  resave: true 
-				}))
-app.use(passport.initialize())
-app.use(passport.session())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 app.post('/users/login', jsonParser, function(req, res) {
 
-		passport.authenticate('local', function(_err, _user, _message) {
-		
-			if (_err) {
-				res.send({'success' : false, 'is_admin' : false})
-			}
-			else if(!_user) {
-				res.send({'success' : false, 'is_admin' : true})
-			}
-			else {
-				req.logIn(_user, function(_err) {
-					res.send({'success' : true, 'is_admin' : _user.is_admin})
-				})
-			}
+	function on_login_success(_user, _passthrough) {
+		res.send({'success' : true, 'is_admin' : _user.is_admin})
+	}
 
-		})(req, res)
+	function on_login_failure(_err, _passthrough) {
+		res.send({'success' : false, 'is_admin' : false})
+	}
+
+	user.login(req, res, on_login_success, on_login_failure)
  })
 
 
 app.get('/users/logout', function(req, res) {
-	req.logout()
-	res.sendStatus(200)
+
+	function on_success(_user, _passthrough) {
+		res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(400)
+	}
+
+	user.logout(req, on_success, on_fail)
 })
 
 
@@ -191,20 +121,20 @@ app.get('/users/session', function(req, res) {
 	}
 	else {
 		res.sendStatus(404)
-	}
-
-	 
+	} 
 })
 
 
 
+app.post('/users', user.admin_role, jsonParser, function(req, res) {
 
+	function on_success(_user, _passthrough) {
+		res.json(_user)
+	}
 
-
-
-
-
-app.post('/users', admin_role, jsonParser, function(req, res) {
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(400)
+	}
 
 	if (req.body.username == null) {
 		return res.sendStatus(400)
@@ -222,40 +152,35 @@ app.post('/users', admin_role, jsonParser, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
-
-		// Create user to insert
-		doc = {
-				  'username'          : req.body.username, 
-				  'password'		  : get_hash(req.body.password),
-				  'is_admin'          : (req.body.is_admin == 'true'),
-		      }
-
-		// Insert and return inserted document to user
-		db.collection('users').insert(doc, function(err, result) {
-			if (err) throw err
-			res.json(result[0])
-		})
+		user.create_user(req.body.username, req.body.password, req.body.is_admin, on_success, on_fail)
 	}
 })
 
 
-app.get('/users', admin_role, function(req, res) {
+app.get('/users', user.admin_role, function(req, res) {
 
-	// Fetch all datasets
-	db.collection('users').find().toArray(function(err, result) {
-		if (err) throw err
+	function on_success(_users, _passthrough) {
+		res.json(_users)
+	}
 
-		// Remove passwords before sending
-		for (var i = 0; i < result.length; i++) {
-			delete result[i]['password']
-		}
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(400)
+	}
 
-		res.json(result)
-	})
+	user.get_users_with_passwords_removed(on_success, on_fail)
 })
 
 
-app.post('/users/username', admin_role, jsonParser, function(req, res) {
+app.post('/users/username', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_result, _passthrough) {
+		res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(400)
+	}
+
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -270,26 +195,20 @@ app.post('/users/username', admin_role, jsonParser, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id)}
-		var arg2 = {'$set' : {'username' : req.body.username}}
-		db.collection('users').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
+		user.update_username(req.body.id, req.body.username, on_success, on_fail)
 	}
 })
 
+app.post('/users/password', user.admin_role, jsonParser, function(req, res) {
 
+	function on_success(_result, _passthrough) {
+		res.sendStatus(200)
+	}
 
-app.post('/users/password', admin_role, jsonParser, function(req, res) {
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(400)
+	}
+
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -304,37 +223,20 @@ app.post('/users/password', admin_role, jsonParser, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id)}
-		var arg2 = {'$set' : {'password' : get_hash(req.body.password)}}
-		db.collection('users').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
+		user.update_password(req.body.id, req.body.password, on_success, on_fail)
 	}
 })
 
+app.post('/users/self/password', user.basic_role, jsonParser, function(req, res) {
 
-
-
-app.post('/users/self/password', basic_role, jsonParser, function(req, res) {
-
-	function update_password_callback(_user, _passthrough) {
+	function on_success(_user, _passthrough) {
 		return res.send({'success' : true})
 	}
 
 
-	function update_password_error_callback(_err, _passthrough) {
-		return res.sendStatus(400)
+	function on_fail(_err, _passthrough) {
+		return res.send({'success' : false})
 	}
-
 
 	if (req.body.current_password == null) {
 		return res.sendStatus(400)
@@ -349,20 +251,19 @@ app.post('/users/self/password', basic_role, jsonParser, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
-
-		// Is the current password correct?
-		if(compare_passwords(req.body.current_password, req.user.password)) {
-			user.update_password(req.user._id, get_hash(req.body.new_password), update_password_callback, update_password_error_callback)
-		}
-		else {
-			return res.send({'success' : false})
-		}
+		user.update_password_self(req.user, req.body.current_password, req.body.new_password, on_success, on_fail)
 	}
 })
 
+app.post('/users/is_admin', user.admin_role, jsonParser, function(req, res) {
 
+	function on_success(_user, _passthrough) {
+		return res.send({'success' : true})
+	}
 
-app.post('/users/is_admin', admin_role, jsonParser, function(req, res) {
+	function on_fail(_err, _passthrough) {
+		return res.send({'success' : false})
+	}
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -374,26 +275,21 @@ app.post('/users/is_admin', admin_role, jsonParser, function(req, res) {
 		return res.sendStatus(400)
 	} 
 	else {
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id)}
-		var arg2 = {'$set' : {'is_admin' : req.body.is_admin}}
-		db.collection('users').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
+		user.update_is_admin(req.body.id, req.body.is_admin, on_success, on_fail)
 	}
 })
 
+app.delete('/users', user.admin_role, jsonParser, function(req, res) {
 
 
-app.delete('/users', admin_role, jsonParser, function(req, res) {
+	function on_success(_result, _passthrough) {
+		res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
 	
 	if (req.query.id == null) {
 		return res.sendStatus(400)
@@ -402,19 +298,7 @@ app.delete('/users', admin_role, jsonParser, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
-
-		var arg = {'_id' : new mongoskin.ObjectID(req.query.id)}
-		db.collection('users').remove(arg, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
+		user.delete_user(req.query.id, on_success, on_fail)
 	}
 })
 
@@ -436,7 +320,18 @@ app.delete('/users', admin_role, jsonParser, function(req, res) {
 
 
 
-app.post('/projects', admin_role, jsonParser, function(req, res) {
+
+
+
+
+
+
+
+
+
+
+
+app.post('/projects', user.admin_role, jsonParser, function(req, res) {
 
 	// Create document to insert
 	doc = {
@@ -458,7 +353,7 @@ app.post('/projects', admin_role, jsonParser, function(req, res) {
 })
 
 
-app.get('/projects/download', admin_role, jsonParser, function(req, res) {
+app.get('/projects/download', user.admin_role, jsonParser, function(req, res) {
 
 	function generate_csv_callback(_csv_string) {
 		res.attachment('project.csv')
@@ -486,7 +381,7 @@ app.get('/projects/download', admin_role, jsonParser, function(req, res) {
 
 
 // curl -v -H "Content-Type: application/json" -XPOST --data "{\"project_id\" : \"548b49fbf694066a0779dd50\", \"user_id\" : \"123\"}" https://localhost/projects/user --insecure
-app.post('/projects/id/user', admin_role, jsonParser, function(req, res) {
+app.post('/projects/id/user', user.admin_role, jsonParser, function(req, res) {
 
 
 	if (!req.body.id) {
@@ -521,7 +416,7 @@ app.post('/projects/id/user', admin_role, jsonParser, function(req, res) {
 
 
 
-app.post('/projects/id/name', admin_role, jsonParser, function(req, res) {
+app.post('/projects/id/name', user.admin_role, jsonParser, function(req, res) {
 
 	if (!req.body.id) {
 		return res.sendStatus(400)
@@ -556,7 +451,7 @@ app.post('/projects/id/name', admin_role, jsonParser, function(req, res) {
 
 
 
-app.post('/projects/id/description', admin_role, jsonParser, function(req, res) {
+app.post('/projects/id/description', user.admin_role, jsonParser, function(req, res) {
 
 	if (!req.body.id) {
 		return res.sendStatus(400)
@@ -587,7 +482,7 @@ app.post('/projects/id/description', admin_role, jsonParser, function(req, res) 
 
 
 
-app.post('/projects/id/dataset_id', admin_role, jsonParser, function(req, res) {
+app.post('/projects/id/dataset_id', user.admin_role, jsonParser, function(req, res) {
 
 	if (!req.body.id) {
 		return res.sendStatus(400)
@@ -622,7 +517,7 @@ app.post('/projects/id/dataset_id', admin_role, jsonParser, function(req, res) {
 
 
 
-app.post('/projects/id/questionnaire_id', admin_role, jsonParser, function(req, res) {
+app.post('/projects/id/questionnaire_id', user.admin_role, jsonParser, function(req, res) {
 
 	if (!req.body.id) {
 		return res.sendStatus(400)
@@ -657,7 +552,7 @@ app.post('/projects/id/questionnaire_id', admin_role, jsonParser, function(req, 
 
 
 
-app.delete('/projects', admin_role, jsonParser, function(req, res) {
+app.delete('/projects', user.admin_role, jsonParser, function(req, res) {
 
 	var calls_completed   = 0
 	var calls_to_complete = 2
@@ -710,7 +605,7 @@ app.delete('/projects', admin_role, jsonParser, function(req, res) {
 })
 
 
-app.delete('/projects/id/user', admin_role, jsonParser, function(req, res) {
+app.delete('/projects/id/user', user.admin_role, jsonParser, function(req, res) {
 
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -743,7 +638,7 @@ app.delete('/projects/id/user', admin_role, jsonParser, function(req, res) {
 })
 
 
-app.get('/projects', basic_role, function(req, res) {
+app.get('/projects', user.basic_role, function(req, res) {
 
 	function get_projects_callback(_projects, _passthrough) {
 
@@ -764,7 +659,7 @@ app.get('/projects', basic_role, function(req, res) {
 
 
 
-app.get('/projects/id', basic_role, function(req, res) {
+app.get('/projects/id', user.basic_role, function(req, res) {
 
 	function get_project_callback(_project, _passthrough) {
 		res.json(_project)
@@ -811,7 +706,7 @@ app.get('/projects/id', basic_role, function(req, res) {
 
 
 
-app.get('/datasets', admin_role, function(req, res) {
+app.get('/datasets', user.admin_role, function(req, res) {
 
 	// Fetch all datasets
 	db.collection('datasets').find().toArray(function(err, result) {
@@ -820,7 +715,7 @@ app.get('/datasets', admin_role, function(req, res) {
 	})
 })
 
-app.get('/datasets/raw', admin_role, function(req, res) {
+app.get('/datasets/raw', user.admin_role, function(req, res) {
 
 	paths = fs.readdirSync(config.datasets_path).filter(function(file) {
 	    return fs.statSync(path.join(config.datasets_path, file)).isDirectory();
@@ -830,7 +725,7 @@ app.get('/datasets/raw', admin_role, function(req, res) {
 })
 
 
-app.get('/datasets/id', admin_role, function(req, res) {
+app.get('/datasets/id', user.admin_role, function(req, res) {
 
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -852,7 +747,7 @@ app.get('/datasets/id', admin_role, function(req, res) {
 
 
 
-app.post('/datasets', admin_role, jsonParser, function(req, res) {
+app.post('/datasets', user.admin_role, jsonParser, function(req, res) {
 
 
 	if (!req.body.name) {
@@ -901,7 +796,7 @@ app.post('/datasets', admin_role, jsonParser, function(req, res) {
 
 
 
-app.get('/datasets/id/build', admin_role,admin_role,  jsonParser, function(req, res) {
+app.get('/datasets/id/build', user.admin_role, jsonParser, function(req, res) {
 	/*
 		Reads in patient .json files and stores them in the db.patients and db.records
 		The OS has an upper limit on how many file descriptors can exist at once.
@@ -961,7 +856,7 @@ app.get('/datasets/id/build', admin_role,admin_role,  jsonParser, function(req, 
 
 
 
-app.post('/datasets/name', admin_role, jsonParser, function(req, res) {
+app.post('/datasets/name', user.admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -994,7 +889,7 @@ app.post('/datasets/name', admin_role, jsonParser, function(req, res) {
 })
 
 
-app.post('/datasets/description', admin_role, jsonParser, function(req, res) {
+app.post('/datasets/description', user.admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1027,7 +922,7 @@ app.post('/datasets/description', admin_role, jsonParser, function(req, res) {
 })
 
 
-app.delete('/datasets', admin_role, jsonParser, function(req, res) {
+app.delete('/datasets', user.admin_role, jsonParser, function(req, res) {
 	
 	if (req.query.id == null) {
 		return res.sendStatus(400)
@@ -1144,7 +1039,7 @@ app.delete('/datasets', admin_role, jsonParser, function(req, res) {
 
 
 
-app.get('/records/id', admin_role, function(req, res) {
+app.get('/records/id', user.admin_role, function(req, res) {
 
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -1224,7 +1119,7 @@ app.get('/records/id', admin_role, function(req, res) {
 
 
 
-app.post('/questionnaires', admin_role, jsonParser, function(req, res) {
+app.post('/questionnaires', user.admin_role, jsonParser, function(req, res) {
 
 	var doc = {'name' : 'New Questionnaire', 'description' : '', 'questions' : [], 'tags' : []}
 
@@ -1239,7 +1134,7 @@ app.post('/questionnaires', admin_role, jsonParser, function(req, res) {
 
 
 
-app.post('/questionnaires/id/question', admin_role, jsonParser, function(req, res) {
+app.post('/questionnaires/id/question', user.admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1270,7 +1165,7 @@ app.post('/questionnaires/id/question', admin_role, jsonParser, function(req, re
 
 
 
-app.post('/questionnaires/id/questions/id/choice', admin_role, jsonParser, function(req, res) {
+app.post('/questionnaires/id/questions/id/choice', user.admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1318,7 +1213,7 @@ app.post('/questionnaires/id/questions/id/choice', admin_role, jsonParser, funct
 
 
 
-app.post('/questionnaires/id/questions/id/tag', admin_role, jsonParser, function(req, res) {
+app.post('/questionnaires/id/questions/id/tag', user.admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1365,7 +1260,7 @@ app.post('/questionnaires/id/questions/id/tag', admin_role, jsonParser, function
 
 
 
-app.post('/questionnaires/id/questions/id/trigger', admin_role, jsonParser, function(req, res) {
+app.post('/questionnaires/id/questions/id/trigger', user.admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1415,7 +1310,7 @@ app.post('/questionnaires/id/questions/id/trigger', admin_role, jsonParser, func
 
 
 
-app.post('/questionnaires/id/tag', admin_role, jsonParser, function(req, res) {
+app.post('/questionnaires/id/tag', user.admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1458,7 +1353,7 @@ app.post('/questionnaires/id/tag', admin_role, jsonParser, function(req, res) {
 
 
 
-app.get('/questionnaires', basic_role, function(req, res) {
+app.get('/questionnaires', user.basic_role, function(req, res) {
 
 	// Fetch all datasets
 	db.collection('questionnaires').find().toArray(function(err, result) {
@@ -1470,7 +1365,7 @@ app.get('/questionnaires', basic_role, function(req, res) {
 
 
 
-app.get('/questionnaires/id/download', admin_role, function(req, res) {
+app.get('/questionnaires/id/download', user.admin_role, function(req, res) {
 	
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -1502,7 +1397,7 @@ app.get('/questionnaires/id/download', admin_role, function(req, res) {
 
 
 
-app.get('/questionnaires/id', basic_role, function(req, res) {
+app.get('/questionnaires/id', user.basic_role, function(req, res) {
 	
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -1526,7 +1421,7 @@ app.get('/questionnaires/id', basic_role, function(req, res) {
 
 
 
-app.post('/questionnaires/upload', admin_role, multipartMiddleware, function(req, res) {
+app.post('/questionnaires/upload', user.admin_role, multipartMiddleware, function(req, res) {
 	
 	var file = req.files.file
 
@@ -1561,7 +1456,7 @@ app.post('/questionnaires/upload', admin_role, multipartMiddleware, function(req
 
 
 
-app.get('/questionnaires/download', admin_role, function(req, res) {
+app.get('/questionnaires/download', user.admin_role, function(req, res) {
 
 	// Fetch all datasets
 	db.collection('questionnaires').find().toArray(function(err, result) {
@@ -1573,7 +1468,7 @@ app.get('/questionnaires/download', admin_role, function(req, res) {
 
 
 
-app.post('/questionnaires/id/name', admin_role, jsonParser, function(req, res) {
+app.post('/questionnaires/id/name', user.admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1606,7 +1501,7 @@ app.post('/questionnaires/id/name', admin_role, jsonParser, function(req, res) {
 })
 
 
-app.post('/questionnaires/id/description', admin_role, jsonParser, function(req, res) {
+app.post('/questionnaires/id/description', user.admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1637,7 +1532,7 @@ app.post('/questionnaires/id/description', admin_role, jsonParser, function(req,
 
 
 
-app.post('/questionnaires/id/tag/name', admin_role, jsonParser, function(req, res) {
+app.post('/questionnaires/id/tag/name', user.admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1680,7 +1575,7 @@ app.post('/questionnaires/id/tag/name', admin_role, jsonParser, function(req, re
 })
 
 
-app.post('/questionnaires/id/questions/id/question', admin_role, jsonParser, function(req, res) {
+app.post('/questionnaires/id/questions/id/question', user.admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1724,7 +1619,7 @@ app.post('/questionnaires/id/questions/id/question', admin_role, jsonParser, fun
 })
 
 
-app.post('/questionnaires/id/questions/id/choices/id/name', admin_role, jsonParser, function(req, res) {
+app.post('/questionnaires/id/questions/id/choices/id/name', user.admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1818,7 +1713,7 @@ app.post('/questionnaires/id/questions/id/choices/id/name', admin_role, jsonPars
 
 
 
-app.post('/questionnaires/id/questions/id/frequency', admin_role, jsonParser, function(req, res) {
+app.post('/questionnaires/id/questions/id/frequency', user.admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1863,7 +1758,7 @@ app.post('/questionnaires/id/questions/id/frequency', admin_role, jsonParser, fu
 
 
 
-app.post('/questionnaires/id/questions/id/type', admin_role, jsonParser, function(req, res) {
+app.post('/questionnaires/id/questions/id/type', user.admin_role, jsonParser, function(req, res) {
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1906,7 +1801,7 @@ app.post('/questionnaires/id/questions/id/type', admin_role, jsonParser, functio
 	}
 })
 
-app.delete('/questionnaires/id/question', admin_role, jsonParser, function(req, res) {
+app.delete('/questionnaires/id/question', user.admin_role, jsonParser, function(req, res) {
 
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -1942,7 +1837,7 @@ app.delete('/questionnaires/id/question', admin_role, jsonParser, function(req, 
 
 
 
-app.delete('/questionnaires/id/tag', admin_role, jsonParser, function(req, res) {
+app.delete('/questionnaires/id/tag', user.admin_role, jsonParser, function(req, res) {
 
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -1977,7 +1872,7 @@ app.delete('/questionnaires/id/tag', admin_role, jsonParser, function(req, res) 
 })
 
 
-app.delete('/questionnaires/id', admin_role, jsonParser, function(req, res) {
+app.delete('/questionnaires/id', user.admin_role, jsonParser, function(req, res) {
 
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -2003,7 +1898,7 @@ app.delete('/questionnaires/id', admin_role, jsonParser, function(req, res) {
 })
 
 
-app.delete('/questionnaires/id/questions/id/choices/id', admin_role, jsonParser, function(req, res) {
+app.delete('/questionnaires/id/questions/id/choices/id', user.admin_role, jsonParser, function(req, res) {
 
 	if (req.query.id == null) {
 		return res.sendStatus(400)
@@ -2094,7 +1989,7 @@ app.delete('/questionnaires/id/questions/id/choices/id', admin_role, jsonParser,
 
 
 
-app.delete('/questionnaires/id/questions/id/triggers/id', admin_role, jsonParser, function(req, res) {
+app.delete('/questionnaires/id/questions/id/triggers/id', user.admin_role, jsonParser, function(req, res) {
 
 	if (req.query.id == null) {
 		return res.sendStatus(400)
@@ -2186,7 +2081,7 @@ app.delete('/questionnaires/id/questions/id/triggers/id', admin_role, jsonParser
 
 
 
-app.delete('/questionnaires/id/questions/id/tags/id', admin_role, jsonParser, function(req, res) {
+app.delete('/questionnaires/id/questions/id/tags/id', user.admin_role, jsonParser, function(req, res) {
 
 	if (req.query.id == null) {
 		return res.sendStatus(400)
@@ -2276,7 +2171,7 @@ app.delete('/questionnaires/id/questions/id/tags/id', admin_role, jsonParser, fu
 
 
 
-app.get('/hits', basic_role, function(req, res) {
+app.get('/hits', user.basic_role, function(req, res) {
 
 
 	function on_get_random_hit_callback(_hit, _passthrough) {
@@ -2305,7 +2200,7 @@ app.get('/hits', basic_role, function(req, res) {
 
 
 
-app.post('/hits/choice_id', basic_role, jsonParser, function(req, res) {
+app.post('/hits/choice_id', user.basic_role, jsonParser, function(req, res) {
 
 
 	if (!req.body.hit_id) {
@@ -2346,7 +2241,7 @@ app.post('/hits/choice_id', basic_role, jsonParser, function(req, res) {
 
 
 
-app.post('/hits/text', basic_role, jsonParser, function(req, res) {
+app.post('/hits/text', user.basic_role, jsonParser, function(req, res) {
 
 	if (!req.body.hit_id) {
 		return res.sendStatus(400)
@@ -2390,7 +2285,7 @@ app.post('/hits/text', basic_role, jsonParser, function(req, res) {
 
 
 
-app.post('/hits/id/answered', basic_role, jsonParser, function(req, res) {
+app.post('/hits/id/answered', user.basic_role, jsonParser, function(req, res) {
 
 
 	if (!req.body.hit_id) {
@@ -2425,7 +2320,7 @@ app.post('/hits/id/answered', basic_role, jsonParser, function(req, res) {
 
 
 
-app.post('/hits/annotations/choice_id', basic_role, jsonParser, function(req, res) {
+app.post('/hits/annotations/choice_id', user.basic_role, jsonParser, function(req, res) {
 
 	if (!req.body.id) {
 		return res.sendStatus(400)
@@ -2489,7 +2384,7 @@ app.get('/hits/session', function(req, res) {
 
 
 
-app.get('/hits/project_id/build', admin_role, jsonParser, function(req, res) {
+app.get('/hits/project_id/build', user.admin_role, jsonParser, function(req, res) {
 	/*
 		Reads in patient .json files and stores them in the db.patients and db.records
 		The OS has an upper limit on how many file descriptors can exist at once.
@@ -2579,7 +2474,7 @@ app.get('/phrases', function(req, res) {
 
 
 
-app.post('/phrases/answer', basic_role, jsonParser, function(req, res) {
+app.post('/phrases/answer', user.basic_role, jsonParser, function(req, res) {
 
 	function bulk_answer_callback() {
 		res.sendStatus(200)
@@ -2623,7 +2518,7 @@ app.post('/phrases/answer', basic_role, jsonParser, function(req, res) {
 })
 
 
-app.delete('/phrases/not_applicable', basic_role, jsonParser, function(req, res) {
+app.delete('/phrases/not_applicable', user.basic_role, jsonParser, function(req, res) {
 
 	function delete_phrase_callback(_passthrough) {
 		res.sendStatus(200)
@@ -2646,7 +2541,7 @@ app.delete('/phrases/not_applicable', basic_role, jsonParser, function(req, res)
 
 
 
-app.delete('/phrases/ignore', basic_role, jsonParser, function(req, res) {
+app.delete('/phrases/ignore', user.basic_role, jsonParser, function(req, res) {
 
 
 	function delete_phrase_callback(_passthrough) {
@@ -2670,8 +2565,10 @@ app.delete('/phrases/ignore', basic_role, jsonParser, function(req, res) {
 
 
 
-
-
+var options = {
+  key:  fs.readFileSync(config.key_path),
+  cert: fs.readFileSync(config.cert_path)
+}
 https.createServer(options, app).listen(443)
 
 
