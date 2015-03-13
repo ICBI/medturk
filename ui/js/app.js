@@ -102,6 +102,19 @@ app.config(function($routeProvider) {
  */
 
 
+
+app.factory('settings_factory', function($http) {
+   var factory = {};
+
+   factory.get_settings = function() {
+        return $http.get(server + '/settings'); 
+   }
+
+   return factory;
+});
+
+
+
 app.factory('questionnaire_factory', function($http, $upload) {
 
 

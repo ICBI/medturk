@@ -39,7 +39,7 @@ function get_highlighted_text(text, beg, end) {
 
 
 
-app.controller('HomeController', function($scope, $upload, user_factory, project_factory, questionnaire_factory, dataset_factory, hit_factory) {
+app.controller('HomeController', function($scope, $upload, user_factory, project_factory, questionnaire_factory, dataset_factory, hit_factory, settings_factory) {
 
   	 $scope.project = undefined;
   	 $scope.dataset = undefined;
@@ -51,6 +51,11 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
   	 $scope.datasets = [];
   	 $scope.questionnaires = [];
      $scope.new_user_is_admin = false;
+     $scope.new_user_password = '';
+
+     settings_factory.get_settings().success(function(data){
+            $scope.settings = data;
+     });
 
 
      $scope.get_dataset_index_by_id = function(dataset_id) {
@@ -143,6 +148,7 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
     	 });
 
       $scope.update_user_is_admin = function(_is_admin) {
+        $scope.edit_user.is_admin = _is_admin
     		user_factory.update_user_is_admin($scope.edit_user._id, _is_admin).success(function(data){
       	});
     	}
@@ -163,6 +169,7 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
 
       // Create new user
       $scope.create_user = function(new_user_email, new_user_password, new_user_is_admin) {
+
         user_factory.create_user(new_user_email, new_user_password, new_user_is_admin).success(function(data) {
           $scope.users.push(data);
         });
@@ -1019,8 +1026,6 @@ app.controller('WorkController', function($scope, $sce, $location, hit_factory, 
        $scope.create_hit_text = function(text) {
        
         hit_factory.create_hit_text($scope.project._id, $scope.hit._id, text).success(function(data){
-
-           // Generate a new hit
              $scope.get_hit();
           });
        }
