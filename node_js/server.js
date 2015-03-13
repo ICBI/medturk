@@ -1,31 +1,25 @@
 var express       		= require('express')
 var https         		= require('https')
 var http          		= require('http')
-var fs 		      		= require('fs')
-var path          		= require('path')
 var bodyParser    		= require('body-parser')
 var config        		= require('./config.js')
-var mongoskin     		= require('mongoskin')
 var multipart     		= require('connect-multiparty')
-var FileQueue     		= require('filequeue')
 var spawn         		= require('child_process').spawn
-var fq                  = new FileQueue(200)
-var db                  = mongoskin.db(config.db_url)
 var app                 = express()
 var jsonParser          = bodyParser.json()
 var multipartMiddleware = multipart()
-
+var fs 		      		= require('fs')
+require('./db/database.js').connect()
+var user 		  = require('./business/user.js')
+var setting 	  = require('./business/setting.js')
+var project       = require('./business/project.js')
+var hit           = require('./business/hit.js')
+var questionnaire = require('./business/questionnaire.js')
+var phrase        = require('./business/phrase.js')
+var dataset       = require('./business/dataset.js')
+var record        = require('./business/record.js')
 
 app.use(express.static(config.ui_path))
-
-var user 		  = require('./business/user.js')
-var project       = require('./project.js')
-var hit           = require('./hit.js')
-var questionnaire = require('./questionnaire.js')
-var phrase        = require('./phrase.js')
-
-
-
 app = user.modify_app(app)
 
 
@@ -42,38 +36,18 @@ db.hits.ensureIndex({'project_id' : 1, 'answered' : 1})
 */
 
 
+app.get('/settings', function(req, res) {
 
+	function on_success(_settings, _passthrough) {
+		res.json(_settings)
+	}
 
-/*
-curl -v -H "Content-Type: application/json" -XPOST --data "{\"username\" : \"rmj49\", \"password\" : \"password\"}" https://10.129.21.4/users/ldap/login --insecure
-*/
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(400)
+	}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	setting.get_settings(on_success, on_fail)
+})
 
 
 
@@ -152,6 +126,7 @@ app.post('/users', user.admin_role, jsonParser, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
+
 		user.create_user(req.body.username, req.body.password, req.body.is_admin, on_success, on_fail)
 	}
 })
@@ -333,23 +308,16 @@ app.delete('/users', user.admin_role, jsonParser, function(req, res) {
 
 app.post('/projects', user.admin_role, jsonParser, function(req, res) {
 
-	// Create document to insert
-	doc = {
-			  'name'              : 'New Application', 
-			  'description'       : '',
-			  'dataset_id'        : null,
-			  'questionnaire_id'  : null,
-			  'user_ids'          : [],
-			  'status'            : 'Needs Building',
-			  'num_hits'		  : 0,
-			  'num_answers'		  : 0
-	      }
 
-	// Insert and return inserted document to user
-	db.collection('projects').insert(doc, function(err, result) {
-		if (err) throw err
-		res.json(result[0])
-	})
+	function on_success(_result, _passthrough) {
+		res.json(_result)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
+	project.create_project(on_success, on_fail)
 })
 
 
@@ -384,6 +352,15 @@ app.get('/projects/download', user.admin_role, jsonParser, function(req, res) {
 app.post('/projects/id/user', user.admin_role, jsonParser, function(req, res) {
 
 
+	function on_success(_result, _passthrough) {
+		res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
+
 	if (!req.body.id) {
 		return res.sendStatus(400)
 	}
@@ -397,19 +374,7 @@ app.post('/projects/id/user', user.admin_role, jsonParser, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id)}
-		var arg2 = {'$push' : {'user_ids' : new mongoskin.ObjectID(req.body.user_id)}}
-		db.collection('projects').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if(result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-		})
+		project.add_user(req.body.id, req.body.user_id, on_success, on_fail)
 	}
 })
 
@@ -417,6 +382,15 @@ app.post('/projects/id/user', user.admin_role, jsonParser, function(req, res) {
 
 
 app.post('/projects/id/name', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_result, _passthrough) {
+		res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
 
 	if (!req.body.id) {
 		return res.sendStatus(400)
@@ -431,20 +405,7 @@ app.post('/projects/id/name', user.admin_role, jsonParser, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id)}
-		var arg2 = {'$set' : {'name' : req.body.name}}
-		db.collection('projects').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
+		project.update_project_name(req.body.id, req.body.name, on_success, on_fail)
 	}
 })
 
@@ -452,6 +413,15 @@ app.post('/projects/id/name', user.admin_role, jsonParser, function(req, res) {
 
 
 app.post('/projects/id/description', user.admin_role, jsonParser, function(req, res) {
+
+
+	function on_success(_result, _passthrough) {
+		res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
 
 	if (!req.body.id) {
 		return res.sendStatus(400)
@@ -463,26 +433,22 @@ app.post('/projects/id/description', user.admin_role, jsonParser, function(req, 
 		return res.sendStatus(400)
 	} 
 	else {
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id)}
-		var arg2 = {'$set' : {'description' : req.body.description}}
-		db.collection('projects').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
+		project.update_project_description(req.body.id, req.body.description, on_success, on_fail)
 	}
 })
 
 
 
 app.post('/projects/id/dataset_id', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_result, _passthrough) {
+		res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
 
 	if (!req.body.id) {
 		return res.sendStatus(400)
@@ -497,20 +463,7 @@ app.post('/projects/id/dataset_id', user.admin_role, jsonParser, function(req, r
 		return res.sendStatus(400)
 	} 
 	else {
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id)}
-		var arg2 = {'$set' : {'dataset_id' : new mongoskin.ObjectID(req.body.dataset_id)}}
-		db.collection('projects').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
+		project.update_dataset_id(req.body.id, req.body.dataset_id, on_success, on_fail)
 	}
 })
 
@@ -518,6 +471,15 @@ app.post('/projects/id/dataset_id', user.admin_role, jsonParser, function(req, r
 
 
 app.post('/projects/id/questionnaire_id', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_result, _passthrough) {
+		res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
 
 	if (!req.body.id) {
 		return res.sendStatus(400)
@@ -532,20 +494,7 @@ app.post('/projects/id/questionnaire_id', user.admin_role, jsonParser, function(
 		return res.sendStatus(400)
 	} 
 	else {
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id)}
-		var arg2 = {'$set' : {'questionnaire_id' : new mongoskin.ObjectID(req.body.questionnaire_id)}}
-		db.collection('projects').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
+		project.update_questionnaire_id(req.body.id, req.body.questionnaire_id, on_success, on_fail)
 	}
 })
 
@@ -564,8 +513,6 @@ app.delete('/projects', user.admin_role, jsonParser, function(req, res) {
 			return res.sendStatus(200)
 		}
 	}
-
-
 
 	function hit_delete_callback(_passthrough) {
 		on_callback()
@@ -588,9 +535,6 @@ app.delete('/projects', user.admin_role, jsonParser, function(req, res) {
 		on_callback()
 	}
 
-
-
-
 	if (!req.query.id) {
 		return res.sendStatus(400)
 	}
@@ -599,13 +543,22 @@ app.delete('/projects', user.admin_role, jsonParser, function(req, res) {
 	}
 	else {
 
-		project.delete(req.query.id, project_delete_callback, project_delete_error_callback)
+		project.delete_project(req.query.id, project_delete_callback, project_delete_error_callback)
 		hit.delete_by_project_id(req.query.id, hit_delete_callback, hit_delete_error_callback)
 	}
 })
 
 
 app.delete('/projects/id/user', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_result, _passthrough) {
+		res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
 
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -620,40 +573,26 @@ app.delete('/projects/id/user', user.admin_role, jsonParser, function(req, res) 
 		return res.sendStatus(400)
 	}
 	else {
-		// matt
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.query.id)}
-		var arg2 = {$pull : {'user_ids' : new mongoskin.ObjectID(req.query.user_id)}}
-
-		db.collection('projects').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				return res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-		})
+		project.delete_user_id(req.body.id, req.query.user_id, on_success, on_fail)
 	}
 })
 
 
 app.get('/projects', user.basic_role, function(req, res) {
 
-	function get_projects_callback(_projects, _passthrough) {
-
+	function on_success(_projects, _passthrough) {
 		res.json(_projects)
 	}
 
-	function get_projects_error_callback(_projects, _passthrough) {
-
+	function on_fail(_projects, _passthrough) {
+		res.sendStatus(404)
 	}
 	
 	if (req.user.is_admin) {
-		project.get(get_projects_callback, get_projects_error_callback)
+		project.get(on_success, on_fail)
 	}
 	else {
-		project.get_by_user_id(req.user._id, get_projects_callback, get_projects_error_callback)
+		project.get_by_user_id(req.user._id, on_success, on_fail)
 	}
 })
 
@@ -661,11 +600,11 @@ app.get('/projects', user.basic_role, function(req, res) {
 
 app.get('/projects/id', user.basic_role, function(req, res) {
 
-	function get_project_callback(_project, _passthrough) {
+	function on_success(_project, _passthrough) {
 		res.json(_project)
 	}
 
-	function get_project_error_callback(_project, _passthrough) {
+	function on_fail(_project, _passthrough) {
 
 	}
 
@@ -676,57 +615,50 @@ app.get('/projects/id', user.basic_role, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
-
-		project.get_by_project_id(req.query.id, get_project_callback, get_project_error_callback)
+		project.get_by_project_id(req.query.id, on_success, on_fail)
 	}
 
 })
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 app.get('/datasets', user.admin_role, function(req, res) {
 
-	// Fetch all datasets
-	db.collection('datasets').find().toArray(function(err, result) {
-		if (err) throw err
-		res.json(result)
-	})
+	function on_success(_result, _passthrough) {
+		res.json(_result)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
+	dataset.get_all_datasets(on_success, on_fail)
 })
 
 app.get('/datasets/raw', user.admin_role, function(req, res) {
 
-	paths = fs.readdirSync(config.datasets_path).filter(function(file) {
-	    return fs.statSync(path.join(config.datasets_path, file)).isDirectory();
-	});
+	function on_success(_result, _passthrough) {
+		res.json(_result)
+	}
 
-	res.json(paths)
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
+	dataset.get_dataset_folders(on_success, on_fail)
 })
 
 
 app.get('/datasets/id', user.admin_role, function(req, res) {
 
+	function on_success(_result, _passthrough) {
+		res.json(_result)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
+
 	if (!req.query.id) {
 		return res.sendStatus(400)
 	}
@@ -734,20 +666,22 @@ app.get('/datasets/id', user.admin_role, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.query.id)}
-
-		// Fetch a dataset
-		db.collection('datasets').findOne(arg1, function(err, result) {
-			if (err) throw err
-			res.json(result)
-		})
+		dataset.get_dataset_by_id(req.query.id, on_success, on_fail)
 	}
 })
 
 
 
 app.post('/datasets', user.admin_role, jsonParser, function(req, res) {
+
+
+	function on_success(_result, _passthrough) {
+		res.json(_result)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
 
 
 	if (!req.body.name) {
@@ -766,34 +700,9 @@ app.post('/datasets', user.admin_role, jsonParser, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
-
-
-		doc = {
-				  'name'              : req.body.name, 
-				  'description'       : req.body.description,
-				  'folder'            : req.body.folder,
-				  'status'            : 'Building (0% complete)',
-				  'num_patients'	  : 0,
-				  'date'              : Date()
-		      }
-
-
-		db.collection('datasets').insert(doc, function(err, result) {
-				if (err) {
-					throw err
-					return res.sendStatus(500)
-				}
-				else {
-					res.send(result[0])
-				}
-		})
-
+		dataset.create_dataset(req.body.name, req.body.description, req.body.folder, on_success, on_fail)
 	}
 })
-
-
-
-
 
 
 app.get('/datasets/id/build', user.admin_role, jsonParser, function(req, res) {
@@ -830,7 +739,7 @@ app.get('/datasets/id/build', user.admin_role, jsonParser, function(req, res) {
 	}
 	else {
 	
-		_child_process = spawn('node', ['build_dataset.js', req.query.id])
+		_child_process = spawn('node', ['./processes/build_dataset.js', req.query.id])
 		
 		_child_process.stdout.on('data', function(data) {
 			
@@ -845,7 +754,6 @@ app.get('/datasets/id/build', user.admin_role, jsonParser, function(req, res) {
 		})
 		
 		_child_process.stderr.on('data', function(data) {
-		   
 		})
 
 		_child_process.on('close', function(code) {
@@ -857,6 +765,16 @@ app.get('/datasets/id/build', user.admin_role, jsonParser, function(req, res) {
 
 
 app.post('/datasets/name', user.admin_role, jsonParser, function(req, res) {
+
+
+	function on_success(_result, _passthrough) {
+		res.json(_result)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -871,25 +789,21 @@ app.post('/datasets/name', user.admin_role, jsonParser, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id)}
-		var arg2 = {'$set' : {'name' : req.body.name}}
-		db.collection('datasets').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
+		dataset.update_dataset_name(req.body.id, req.body.name, on_success, on_fail)
 	}
 })
 
 
 app.post('/datasets/description', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_result, _passthrough) {
+		res.json(_result)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -904,25 +818,21 @@ app.post('/datasets/description', user.admin_role, jsonParser, function(req, res
 		return res.sendStatus(400)
 	}
 	else {
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id)}
-		var arg2 = {'$set' : {'description' : req.body.description}}
-		db.collection('datasets').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
+		dataset.update_dataset_description(req.body.id, req.body.description, on_success, on_fail)
 	}
 })
 
 
 app.delete('/datasets', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_passthrough) {
+		res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
 	
 	if (req.query.id == null) {
 		return res.sendStatus(400)
@@ -931,115 +841,22 @@ app.delete('/datasets', user.admin_role, jsonParser, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
-
-		// We must wait for three events to finish
-		// Once this counter hits max, we are finished
-		var counter = 0
-		var max = 3
-
-		// Delete dataset
-		var _id = new mongoskin.ObjectID(req.query.id)
-
-		var arg = {'_id' : _id}
-		db.collection('datasets').remove(arg, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				counter += 1
-				if (counter >= max) {
-					res.sendStatus(200)
-				}
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
-
-
-		arg = {'dataset_id' : _id}
-
-		// Delete patients
-		db.collection('patients').remove(arg, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				counter += 1
-				if (counter >= max) {
-					res.sendStatus(200)
-				}
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
-
-
-		// Delete records
-		db.collection('records').remove(arg, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				counter += 1
-				if (counter >= max) {
-					res.sendStatus(200)
-				}
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
+		dataset.delete_dataset(req.query.id, on_success, on_fail)
 	}
 })
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 app.get('/records/id', user.admin_role, function(req, res) {
+
+
+	function on_success(_result, _passthrough) {
+		res.json(_result)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
 
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -1048,93 +865,36 @@ app.get('/records/id', user.admin_role, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
-
-		var arg = { '_id' : new mongoskin.ObjectID(req.query.id)}
-
-		db.collection('records').findOne(arg, function(err, result) {
-	    	if (err) {
-	    		throw err
-	    	}
-	    	else {
-	    		res.json(result)
-	    	}
-	    
-		})
+		record.get_record_by_id(req.query.id, on_success, on_fail)
 	}
 })
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 app.post('/questionnaires', user.admin_role, jsonParser, function(req, res) {
 
-	var doc = {'name' : 'New Questionnaire', 'description' : '', 'questions' : [], 'tags' : []}
+	function on_success(_result, _passthrough) {
+		res.json(_result)
+	}
 
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
 
-	// Insert and return inserted document to user
-	db.collection('questionnaires').insert(doc, function(err, result) {
-	if (err) throw err
-		
-		res.json(result[0])
-	})
+	questionnaire.create_questionnaire(on_success, on_fail)
 })
 
 
 
 app.post('/questionnaires/id/question', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_result, _passthrough) {
+		res.json(_result)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1143,29 +903,22 @@ app.post('/questionnaires/id/question', user.admin_role, jsonParser, function(re
 		return res.sendStatus(400)
 	}
 	else {
-
-	    var doc = {'_id' : new mongoskin.ObjectID(), 'question' : '', 'type' : 'radio', 'frequency' : 'once', 'tag_ids' : [], 'choices' : [], 'triggers' : []}
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id)}
-		var arg2 = { $push: { 'questions' : doc } }
-
-		db.collection('questionnaires').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.json(doc)
-			}	
-			else {
-				return res.sendStatus(400)
-			}
-		})
+		questionnaire.create_question(req.body.id, on_success, on_fail)
 	}
 })
 
 
 
-
-
 app.post('/questionnaires/id/questions/id/choice', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_result, _passthrough) {
+		res.json(_result)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1186,26 +939,7 @@ app.post('/questionnaires/id/questions/id/choice', user.admin_role, jsonParser, 
 		return res.sendStatus(400)
 	}
 	else {
-
-		// todo
-		var _id          = new mongoskin.ObjectID(req.body.id)
-		var _question_id = new mongoskin.ObjectID(req.body.question_id)
-
-		var doc  = {'_id' : new mongoskin.ObjectID(), 'name' : req.body.name}
-
-		var arg1 = {'_id' : _id, "questions" : {$elemMatch : {'_id' : _question_id}}}
-		var arg2 = { $push: { 'questions.$.choices' : doc } }
-
-		db.collection('questionnaires').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.json(doc)
-			}	
-			else {
-				return res.sendStatus(400)
-			}
-		})
+		questionnaire.create_question_choice(req.body.id, req.body.question_id, req.body.name, on_success, on_fail)
 	}
 })
 
@@ -1214,6 +948,14 @@ app.post('/questionnaires/id/questions/id/choice', user.admin_role, jsonParser, 
 
 
 app.post('/questionnaires/id/questions/id/tag', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_result, _passthrough) {
+		res.json(_result)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1234,33 +976,21 @@ app.post('/questionnaires/id/questions/id/tag', user.admin_role, jsonParser, fun
 		return res.sendStatus(400)
 	}
 	else {
-
-		// todo
-		var _id          = new mongoskin.ObjectID(req.body.id)
-		var _question_id = new mongoskin.ObjectID(req.body.question_id)
-		var _tag_id      = new mongoskin.ObjectID(req.body.tag_id)
-
-		var doc  = _tag_id
-
-		var arg1 = {'_id' : _id, "questions" : {$elemMatch : {'_id' : _question_id}}}
-		var arg2 = { $push: { 'questions.$.tag_ids' : doc } }
-
-		db.collection('questionnaires').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.json(doc)
-			}	
-			else {
-				return res.sendStatus(400)
-			}
-		})
+		questionnaire.insert_question_tag_id(req.body.id, req.body.question_id, req.body.tag_id, on_success, on_fail)
 	}
 })
 
 
-
 app.post('/questionnaires/id/questions/id/trigger', user.admin_role, jsonParser, function(req, res) {
+
+
+	function on_success(_result, _passthrough) {
+		res.json(_result)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1284,26 +1014,7 @@ app.post('/questionnaires/id/questions/id/trigger', user.admin_role, jsonParser,
 		return res.sendStatus(400)
 	}
 	else {
-
-		// todo
-		var _id          = new mongoskin.ObjectID(req.body.id)
-		var _question_id = new mongoskin.ObjectID(req.body.question_id)
-
-		var doc  = {'_id' : new mongoskin.ObjectID(), 'name' : req.body.name, 'case_sensitive' : req.body.case_sensitive}
-
-		var arg1 = {'_id' : _id, "questions" : {$elemMatch : {'_id' : _question_id}}}
-		var arg2 = { $push: { 'questions.$.triggers' : doc } }
-
-		db.collection('questionnaires').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.json(doc)
-			}	
-			else {
-				return res.sendStatus(404)
-			}
-		})
+		questionnaire.create_trigger(req.body.id, req.body.question_id, req.body.name, req.body.case_sensitive, on_success, on_fail)
 	}
 })
 
@@ -1311,6 +1022,15 @@ app.post('/questionnaires/id/questions/id/trigger', user.admin_role, jsonParser,
 
 
 app.post('/questionnaires/id/tag', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_result, _passthrough) {
+		res.json(_result)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1325,29 +1045,7 @@ app.post('/questionnaires/id/tag', user.admin_role, jsonParser, function(req, re
 		return res.sendStatus(400)
 	}
 	else {
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id)}
-
-		db.collection('questionnaires').findOne(arg1, function(err, result) {
-			if (err) throw err
-			
-			// Add this tag to the current collection
-			var tag = {'_id' : new mongoskin.ObjectID(), 'name' : req.body.name}
-			result.tags.push(tag)
-
-			var arg2 = {'$set' : {'tags' : result.tags}}
-
-			db.collection('questionnaires').update(arg1, arg2, function(err, result) {
-				if (err) throw err
-
-				if (result) {
-					res.json(tag)
-				}
-				else {
-					res.sendStatus(404)
-				}
-			})
-		})
+		questionnaire.create_tag(req.body.id ,req.body.name, on_success, on_fail)
 	}
 })
 
@@ -1355,17 +1053,33 @@ app.post('/questionnaires/id/tag', user.admin_role, jsonParser, function(req, re
 
 app.get('/questionnaires', user.basic_role, function(req, res) {
 
-	// Fetch all datasets
-	db.collection('questionnaires').find().toArray(function(err, result) {
-		if (err) throw err
-		res.json(result)
-	})
+	function on_success(_result, _passthrough) {
+		res.json(_result)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
+	questionnaire.get_all_questionnaires(on_success, on_fail)
 })
 
 
 
 
 app.get('/questionnaires/id/download', user.admin_role, function(req, res) {
+
+	function on_success(_result, _passthrough) {
+		res.setHeader('Content-disposition', 'attachment; filename=' + _result.name + ".json");
+		res.setHeader('Content-type', 'application/json');
+		res.charset = 'UTF-8';
+		res.write(JSON.stringify(_result, undefined, 2))
+		res.end()
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
 	
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -1374,22 +1088,7 @@ app.get('/questionnaires/id/download', user.admin_role, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.query.id)}
-
-		// Fetch a dataset
-		db.collection('questionnaires').findOne(arg1, function(err, result) {
-			if (err) throw err
-	
-
-			result
-
-			res.setHeader('Content-disposition', 'attachment; filename='+result.name + ".json");
-			res.setHeader('Content-type', 'application/json');
-			res.charset = 'UTF-8';
-			res.write(JSON.stringify(result, undefined, 2))
-			res.end()
-		})
+		questionnaire.get_by_id(req.query.id, on_success, on_fail)
 	}
 })
 
@@ -1398,6 +1097,15 @@ app.get('/questionnaires/id/download', user.admin_role, function(req, res) {
 
 
 app.get('/questionnaires/id', user.basic_role, function(req, res) {
+
+	function on_success(_result, _passthrough) {
+		res.json(_result)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
 	
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -1406,69 +1114,37 @@ app.get('/questionnaires/id', user.basic_role, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.query.id)}
-
-		// Fetch a dataset
-		db.collection('questionnaires').findOne(arg1, function(err, result) {
-			if (err) throw err
-			res.json(result)
-		})
+		questionnaire.get_by_id(req.query.id, on_success, on_fail)
 	}
 })
-
-
-
 
 
 app.post('/questionnaires/upload', user.admin_role, multipartMiddleware, function(req, res) {
 	
-	var file = req.files.file
 
-
-	function on_insert_callback(_id, _passthrough) {
-		res.json({'_id' : _id})
+	function on_success(_result, _passthrough) {
+		res.json(_result)
 	}
 
-	function on_insert_error_callback(_id, _passthrough) {
-		return res.sendStatus(400)
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
 	}
 
-	// Is this a json file?
-	if (file.name.substr(file.name.length-5).toLowerCase() == '.json') {
-
-		fs.readFile(file.path, 'utf8', function (err, data) {
-  			if (err) {
-  				return res.sendStatus(400)
-  			}
-  			else {
-  				// This code blocks the thread
-  				var doc = JSON.parse(data)
-  				questionnaire.insert(doc, on_insert_callback, on_insert_error_callback)
-  			}
-		})
-	}
-	else {
-		return res.sendStatus(400)
-	}
+	questionnaire.upload(req.files.file, on_success, on_fail)
 })
-
-
-
-
-app.get('/questionnaires/download', user.admin_role, function(req, res) {
-
-	// Fetch all datasets
-	db.collection('questionnaires').find().toArray(function(err, result) {
-		if (err) throw err
-		res.json(result)
-	})
-})
-
 
 
 
 app.post('/questionnaires/id/name', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_result, _passthrough) {
+		res.json(_result)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1483,25 +1159,21 @@ app.post('/questionnaires/id/name', user.admin_role, jsonParser, function(req, r
 		return res.sendStatus(400)
 	}
 	else {
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id)}
-		var arg2 = {'$set' : {'name' : req.body.name}}
-		db.collection('questionnaires').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
+		questionnaire.update_name(req.body.id, req.body.name, on_success, on_fail)
 	}
 })
 
 
 app.post('/questionnaires/id/description', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_result, _passthrough) {
+		res.json(_result)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1513,26 +1185,22 @@ app.post('/questionnaires/id/description', user.admin_role, jsonParser, function
 		return res.sendStatus(400)
 	}
 	else {
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id)}
-		var arg2 = {'$set' : {'description' : req.body.description}}
-		db.collection('questionnaires').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
+		questionnaire.update_description(req.body.id, req.body.description, on_success, on_fail)
 	}
 })
 
 
 
 app.post('/questionnaires/id/tag/name', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_result, _passthrough) {
+		res.json(_result)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1553,29 +1221,20 @@ app.post('/questionnaires/id/tag/name', user.admin_role, jsonParser, function(re
 		return res.sendStatus(400)
 	}
 	else {
-
-
-		var tag_id = new mongoskin.ObjectID(req.body.tag_id)
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id), "tags" : {$elemMatch : {'_id' : tag_id}}}
-		var arg2 = { $set : {"tags.$.name" : req.body.name}}
-
-		db.collection('questionnaires').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
+		questionnaire.update_tag_name(req.body.id, req.body.tag_id, req.body.name, on_success, on_fail)
 	}
 })
 
 
 app.post('/questionnaires/id/questions/id/question', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_result, _passthrough) {
+		res.json(_result)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1596,30 +1255,20 @@ app.post('/questionnaires/id/questions/id/question', user.admin_role, jsonParser
 		return res.sendStatus(400)
 	}
 	else {
-
-		var _id         = new mongoskin.ObjectID(req.body.id)
-		var question_id = new mongoskin.ObjectID(req.body.question_id)
-
-
-		var arg1 = {'_id' : _id, "questions" : {$elemMatch : {'_id' : question_id}}}
-		var arg2 = { $set : {"questions.$.question" : req.body.question}}
-
-		db.collection('questionnaires').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
+		questionnaire.update_question_name(req.body.id, req.body.question_id, req.body.question, on_success, on_fail)
 	}
 })
 
 
 app.post('/questionnaires/id/questions/id/choices/id/name', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_passthrough) {
+		res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1646,74 +1295,21 @@ app.post('/questionnaires/id/questions/id/choices/id/name', user.admin_role, jso
 		return res.sendStatus(400)
 	}
 	else {
-
-		var _id         = new mongoskin.ObjectID(req.body.id)
-		var question_id = new mongoskin.ObjectID(req.body.question_id)
-		var choice_id   = req.body.choice_id
-
-
-		// [1] Only retrieve the question portion of the questionnaire
-		// [2] Update choice porition of the question
-		// [3] Update the question subdocument in the questionnaire
-
-		// Query for the questionnaire
-		var arg1 = {'_id' : _id}
-
-		// But only return the question
-		var arg2 = {_id: 0, questions: {$elemMatch: {_id:  question_id}}}
-
-		// Fetch the question
-		db.collection('questionnaires').findOne(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				
-				var question = result.questions[0]
-				var choice = undefined
-
-				for (i = 0; i < question.choices.length; i++) {
-					if (question.choices[i]._id == choice_id) {
-						choice = question.choices[i]
-						break
-					}
-				}
-
-				if (choice == undefined) {
-					return res.sendStatus(404)
-				}
-				else {
-
-					// Now we can update the choice name
-					choice.name = req.body.name
-
-					arg1 = {'_id' : _id, "questions" : {$elemMatch : {'_id' : question_id}}}
-					arg2 = { $set : {"questions.$" : question}}
-
-					db.collection('questionnaires').update(arg1, arg2, function(err, result) {
-						if (err) throw err
-
-						if (result) {
-							res.sendStatus(200)
-						}
-						else {
-							res.sendStatus(404)
-						}
-						
-					})
-				}
-				
-			}
-			else {
-				// Couldn't find it
-				return res.sendStatus(404)
-			}
-		})
+		questionnaire.update_question_choice_name(req.body.id, req.body.question_id, req.body.choice_id, req.body.name, on_success, on_fail)
 	}
 })
 
 
 
 app.post('/questionnaires/id/questions/id/frequency', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_passthrough) {
+		res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1734,31 +1330,21 @@ app.post('/questionnaires/id/questions/id/frequency', user.admin_role, jsonParse
 		return res.sendStatus(400)
 	}
 	else {
-
-		var _id         = new mongoskin.ObjectID(req.body.id)
-		var question_id = new mongoskin.ObjectID(req.body.question_id)
-
-
-		var arg1 = {'_id' : _id, "questions" : {$elemMatch : {'_id' : question_id}}}
-		var arg2 = { $set : {"questions.$.frequency" : req.body.frequency}}
-
-		db.collection('questionnaires').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
+		questionnaire.update_question_frequency(req.body.id, req.body.question_id, req.body.frequency, on_success, on_fail)
 	}
 })
 
 
-
 app.post('/questionnaires/id/questions/id/type', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_passthrough) {
+		res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
 
 	if (req.body.id == null) {
 		return res.sendStatus(400)
@@ -1779,29 +1365,21 @@ app.post('/questionnaires/id/questions/id/type', user.admin_role, jsonParser, fu
 		return res.sendStatus(400)
 	}
 	else {
-
-		var _id         = new mongoskin.ObjectID(req.body.id)
-		var question_id = new mongoskin.ObjectID(req.body.question_id)
-
-
-		var arg1 = {'_id' : _id, "questions" : {$elemMatch : {'_id' : question_id}}}
-		var arg2 = { $set : {"questions.$.type" : req.body.type}}
-
-		db.collection('questionnaires').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
+		questionnaire.update_question_type(req.body.id, req.body.question_id, req.body.type, on_success, on_fail)
 	}
 })
 
 app.delete('/questionnaires/id/question', user.admin_role, jsonParser, function(req, res) {
+
+
+	function on_success(_passthrough) {
+		res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
 
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -1816,28 +1394,22 @@ app.delete('/questionnaires/id/question', user.admin_role, jsonParser, function(
 		return res.sendStatus(400)
 	}
 	else {
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.query.id)}
-		var arg2 = {$pull : {'questions' : {'_id': new mongoskin.ObjectID(req.query.question_id)} }}
-
-		db.collection('questionnaires').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				return res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-		})
-
-		
+		questionnaire.delete_question(req.body.id, req.body.question_id, req.query.question_id, on_success, on_fail)		
 	}
 })
 
 
 
 app.delete('/questionnaires/id/tag', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_passthrough) {
+		res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
 
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -1852,27 +1424,20 @@ app.delete('/questionnaires/id/tag', user.admin_role, jsonParser, function(req, 
 		return res.sendStatus(400)
 	}
 	else {
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.query.id)}
-		var arg2 = {$pull : {'tags' : {'_id': new mongoskin.ObjectID(req.query.tag_id)} }}
-
-		db.collection('questionnaires').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				return res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-		})
-
-		
+		questionnaire.delete_tag(req.query.id, req.query.tag_id, on_success, on_fail)	
 	}
 })
 
 
 app.delete('/questionnaires/id', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_passthrough) {
+		res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
 
 	if (!req.query.id) {
 		return res.sendStatus(400)
@@ -1881,24 +1446,21 @@ app.delete('/questionnaires/id', user.admin_role, jsonParser, function(req, res)
 		return res.sendStatus(400)
 	}
 	else {
-
-		var arg = {'_id' : new mongoskin.ObjectID(req.query.id)}
-		db.collection('questionnaires').remove(arg, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-			
-		})
+		questionnaire.delete_questionnaire(req.query.id, on_success, on_fail)	
 	}
 })
 
 
 app.delete('/questionnaires/id/questions/id/choices/id', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_passthrough) {
+		res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
+
 
 	if (req.query.id == null) {
 		return res.sendStatus(400)
@@ -1919,70 +1481,7 @@ app.delete('/questionnaires/id/questions/id/choices/id', user.admin_role, jsonPa
 		return res.sendStatus(400)
 	}
 	else {
-
-		var _id         = new mongoskin.ObjectID(req.query.id)
-		var question_id = new mongoskin.ObjectID(req.query.question_id)
-		var choice_id   = req.query.choice_id
-
-
-		// [1] Only retrieve the question portion of the questionnaire
-		// [2] Update choice porition of the question
-		// [3] Update the question subdocument in the questionnaire
-
-		// Query for the questionnaire
-		var arg1 = {'_id' : _id}
-
-		// But only return the question
-		var arg2 = {_id: 0, questions: {$elemMatch: {_id:  question_id}}}
-
-		// Fetch the question
-		db.collection('questionnaires').findOne(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				// RMJ
-				var question = result.questions[0]
-				var choice_index = undefined
-
-				for (i = 0; i < question.choices.length; i++) {
-					if (question.choices[i]._id == choice_id) {
-						choice_index = i
-			
-						break
-					}
-				}
-
-
-				if (choice_index == undefined) {
-					return res.sendStatus(404)
-				}
-				else {
-
-					// Now we can remove the choice
-					question.choices.splice(choice_index, 1)
-
-					arg1 = {'_id' : _id, "questions" : {$elemMatch : {'_id' : question_id}}}
-					arg2 = { $set : {"questions.$" : question}}
-
-					db.collection('questionnaires').update(arg1, arg2, function(err, result) {
-						if (err) throw err
-
-						if (result) {
-							res.sendStatus(200)
-						}
-						else {
-							res.sendStatus(404)
-						}
-						
-					})
-				}
-				
-			}
-			else {
-				// Couldn't find it
-				return res.sendStatus(404)
-			}
-		})
+		questionnaire.delete_question_choice(req.query.id, req.query.question_id, req.query.choice_id, on_success, on_fail)
 	}
 })
 
@@ -1990,6 +1489,14 @@ app.delete('/questionnaires/id/questions/id/choices/id', user.admin_role, jsonPa
 
 
 app.delete('/questionnaires/id/questions/id/triggers/id', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_passthrough) {
+		res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
 
 	if (req.query.id == null) {
 		return res.sendStatus(400)
@@ -2010,78 +1517,20 @@ app.delete('/questionnaires/id/questions/id/triggers/id', user.admin_role, jsonP
 		return res.sendStatus(400)
 	}
 	else {
-
-		var _id         = new mongoskin.ObjectID(req.query.id)
-		var question_id = new mongoskin.ObjectID(req.query.question_id)
-		var trigger_id   = req.query.trigger_id
-
-
-		// [1] Only retrieve the question portion of the questionnaire
-		// [2] Update choice porition of the question
-		// [3] Update the question subdocument in the questionnaire
-
-		// Query for the questionnaire
-		var arg1 = {'_id' : _id}
-
-		// But only return the question
-		var arg2 = {_id: 0, questions: {$elemMatch: {_id:  question_id}}}
-
-		// Fetch the question
-		db.collection('questionnaires').findOne(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				// RMJ
-				var question = result.questions[0]
-				var trigger_index = undefined
-
-				for (i = 0; i < question.triggers.length; i++) {
-					if (question.triggers[i]._id == trigger_id) {
-						trigger_index = i
-						break
-					}
-				}
-
-
-				if (trigger_index == undefined) {
-					return res.sendStatus(404)
-				}
-				else {
-
-					// Now we can remove the choice
-					question.triggers.splice(trigger_index, 1)
-
-					arg1 = {'_id' : _id, "questions" : {$elemMatch : {'_id' : question_id}}}
-					arg2 = { $set : {"questions.$" : question}}
-
-					db.collection('questionnaires').update(arg1, arg2, function(err, result) {
-						if (err) throw err
-
-						if (result) {
-							res.sendStatus(200)
-						}
-						else {
-							res.sendStatus(404)
-						}
-						
-					})
-				}
-				
-			}
-			else {
-				// Couldn't find it
-				return res.sendStatus(404)
-			}
-		})
+		questionnaire.delete_question_trigger(req.query.id, req.query.question_id, req.query.trigger_id, on_success, on_fail)
 	}
 })
 
 
-
-
-
-
 app.delete('/questionnaires/id/questions/id/tags/id', user.admin_role, jsonParser, function(req, res) {
+
+	function on_success(_passthrough) {
+		res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		res.sendStatus(404)
+	}
 
 	if (req.query.id == null) {
 		return res.sendStatus(400)
@@ -2102,79 +1551,13 @@ app.delete('/questionnaires/id/questions/id/tags/id', user.admin_role, jsonParse
 		return res.sendStatus(400)
 	}
 	else {
-
-		var _id         = new mongoskin.ObjectID(req.query.id)
-		var question_id = new mongoskin.ObjectID(req.query.question_id)
-		var tag_id      = req.query.tag_id
-
-		// [1] Only retrieve the question portion of the questionnaire
-		// [2] Update tag portion of the question
-		// [3] Update the question subdocument in the questionnaire
-
-		// Query for the questionnaire
-		var arg1 = {'_id' : _id}
-
-		// But only return the question
-		var arg2 = {_id: 0, questions: {$elemMatch: {_id:  question_id}}}
-
-		// Fetch the question
-		db.collection('questionnaires').findOne(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				// RMJ
-				var question = result.questions[0]
-				var tag_index = undefined
-
-				for (i = 0; i < question.tag_ids.length; i++) {
-					if (question.tag_ids[i] == tag_id) {
-						tag_index = i
-						break
-					}
-				}
-
-
-				if (tag_index == undefined) {
-					return res.sendStatus(404)
-				}
-				else {
-
-					// Now we can remove the tag
-					question.tag_ids.splice(tag_index, 1)
-
-					arg1 = {'_id' : _id, "questions" : {$elemMatch : {'_id' : question_id}}}
-					arg2 = { $set : {"questions.$" : question}}
-
-					db.collection('questionnaires').update(arg1, arg2, function(err, result) {
-						if (err) throw err
-
-						if (result) {
-							res.sendStatus(200)
-						}
-						else {
-							res.sendStatus(404)
-						}
-						
-					})
-				}
-				
-			}
-			else {
-				// Couldn't find it
-				return res.sendStatus(404)
-			}
-		})
+		questionnaire.delete_question_tag(req.query.id, req.query.question_id, req.query.tag_id, on_success, on_fail)
 	}
 })
 
-
-
-
-
 app.get('/hits', user.basic_role, function(req, res) {
 
-
-	function on_get_random_hit_callback(_hit, _passthrough) {
+	function on_success(_hit, _passthrough) {
 		if (_hit) {
 			return res.json(_hit)
 		}
@@ -2183,7 +1566,7 @@ app.get('/hits', user.basic_role, function(req, res) {
 		}
 	}
 
-	function on_get_random_hit_error_callback(_err, _passthrough) {
+	function on_fail(_err, _passthrough) {
 		return res.sendStatus(400)
 	}
 
@@ -2194,7 +1577,7 @@ app.get('/hits', user.basic_role, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
-		hit.get_random(req.query.project_id, on_get_random_hit_callback, on_get_random_hit_error_callback)
+		hit.get_random(req.query.project_id, on_success, on_fail)
 	}
 })
 
@@ -2202,17 +1585,19 @@ app.get('/hits', user.basic_role, function(req, res) {
 
 app.post('/hits/choice_id', user.basic_role, jsonParser, function(req, res) {
 
+	function on_success(_passthrough) {
+		return res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		return res.sendStatus(400)
+	}
+
 
 	if (!req.body.hit_id) {
 		return res.sendStatus(400)
 	}
 	else if (req.body.hit_id.trim().length == 0) {
-		return res.sendStatus(400)
-	}
-	else if (!req.body.project_id) {
-		return res.sendStatus(400)
-	}
-	else if (req.body.project_id.trim().length == 0) {
 		return res.sendStatus(400)
 	}
 	else if (!req.body.choice_id) {
@@ -2222,20 +1607,7 @@ app.post('/hits/choice_id', user.basic_role, jsonParser, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
-
-		arg1 = {'_id' : mongoskin.ObjectID(req.body.hit_id)}
-		arg2 = {$set : {'choice_id' :  mongoskin.ObjectID(req.body.choice_id), 'answered' : true, 'user_id' : req.user._id, 'answered_date' : Date()}}
-
-		db.collection('hits').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-			
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-		})
+		hit.update_choice_id(req.body.hit_id, req.body.choice_id, req.user._id, on_success, on_fail)
 	}
 })
 
@@ -2243,16 +1615,19 @@ app.post('/hits/choice_id', user.basic_role, jsonParser, function(req, res) {
 
 app.post('/hits/text', user.basic_role, jsonParser, function(req, res) {
 
+	function on_success(_passthrough) {
+		return res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		return res.sendStatus(400)
+	}
+
+
 	if (!req.body.hit_id) {
 		return res.sendStatus(400)
 	}
 	else if (req.body.hit_id.trim().length == 0) {
-		return res.sendStatus(400)
-	}
-	else if (!req.body.project_id) {
-		return res.sendStatus(400)
-	}
-	else if (req.body.project_id.trim().length == 0) {
 		return res.sendStatus(400)
 	}
 	else if (!req.body.text) {
@@ -2262,22 +1637,8 @@ app.post('/hits/text', user.basic_role, jsonParser, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
-
 		var _text = req.body.text.trim()
-
-		arg1 = {'_id' : mongoskin.ObjectID(req.body.hit_id)}
-		arg2 = {$set : {'answer_text' : _text, 'answered' : true, 'user_id' : req.user._id, 'answered_date' : Date()}}
-
-		db.collection('hits').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-			
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-		})
+		hit.update_text(req.body.hit_id, _text, req.user._id, on_success, on_fail)
 	}
 })
 
@@ -2287,6 +1648,14 @@ app.post('/hits/text', user.basic_role, jsonParser, function(req, res) {
 
 app.post('/hits/id/answered', user.basic_role, jsonParser, function(req, res) {
 
+	function on_success(_passthrough) {
+		return res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		return res.sendStatus(400)
+	}
+
 
 	if (!req.body.hit_id) {
 		return res.sendStatus(400)
@@ -2294,33 +1663,23 @@ app.post('/hits/id/answered', user.basic_role, jsonParser, function(req, res) {
 	else if (req.body.hit_id.trim().length == 0) {
 		return res.sendStatus(400)
 	}
-	else if (!req.body.project_id) {
-		return res.sendStatus(400)
-	}
-	else if (req.body.project_id.trim().length == 0) {
-		return res.sendStatus(400)
-	}
 	else {
-
-		arg1 = {'_id' : mongoskin.ObjectID(req.body.hit_id)}
-		arg2 = {$set : {'answered' : true, 'user_id' : req.user._id, 'answered_date' : Date()}}
-
-		db.collection('hits').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-			
-			if (result) {
-				res.sendStatus(200)
-			}
-			else {
-				res.sendStatus(404)
-			}
-		})
+		hit.update_answered(req.body.hit_id, req.user._id, on_success, on_fail)
 	}
 })
 
 
 
 app.post('/hits/annotations/choice_id', user.basic_role, jsonParser, function(req, res) {
+
+	function on_success(_passthrough) {
+		return res.sendStatus(200)
+	}
+
+	function on_fail(_err, _passthrough) {
+		return res.sendStatus(400)
+	}
+
 
 	if (!req.body.id) {
 		return res.sendStatus(400)
@@ -2341,39 +1700,23 @@ app.post('/hits/annotations/choice_id', user.basic_role, jsonParser, function(re
 		return res.sendStatus(400)
 	}
 	else {
-
-		var arg1 = {'_id' : new mongoskin.ObjectID(req.body.id), 'annotations' : {$elemMatch : {'_id' : new mongoskin.ObjectID(req.body.annotation_id)}}}
-		var arg2 = { $set: {'annotations.$.choice_id' : new mongoskin.ObjectID(req.body.choice_id), 'annotations.$.answered' : true, 'annotations.$.user_id' : req.user._id, 'annotations.$.answered_date' : Date() } } 
-
-		db.collection('hits').update(arg1, arg2, function(err, result) {
-			if (err) throw err
-
-			if (result) {
-				return res.sendStatus(200)
-			}	
-			else {
-				return res.sendStatus(400)
-			}
-		})
+		hit.update_annotation_choice_id(req.body.id, req.body.annotation_id, req.body.choice_id, req.user._id, on_success, on_fail)
 	}
 })
 
 
-
-
-
 app.get('/hits/session', function(req, res) {
 
-	function get_user_callback(_user, _passthrough) {
+	function on_success(_user, _passthrough) {
 			res.json(_user)
 	}
 
-	function get_user_error_callback(_err, _passthrough) {
+	function on_fail(_err, _passthrough) {
 		res.sendStatus(404)
 	}
 
 	if (req.user) {
-		user.get_by_username(req.user.username, get_user_callback, get_user_error_callback) 
+		user.get_by_username(req.user.username, on_success, on_fail) 
 	}
 	else {
 		res.sendStatus(404)
@@ -2419,7 +1762,7 @@ app.get('/hits/project_id/build', user.admin_role, jsonParser, function(req, res
 		return res.sendStatus(400)
 	}
 	else {
-		_child_process = spawn('node', ['build_hits.js', req.query.id])
+		_child_process = spawn('node', ['./processes/build_hits.js', req.query.id])
 		
 		_child_process.stdout.on('data', function(data) {
 
@@ -2443,11 +1786,11 @@ app.get('/hits/project_id/build', user.admin_role, jsonParser, function(req, res
 
 app.get('/phrases', function(req, res) {
 
-	function get_phrases_callback(_phrases, _passthrough) {
-		res.json(_phrases)
+	function on_success(_result, _passthrough) {
+		res.json(_result)
 	}
 
-	function get_phrases_error_callback(_err, _passthrough) {
+	function on_fail(_err, _passthrough) {
 		res.sendStatus(404)
 	}
 
@@ -2468,7 +1811,7 @@ app.get('/phrases', function(req, res) {
 		var project_id   = req.query.project_id.trim()
 		var question_id  = req.query.question_id.trim()
 
-		phrase.get_phrases_by_project_id_and_question_id(project_id, question_id, get_phrases_callback, get_phrases_error_callback)
+		phrase.get_phrases_by_project_id_and_question_id(project_id, question_id, on_success, on_fail)
 	} 
 })
 
@@ -2476,16 +1819,13 @@ app.get('/phrases', function(req, res) {
 
 app.post('/phrases/answer', user.basic_role, jsonParser, function(req, res) {
 
-	function bulk_answer_callback() {
+	function on_success() {
 		res.sendStatus(200)
 	}
 
-
-	function bulk_answer_error_callback(_err) {
+	function on_fail(_err) {
 		return res.sendStatus(400)
 	}
-
-
 
 	if (!req.body.phrase_id) {
 		return res.sendStatus(400)
@@ -2513,18 +1853,18 @@ app.post('/phrases/answer', user.basic_role, jsonParser, function(req, res) {
 	}
 	else {
 
-		phrase.bulk_answer(req.body.phrase_id, req.body.answer, req.body.type, req.body.frequency, req.user._id, bulk_answer_callback, bulk_answer_error_callback)
+		phrase.bulk_answer(req.body.phrase_id, req.body.answer, req.body.type, req.body.frequency, req.user._id, on_success, on_fail)
 	}
 })
 
 
 app.delete('/phrases/not_applicable', user.basic_role, jsonParser, function(req, res) {
 
-	function delete_phrase_callback(_passthrough) {
+	function on_success(_passthrough) {
 		res.sendStatus(200)
 	}
 
-	function delete_phrase_error_callback(_err, _passthrough) {
+	function on_fail(_err, _passthrough) {
 		res.sendStatus(404)
 	}
 	
@@ -2535,7 +1875,7 @@ app.delete('/phrases/not_applicable', user.basic_role, jsonParser, function(req,
 		return res.sendStatus(400)
 	}
 	else {
-		phrase.not_applicable(req.query.phrase_id, delete_phrase_callback, delete_phrase_error_callback)
+		phrase.not_applicable(req.query.phrase_id, on_success, on_fail)
 	}
 })
 
@@ -2544,11 +1884,11 @@ app.delete('/phrases/not_applicable', user.basic_role, jsonParser, function(req,
 app.delete('/phrases/ignore', user.basic_role, jsonParser, function(req, res) {
 
 
-	function delete_phrase_callback(_passthrough) {
+	function on_success(_passthrough) {
 		res.sendStatus(200)
 	}
 
-	function delete_phrase_error_callback(_err, _passthrough) {
+	function on_fail(_err, _passthrough) {
 		res.sendStatus(404)
 	}
 	
@@ -2559,7 +1899,7 @@ app.delete('/phrases/ignore', user.basic_role, jsonParser, function(req, res) {
 		return res.sendStatus(400)
 	}
 	else {
-		phrase.ignore(req.query.phrase_id, delete_phrase_callback, delete_phrase_error_callback)
+		phrase.ignore(req.query.phrase_id, on_success, on_fail)
 	}
 })
 
