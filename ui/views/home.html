@@ -55,7 +55,7 @@
               <td>{{q.description}}</td>
               <td>{{q.questions.length}}</td>
               <td>
-                  <a ng-click="download_questionnaire(q._id)">Download</a>&nbsp;&nbsp;&nbsp;<a ng-click="edit_questionnaire(q._id)">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_questionnaire(q._id, q.name)">Delete</a></td>
+                  <a ng-click="download_questionnaire(q._id)">Download</a>&nbsp;&nbsp;&nbsp;<a ng-click="edit_questionnaire(q._id)">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_questionnaire(q._id, q.name, $index)">Delete</a></td>
               </td>
           </tr>
          </table>
@@ -182,19 +182,24 @@
                       <h4>Edit Username</h4>
                       <input id="edit_username" style="width: 400px" type="text" class="form-control" ng-model="edit_user.username"/>
                     </div>
-                  <br/>
-                  <br/>
-                  <div class="row">
+                  <div class="row" ng-if="!settings.use_ldap">
+                      <br/>
+                      <br/>
                       <h4>Set New Password</h4>
                       <input id="edit_user_password" type="password" style="width: 400px" type="text" class="form-control" ng-model="edit_user.password"/>
                     </div>
                   <br/>
                   <br/>
-
                   <div class="row">
-                    <h4>Is Admin?</h4>
-                  <select ng-change="update_user_is_admin(edit_user.is_admin)" ng-model="edit_user.is_admin" style="width: 200px" class="form-control" ng-options="t for t in [true, false]"></select>
-                </div>
+                  <h4>Should this curator be an admin?</h4>
+                        <div class="btn-group">
+                          <a href="javascript:void(0)" ng-click="update_user_is_admin(true)" ng-class="{ 'active' : edit_user.is_admin}" class="btn btn-default">Yes</a>
+                          <a href="javascript:void(0)" ng-click="update_user_is_admin(false)" ng-class="{ 'active' : !edit_user.is_admin}" class="btn btn-default">No</a>
+                      </div>
+                  </div>  
+
+
+
             </div>
             <div class="modal-footer">
                 <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -216,24 +221,26 @@
                 <h4 class="modal-title" id="myModalLabel">New Curator</h4>
             </div>
             <div class="modal-body">
+
                   <div class="row">
-                      <h4>E-mail</h4>
+                      <h4>Username</h4>
                       <input style="width: 400px" type="text" class="form-control" ng-model="new_user_email"/>
-                    </div>
-                  <br/>
-                  <br/>
-                  <div class="row">
+                  </div>
+                  <div class="row" ng-if="!settings.use_ldap">
+                      <br/>
+                      <br/>
                       <h4>Password</h4>
-                      <input type="password" style="width: 400px" type="text" class="form-control" ng-model="new_user_password"/>
-                    </div>
-
+                      <input type="password" style="width: 400px" type="text" class="form-control" ng-model="$parent.new_user_password"/>
+                  </div>
                   <br/>
                   <br/>
-
                   <div class="row">
-                    <h4>Is this curator an admin?</h4>
-                  <select ng-model="new_user_is_admin" style="width: 200px" class="form-control" ng-options="t for t in [true, false]"></select>
-                </div>
+                  <h4>Should this curator be an admin?</h4>
+                        <div class="btn-group">
+                          <a href="javascript:void(0)" ng-click="new_user_is_admin = true" ng-class="{ 'active' : new_user_is_admin}" class="btn btn-default">Yes</a>
+                          <a href="javascript:void(0)" ng-click="new_user_is_admin = false" ng-class="{ 'active' : !new_user_is_admin}" class="btn btn-default">No</a>
+                      </div>
+                  </div>                 
             </div>
             <div class="modal-footer">
                 <button id="close" ng-click="create_user(new_user_email, new_user_password, new_user_is_admin)" type="button" class="btn btn-default" data-dismiss="modal">Create</button>
