@@ -1,7 +1,5 @@
-var config     = require('../config.js')
 var mongoskin  = require('mongoskin')
-var db         = mongoskin.db(config.db_url)
-
+var db = require('./database.js').db()
 
 module.exports = {
 
