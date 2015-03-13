@@ -97,11 +97,9 @@ module.exports = {
 
 	update_password_self: function(_user, _current_password, _new_password, _callback, _error_callback, _passthrough) {
 
-		_current_password = _get_hash(_current_password)
 		_new_password     = _get_hash(_new_password)
 
 		compare_passwords(_user,
-						  _user.username, 
 						  _current_password, 
 						  function(_passthrough){ 
 						  	 user_db.update_password(_user._id, _new_password, _callback, _error_callback, _passthrough)
@@ -156,9 +154,9 @@ if (config.use_ldap) {
 	  url: config.ldap_url
 	})
 
-	compare_passwords = function(_user, _username, _password, _callback, _error_callback, _passthrough) {
+	compare_passwords = function(_user, _password, _callback, _error_callback, _passthrough) {
 
-		client.bind('uid=' + _username + ',' + config.ldap_dn, _password, function(_err) {
+		client.bind('uid=' + _user.username + ',' + config.ldap_dn, _password, function(_err) {
 	  		if(_err) {
 	  			_error_callback(_err, _passthrough)
 	  		}
@@ -183,7 +181,7 @@ if (config.use_ldap) {
 }
 else {
 
-	compare_passwords = function(_user, _username, _password, _callback, _error_callback, _passthrough) {
+	compare_passwords = function(_user, _password, _callback, _error_callback, _passthrough) {
 		
 		if (bcrypt.compareSync(_password, _user.password)) {
 			_callback(_passthrough)
@@ -201,7 +199,6 @@ passport.use(new LocalStrategy( {usernameField: 'username'}, function(_username,
 		function get_user_callback(_user, _passthrough) {
 
 			compare_passwords(_user,
-							  _username, 
 							  _password, 
 							  function(_passthrough){ 
 							  	return _done(null, _user)
