@@ -50,7 +50,7 @@
             <li class="dropdown user-dropdown">
               <a class="dropdown-toggle" data-toggle="dropdown" style="color: white"><span id="user_name"></span>&nbsp;&nbsp;&nbsp;<i class="fa fa-user"></i><b class="caret"></b></a>
               <ul class="dropdown-menu">
-                <li><a id="open_change_password" href="#" data-target="#password_modal" data-toggle="modal"><i class="fa fa-sign-out"></i> Change Password</a></li>
+                <li><a id="open_change_password" style="display: none;" href="#" data-target="#password_modal" data-toggle="modal"><i class="fa fa-sign-out"></i> Change Password</a></li>
                 <li><a id="sign_out" href="#"><i class="fa fa-power-off"></i> Sign Out</a></li>
               </ul>
             </li>
@@ -125,6 +125,29 @@
     <script>
     
       var server = config.api_url;
+
+      $.ajax({
+            url:        server + '/settings',
+            xhrFields: { withCredentials: true },
+            crossDomain: true,
+            type:       'GET',
+            dataType:   'json',
+            success:    function(data) {
+              
+               if(data.use_ldap) {
+                  $('#open_change_password').hide();
+               }
+               else {
+                  $('#open_change_password').show();
+               }
+
+            },
+            error:      function(jqXHR, textStatus, errorThrown) { 
+                window.location.replace(server + "/login.html");
+            }
+      });
+
+
       var get_user = $.ajax({
                       url:        server + '/users/session',
                       xhrFields: { withCredentials: true },
