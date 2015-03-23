@@ -1,7 +1,23 @@
 <img style="width: 240px; height: 200px; float: left; padding-right: 30px" class="featurette-image img-responsive" data-src="holder.js/500x500/auto" src="img/medkit.png" alt="Generic placeholder image">
 
+<h2>What's the purpose of this page?</h2>
+<p>Curators can waste time by reviewing passages of text that are irrelevant to answering the question. For example, suppose a question is entered such as: <b>Did this patient have a low white blood cell count?</b> From this, suppose one of the question keywords is <b>white</b>. medTurk might present text to a curator such as</p>
+<p>
+    <i>Patient is a <b>white</b> female diagnosed with...</i>
+</p>
+
+<p>
+    Clearly, this passage is irrelevant to the question. This page allows you to ignore such phrases to improve efficiency.
+</p>
+</p>
+<h2>How do I get started?</h2>
+<p>
+    Choose the application and a corresponding question to find phrases that are not relevant to answering the question.
+</p>
+
 <div ng-if="projects.length > 0" class="row">
         <br/>
+
         <h4>Select an application to work on here:</h4>
         <select ng-change="on_change_project(project)" ng-model="project" style="width: 400px" class="form-control" ng-options="p.name for p in projects"></select>
         <br/>
@@ -20,22 +36,27 @@
     <h1>The {{project.name}} is finished</h1>
 </div>
 
-
-
 <div ng-if="!is_project_complete && projects.length > 0" class="row">
         <table class="table table-striped">
             <tr>
                 <th>Phrase</th>
-                <th>Number of Notes Affected</th>
-                <th>Number of Patients Affected</th>
-                <th>Bulk Answer</th>
-                <th></th>
+                <th>Number of patients with this phrase</th>
+                <th>Number of clinical notes with this phrase</th>
+                <th>Relevant?</th>
                 <th></th>
             </tr>
             <tr ng-repeat="phrase in phrases">
                 <td>{{phrase.phrase}}</td>
-                <td>{{phrase.count}}</td>
                 <td>{{phrase.num_patients}}</td>
+                <td>{{phrase.count}}</td>
+                <td>
+                    <div class="btn-group">
+                        <button type="radio" class="btn btn-default" ng-click="ignore_phrase(phrase, $index)">Yes</button>
+                        <button type="radio" class="btn btn-default" ng-click="mark_phrase_as_not_relevant(phrase, $index)">No</button>
+                    </div>
+                </td>
+
+                <!--
                 <td>
                     <div ng-if="question.type == 'radio'" class="btn-group">
                          <button type="radio" ng-repeat="choice in question.choices" class="btn btn-default {{annotation.choice_id == choice._id ? 'active' : ''}}" ng-click="answer(phrase._id, choice._id, $parent.$index)">{{choice.name}}</button>
@@ -45,8 +66,7 @@
                         <button class="btn btn-default" ng-click="answer(phrase._id, text_answer, $parent.$index)">Submit</button>
                     </div>
                 </td>
-                <td><a ng-click="ignore_phrase(phrase, $index)">Not Enough Information</a></td>
-                <td><a ng-click="mark_phrase_as_not_relevant(phrase, $index)">Not Relevant</a></td><td>
+                !-->
             </tr>
         </table>
     <button class="btn btn-danger" ng-click="get_phrases()">Reload</button>
