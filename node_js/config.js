@@ -7,7 +7,7 @@ module.exports = {
     'datasets_path' : '../datasets/',
     'cert_path'     : './security/medturk-cert.pem',
     'key_path'      : './security/medturk-key.pem',
-    'ldap_url'      : 'ldaps://directory.georgetown.edu',
-    'ldap_dn'       : 'ou=People,dc=georgetown,dc=edu',
+    'ldap_url'      : 'ldaps://ldap.example.edu',
+    'ldap_dn'       : 'ou=People,dc=my_dc,dc=edu',
     'use_ldap'      : false
 }
