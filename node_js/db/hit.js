@@ -1,6 +1,8 @@
 var mongoskin  = require('mongoskin')
 var db = require('./database.js').db()
 
+
+
 module.exports = {
 
 	generate_id: function() {
@@ -9,28 +11,33 @@ module.exports = {
 
 	get_random: function(_project_id, _callback, _error_callback, _passthrough) {
 
-		function on_get_number_of_answered_hits_callback(N, __passthrough) {
+		function on_get_number_of_answered_hits_callback(N, _p) {
 
 			var r = Math.floor(Math.random()*N)
 
 			var arg = {'project_id' : new mongoskin.ObjectID(_project_id), 'answered' : {$exists : false} }
 
-			db.collection('hits').find(arg, null, {limit: -1, skip: r}, function(_err, result) {
-			
+			//db.collection('hits').find(arg, {limit: -1, skip: r}, function(_err, _result) {
+			// TODO: Figure out why above line does not work on Redhat
+			db.collection('hits').find(arg).skip(r).limit(-1).toArray( function(_err, _result) {
 				if (_err) {
-					_error_callback(result[0], _passthrough)
+					_error_callback(_err, _passthrough)
 				}
 				else {
-					result.next(function(_err, _hit) {
+					
+					_callback(_result[0], _passthrough)
+
+					/*
+					_result.next(function(_err, _hit) {
 						_callback(_hit, _passthrough)
-					})
+					})*/
 				}
 			})
 		}
 
 
-		function on_get_number_of_answered_hits_error_callback(_err, __passthrough) {
-			_error_callback(_err, _passthrough)
+		function on_get_number_of_answered_hits_error_callback(_err, _p) {
+			_error_callback(_err, _p)
 		}
 
 		_get_number_of_hits_without_answers(_project_id, on_get_number_of_answered_hits_callback, on_get_number_of_answered_hits_error_callback)
