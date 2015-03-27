@@ -50,8 +50,16 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
   	 $scope.project_description = '';
   	 $scope.datasets = [];
   	 $scope.questionnaires = [];
-     $scope.new_user_is_admin = false;
-     $scope.new_user_password = '';
+
+
+     $scope.reset_new_user_form = function() {
+          $scope.new_user_password = '';
+          $scope.new_user_email = '';
+          $scope.new_user_is_admin = false;
+      }
+
+      $scope.reset_new_user_form();
+
 
      settings_factory.get_settings().success(function(data){
             $scope.settings = data;
@@ -167,11 +175,13 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
        		}); 
   	  }
 
+
       // Create new user
       $scope.create_user = function(new_user_email, new_user_password, new_user_is_admin) {
 
         user_factory.create_user(new_user_email, new_user_password, new_user_is_admin).success(function(data) {
           $scope.users.push(data);
+          $scope.reset_new_user_form();
         });
 
        }
@@ -235,6 +245,12 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
 
 
          $scope.create_dataset = function() {
+
+
+              // If user forgot to name the dataset, default to folder name
+              if ($scope.name.trim().length == 0) {
+                  $scope.name = $scope.folder;
+              }
 
               var _dataset;
 
@@ -449,8 +465,8 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
   		 	    }
   	 }
 
-     $scope.build_project = function() {
-
+     $scope.build_project = function(_project) {
+            $scope.project = _project;
             $scope.project.status = 'Building (0% complete)';
 
             function on_build_hits_callback(_json) {
@@ -463,9 +479,6 @@ app.controller('HomeController', function($scope, $upload, user_factory, project
 
             hit_factory.build_hits($scope.project._id, on_build_hits_callback)
      }
-
-
-		
 });
 
 
@@ -475,7 +488,6 @@ app.controller('QuestionnaireController', function($scope, $routeParams, questio
   $scope.tag                  = undefined;
   $scope.case_sensitive       = false;
   $scope.tag_text             = '';
-  $scope.choice_name          = '';
   $scope.question             = undefined;
   $scope.binary               = [true, false];
   $scope.question_frequencies = [{'name' : 'Once', 'value' : 'once'}, {'name' : 'Multiple', 'value' : 'multiple'}];
@@ -513,6 +525,7 @@ app.controller('QuestionnaireController', function($scope, $routeParams, questio
 
   $scope.update_choice_name = function(_choice_id, _choice_name) {
       questionnaire_factory.update_question_choice_name($scope.questionnaire._id, $scope.question._id, _choice_id, _choice_name).success(function(data){
+
       });
   }
 
@@ -564,20 +577,37 @@ app.controller('QuestionnaireController', function($scope, $routeParams, questio
 	}
 
 
-	$scope.create_question_choice = function(_choice_name) {
-		
-      		for (var i = 0; i < $scope.question.choices.length; i++) {
-      			   if ($scope.question.choices[i].name == _choice_name) {
-      				      alert('Choice already exists');
-      				      return;
-      			   }
-      		}	
+  $scope.does_question_choice_already_exist = function(_choice_name) {
 
-	
-		      questionnaire_factory.create_question_choice($scope.questionnaire._id, $scope.question._id, _choice_name).success(function(data){
-    			       $scope.question.choices.push(data);
-    			       $scope.choice_name = '';
-		      });	
+      for (var i = 0; i < $scope.question.choices.length; i++) {
+           if ($scope.question.choices[i].name == _choice_name) {
+                return true;
+           }
+      } 
+
+      return false
+  }
+
+
+	$scope.create_question_choice = function(_choice_name) {
+          /* Creates a question choice for a given question */
+
+          if($scope.does_question_choice_already_exist(_choice_name)) {
+              alert('"' + _choice_name + '" is already a choice');
+          }
+          else {
+  		      questionnaire_factory.create_question_choice($scope.questionnaire._id, $scope.question._id, _choice_name).success(function(data){
+      			       $scope.question.choices.push(data);
+
+                   /* TODO
+                      Figure out why $scope.choice_name = ''; 
+                      does not work here
+
+                   */
+
+                   $('#choice_name').val('');
+  		      });	
+        }
   	}
 
 
@@ -598,7 +628,7 @@ app.controller('QuestionnaireController', function($scope, $routeParams, questio
 		    _trigger = _trigger.trim();
 
     		if (_trigger.length == 0) {
-        			alert('Trigger cannot be empty');
+        			alert('Keyword cannot be empty');
           		$scope.trigger = '';
         			return;
     		}
