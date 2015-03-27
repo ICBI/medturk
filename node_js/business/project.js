@@ -53,12 +53,30 @@ module.exports = {
 		var csv_data = 'Patient Id,medTurk Patient Id,Question Id,Question,Answer,Date,Answered Date,Answered By'
 
 
+		function make_row(_patient_id, _hit, _question, _answer, _date, _answered_date, _answered_by_id) {
+			csv_data += _patient_id + ','
+			csv_data += _hit.patient_id.toString() + ','
+			csv_data += _question._id.toString() + ','
+			csv_data += '"' + _question.question + '",' 
+			csv_data += '"' + _answer + '",'
+			csv_data += '"' + _date + '",'
+			csv_data += '"' + _answered_date + '",'
+			csv_data += '"' + g_users[_answered_by_id.toString()] + '"'
+
+			if (_question.csv_tags.length > 0) {
+				csv_data += _question.csv_tags
+			}
+
+			csv_data += '\r\n'
+		}
+
+
 		function create_csv_record(_hit, _question, _question_index, _date, _answered_date, _answered_by_id, _patient_id, _json) {
 			
 			var _answer = ''
 		
 			if (_question.type == 'text') {
-				_answer = _json.answer_text
+				_answer = _json.text
 			}
 			else if (_question.type == 'radio') {
 
@@ -71,28 +89,12 @@ module.exports = {
 			}
 
 			if (_answer.length > 0) {
-
-				csv_data += _patient_id + ','
-				csv_data += _hit.patient_id.toString() + ','
-				csv_data += _question._id.toString() + ','
-				csv_data += '"' + _question.question + '",' 
-				csv_data += '"' + _answer + '",'
-				csv_data += '"' + _date + '",'
-				csv_data += '"' + _answered_date + '",'
-				csv_data += '"' + g_users[_answered_by_id.toString()] + '"'
-
-				if (_question.csv_tags.length > 0) {
-					csv_data += _question.csv_tags
-				}
-
-				csv_data += '\r\n'
+				make_row(_patient_id, _hit, _question, _answer, _date, _answered_date, _answered_by_id)
 			}		
 		}
 
 
 		function on_get_patient_callback(_patient, _hit) {
-
-
 
 			var question_index = g_question_ids.indexOf(_hit.question_id.toString())
 			_question = g_questionnaire.questions[question_index]
@@ -100,16 +102,23 @@ module.exports = {
 			g_number_of_hits_traversed += 1
 
 			if (_question.frequency == 'multiple') {
-
+				// For each annotation
 				for(var i = 0; i < _hit.annotations.length; i++) {
-					if (_hit.annotations[i].answered) {
-						create_csv_record(_hit, _question, question_index, _hit.annotations[i].date, _hit.annotations[i].answered_date, _hit.annotations[i].user_id, _patient.id, _hit.annotations[i])
+					if (_hit.annotations[i].answer) {
+						// For each answer
+						for (var j = 0; j < _hit.annotations[i].answer.length; j++) {
+							create_csv_record(_hit, _question, question_index, _hit.annotations[i].date, _hit.annotations[i].answer[j].date, _hit.annotations[i].answer[j].user_id, _patient.id, _hit.annotations[i].answer[j])
+						}
 					}
 				}
 			}
-
 			else if (_question.frequency == 'once') {
-				create_csv_record(_hit, _question, question_index, '', _hit.answered_date, _hit.user_id, _patient.id, _hit)
+				// For each answer
+				if (_hit.answer) {
+					for (var j = 0; j < _hit.answer.length; j++) {
+						create_csv_record(_hit, _question, question_index, _hit.date, _hit.answer[j].date, _hit.answer[j].user_id, _patient.id, _hit.answer[j])
+					}
+				}
 			}
 
 			if (g_number_of_hits_traversed == g_number_of_hits) {
