@@ -81,7 +81,10 @@
                         <span class="label label-default">{{get_user_name(user_id)}}</span>
                   </p>
               </td>
-              <td>{{project.status}}</td>
+              <td>
+                <button ng-hide="project.status != 'Needs Building'" ng-click="build_project(project)" type="button" class="btn btn-danger" data-dismiss="modal">Build</button>
+                <span ng-hide="project.status == 'Needs Building'">{{project.status}}</span>
+              </td>
               <td> {{(project.num_answers/project.num_hits)*100.0 | number:0 }}% ({{project.num_answers}}/{{project.num_hits}})</td>
               <td>
                   <a ng-click="download(project._id)">Download</a>&nbsp;&nbsp;&nbsp;<a ng-click="edit_project(project._id)">Edit</a>&nbsp;&nbsp;&nbsp;<a ng-click="delete_project(project._id, project.name, $index)">Delete</a></td>
@@ -110,19 +113,19 @@
                 <h4 class="modal-title" id="myModalLabel">Add Clinical Note Set</h4>
             </div>
             <div class="modal-body">
-                  <div class="row">
+                  <div class="modal_section">
                       <h4>Name</h4>
                       <input style="width: 400px" type="text" class="form-control" ng-model="name"/>
                     </div>
                     <br/>
                     <br/>
-                    <div class="row">
+                    <div class="modal_section">
                       <h4>Description</h4>
                         <textarea style="width: 400px" class="form-control" rows="3" ng-model="description"></textarea>
                     </div>
                     <br/>
                     <br/>
-                    <div class="row">
+                    <div class="modal_section">
                         <h4>Source</h4>
                         <select ng-model="folder" style="width: 400px" class="form-control" ng-options="x for x in raw_datasets"></select>
                     </div>      
@@ -222,11 +225,11 @@
             </div>
             <div class="modal-body">
 
-                  <div class="row">
+                  <div class="modal_section">
                       <h4>Username</h4>
                       <input style="width: 400px" type="text" class="form-control" ng-model="new_user_email"/>
                   </div>
-                  <div class="row" ng-if="!settings.use_ldap">
+                  <div class="modal_section" ng-if="!settings.use_ldap">
                       <br/>
                       <br/>
                       <h4>Password</h4>
@@ -234,7 +237,7 @@
                   </div>
                   <br/>
                   <br/>
-                  <div class="row">
+                  <div class="modal_section">
                   <h4>Should this curator be an admin?</h4>
                         <div class="btn-group">
                           <a href="javascript:void(0)" ng-click="new_user_is_admin = true" ng-class="{ 'active' : new_user_is_admin}" class="btn btn-default">Yes</a>
@@ -263,19 +266,19 @@
                 <h4 class="modal-title" id="myModalLabel">New Application</h4>
             </div>
             <div class="modal-body">
-                  <div class="row">
+                  <div class="modal_section">
                       <h4>Name</h4>
                       <input id="project_name" style="width: 400px" type="text" class="form-control" ng-model="project.name"/>
                     </div>
                     <br/>
                     <br/>
-                    <div class="row">
+                    <div class="modal_section">
                       <h4>Description</h4>
                         <textarea id="project_description" style="width: 400px" class="form-control" rows="3" ng-model="project.description"></textarea>
                     </div>
                     <br/>
                     <br/>
-                    <div class="row">
+                    <div class="modal_section">
                         <h4>Choose a Clinical Note Set</h4>
 
                         <select ng-change="update_project_dataset(project._id, project_dataset)" ng-model="project_dataset" style="width: 400px" class="form-control" ng-options="ds.name for ds in datasets"></select>
@@ -283,7 +286,7 @@
                     </div>
                     <br/>
                     <br/>
-                    <div class="row">
+                    <div class="modal_section">
                         <h4>Choose a Questionnaire</h4>
                         <select ng-change="update_project_questionnaire(project._id, project_questionnaire)" ng-model="project_questionnaire" style="width: 400px" class="form-control" ng-options="questionnaire.name for questionnaire in questionnaires"></select>
                     </div>
@@ -291,7 +294,7 @@
                     <br/>
      
               
-                    <div class="row">
+                    <div class="modal_section">
                       <h4>Curators</h4>
                         <table style="width: 400px" class="table table-striped">
                         <tr>
@@ -310,7 +313,7 @@
                       </table>
                   </div>
 
-                  <div class="row">
+                  <div class="modal_section">
                         <p>Add Curator</p>
                         <select ng-change="add_user_to_project(selected_item._id)" ng-model="selected_item" style="width: 200px" class="form-control" ng-options="user.username for user in users"></select>
                     </button>
@@ -344,11 +347,11 @@
                 <h4 class="modal-title" id="myModalLabel">Clinical Note Set Editor</h4>
             </div>
             <div class="modal-body">
-                  <div class="row">
+                  <div class="modal_section">
                       <h4>Name</h4>
                       <input id="dataset_name" style="width: 400px" type="text" class="form-control" ng-model="dataset.name"/>
                     </div>
-                    <div class="row">
+                    <div class="modal_section">
                       <h4>Description</h4>
                         <textarea id="dataset_description" style="width: 400px" class="form-control" rows="3" ng-model="dataset.description"></textarea>
                     </div>
