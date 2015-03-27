@@ -1,6 +1,6 @@
 module.exports = {
 
-    'db_url'        : 'mongodb://localhost:27017/medturk',
+    'db_url'        : 'mongodb://localhost:27017/medturk?ssl=true&sslAllowInvalidCertificates=true',
     'api_url'       : 'https://localhost',
     'ui_path'       : '../ui',
     'secret_key'    : 'replace me with a secret key',
