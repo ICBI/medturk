@@ -22,20 +22,6 @@ var record        = require('./business/record.js')
 app.use(express.static(config.ui_path))
 app = user.modify_app(app)
 
-
-
-
-/*
-Indexes to ensure:
-
-db.records.ensureIndex({'patient_id' : 1, 'dataset_id' : 1})
-db.users.ensureIndex({'username' : 1})
-db.patients.ensureIndex({'dataset_id' : 1})
-db.hits.ensureIndex({'annotations.phrase_ids' : 1})
-db.hits.ensureIndex({'project_id' : 1, 'answered' : 1})
-*/
-
-
 app.get('/settings', function(req, res) {
 
 	function on_success(_settings, _passthrough) {
