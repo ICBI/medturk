@@ -15,7 +15,7 @@ module.exports = {
 
 			var r = Math.floor(Math.random()*N)
 
-			var arg = {'project_id' : new mongoskin.ObjectID(_project_id), 'answered' : {$exists : false} }
+			var arg = {'project_id' : new mongoskin.ObjectID(_project_id), 'answer' : {$exists : false} }
 
 			//db.collection('hits').find(arg, {limit: -1, skip: r}, function(_err, _result) {
 			// TODO: Figure out why above line does not work on Redhat
@@ -79,7 +79,7 @@ module.exports = {
 
 	get_by_answered: function(_project_id, _answered, _callback, _error_callback, _passthrough) {
 
-		var _query  = {'project_id' : new mongoskin.ObjectID(_project_id), 'answered' : _answered}	
+		var _query  = {'project_id' : new mongoskin.ObjectID(_project_id), 'answer' : {$exists : _answered}}	
 
 		db.collection('hits').find(_query, function(_err, _result) {
 			if (_err) {
@@ -93,7 +93,7 @@ module.exports = {
 
 	get_number_of_answered_hits: function(_project_id, _callback, _error_callback, _passthrough) {
 
-		var _query  = {'project_id' : new mongoskin.ObjectID(_project_id), 'answered' : true}	
+		var _query  = {'project_id' : new mongoskin.ObjectID(_project_id), 'answer' : {$exists : true}}	
 
 		db.collection('hits').count(_query, function(_err, _result) {
 			if (_err) {
@@ -139,7 +139,11 @@ module.exports = {
 	update_annotation_choice_id: function(_hit_id, _annotation_id, _choice_id, _user_id, _answered_date, _callback, _error_callback, _passthrough) {
 
 		var arg1 = {'_id' : new mongoskin.ObjectID(_hit_id), 'annotations' : {$elemMatch : {'_id' : new mongoskin.ObjectID(_annotation_id)}}}
-		var arg2 = { $set: {'annotations.$.choice_id' : new mongoskin.ObjectID(_choice_id), 'annotations.$.answered' : true, 'annotations.$.user_id' : _user_id, 'annotations.$.answered_date' : _answered_date } } 
+
+		var answer = {'choice_id' : new mongoskin.ObjectID(_choice_id), 'date' : _answered_date, 'user_id' : _user_id}
+		var arg2 = { $push: {'annotations.$.answer' : answer } }
+
+		//var arg2 = { $set: {'annotations.$.choice_id' : new mongoskin.ObjectID(_choice_id), 'annotations.$.answered' : true, 'annotations.$.user_id' : _user_id, 'annotations.$.answered_date' : _answered_date } } 
 
 		db.collection('hits').update(arg1, arg2, function(_err, _result) {
 			if (_err) {
@@ -158,7 +162,13 @@ module.exports = {
 	update_answered: function(_hit_id, _answered, _user_id, _answered_date, _callback, _error_callback, _passthrough) {
 
 		var arg1 = {'_id' : mongoskin.ObjectID(_hit_id)}
-		var arg2 = {$set : {'answered' : _answered, 'user_id' : _user_id, 'answered_date' : _answered_date}}
+
+
+		var answer = {'date' : _answered_date, 'user_id' : _user_id}
+		var arg2 = { $push: {'answer' : answer } }
+
+		//var arg2 = {$set : {'answered' : _answered, 'user_id' : _user_id, 'answered_date' : _answered_date}}
+
 
 		db.collection('hits').update(arg1, arg2, function(_err, _result) {
 			if (_err) {
@@ -178,10 +188,18 @@ module.exports = {
 
 		arg1 = {'_id' : mongoskin.ObjectID(_hit_id)}
 
+		var answer = {'text' : _text, 'date' : _answered_date, 'user_id' : _user_id}
+		var arg2 = { $push: {'answer' : answer } }
+
+/*
 		arg2 = {$set : {'answer_text'   : _text, 
 						'answered'      : _answered, 
 						'user_id'       : _user_id, 
 						'answered_date' : _answered_date}}
+*/
+
+
+
 
 		db.collection('hits').update(arg1, arg2, function(_err, _result) {
 			if (_err) {
@@ -199,10 +217,18 @@ module.exports = {
 	update_choice_id: function(_hit_id, _choice_id, _user_id, _answered, _answered_date, _callback, _error_callback, _passthrough) {
 
 		arg1 = {'_id' : mongoskin.ObjectID(_hit_id)}
+
+
+
+		var answer = {'choice_id' : mongoskin.ObjectID(_choice_id), 'date' : _answered_date, 'user_id' : _user_id}
+		var arg2 = { $push: {'answer' : answer } }
+
+		/*
 		arg2 = {$set : {'choice_id' :  mongoskin.ObjectID(_choice_id), 
 						'answered' : _answered, 
 						'user_id' : _user_id, 
 						'answered_date' : _answered_date}}
+		*/
 
 		db.collection('hits').update(arg1, arg2, function(_err, _result) {
 			if (_err) {
@@ -277,7 +303,7 @@ module.exports = {
 
 function _get_number_of_hits_without_answers(_project_id, _callback, _error_callback, _passthrough) {
 
-	var _query = {'project_id' : new mongoskin.ObjectID(_project_id), 'answered' : {$exists : false} }
+	var _query = {'project_id' : new mongoskin.ObjectID(_project_id), 'answer' : {$exists : false} }
 
 	db.collection('hits').count(_query, function(_err, _result) {
 		if (_err) {
