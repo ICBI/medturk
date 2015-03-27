@@ -278,4 +278,9 @@ display: none;
   background-color: #F0F0F0;
 }
 
+.modal_section {
+  background-color: white;
+  padding: 10px 10px 20px 10px;
+}
+
 
