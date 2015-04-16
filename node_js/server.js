@@ -15,7 +15,7 @@ var setting 	  = require('./business/setting.js')
 var project       = require('./business/project.js')
 var hit           = require('./business/hit.js')
 var questionnaire = require('./business/questionnaire.js')
-var phrase        = require('./business/phrase.js')
+//var phrase        = require('./business/phrase.js')
 var dataset       = require('./business/dataset.js')
 var record        = require('./business/record.js')
 
@@ -1748,7 +1748,7 @@ app.get('/hits/project_id/build', user.admin_role, jsonParser, function(req, res
 		return res.sendStatus(400)
 	}
 	else {
-		_child_process = spawn('node', ['./processes/build_hits.js', req.query.id])
+		_child_process = spawn('node', ['./processes/build_hits_v2.js', req.query.id])
 		
 		_child_process.stdout.on('data', function(data) {
 
@@ -1768,7 +1768,7 @@ app.get('/hits/project_id/build', user.admin_role, jsonParser, function(req, res
 
 
 
-
+/*
 
 app.get('/phrases', function(req, res) {
 
@@ -1888,7 +1888,7 @@ app.delete('/phrases/ignore', user.basic_role, jsonParser, function(req, res) {
 		phrase.ignore(req.query.phrase_id, on_success, on_fail)
 	}
 })
-
+*/
 
 
 var options = {

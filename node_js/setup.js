@@ -102,7 +102,7 @@ db.collection('hits').ensureIndex({'project_id' : 1, 'answered' : 1}, function(_
 	}
 })
 
-
+/*
 db.collection('hits').ensureIndex({'annotations.phrase_ids' : 1}, function(_err, _result) {
 	if (_err) {
 		fail('hits.annotations.phrase_ids was not indexed; hits.project_id was not indexed; hits.answered was not indexed')
@@ -111,6 +111,6 @@ db.collection('hits').ensureIndex({'annotations.phrase_ids' : 1}, function(_err,
 		success()
 	}
 })
-
+*/
 
 
