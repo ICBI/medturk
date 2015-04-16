@@ -1,3 +1,5 @@
+/*
+
 var phrase_db = require('../db/phrase.js')
 
 
@@ -39,11 +41,11 @@ module.exports = {
 
 
 	not_applicable: function(_phrase_id, _callback, _error_callback, _passthrough) {
-		/*
-			1. Deletes any annotation with a reference to this phrase
-			2. Ensures if annotations become empty, that hit is deleted
-			3. Deletes phrase from phrase collection
-		*/
+		//
+		//	1. Deletes any annotation with a reference to this phrase
+		//	2. Ensures if annotations become empty, that hit is deleted
+		//	3. Deletes phrase from phrase collection
+		//
 
 		function delete_empty_hits_callback() {
 			phrase_db.delete_phrase(_phrase_id, _callback, _error_callback, _passthrough)
@@ -69,10 +71,10 @@ module.exports = {
 
 
 	ignore: function(_phrase_id, _callback, _error_callback, _passthrough) {
-		/*
-			Deletes phrase from phrase collection
-		*/	
+		
+		//	Deletes phrase from phrase collection
+			
 		phrase_db.delete_phrase(_phrase_id, _callback, _error_callback, _passthrough)
 	}
 }
-
+*/
