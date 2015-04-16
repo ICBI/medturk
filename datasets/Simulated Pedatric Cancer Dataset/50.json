@@ -1,0 +1,45 @@
+{
+    "id": "50", 
+    "records": [
+        {
+            "date": "1999-11-14", 
+            "id": 393, 
+            "note": "Sigfried is a 8-year-old from china male diagnosed with acute lymphoblastic leukemia. "
+        }, 
+        {
+            "date": "1999-12-05", 
+            "id": 394, 
+            "note": "Sigfried is a 8-year-old chinese male diagnosed with ALL. Childhood acute lymphoblastic leukemia (also called ALL or acute lymphocytic leukemia) is a cancer of the blood and bone marrow. This type of cancer usually gets worse quickly if it is not treated."
+        }, 
+        {
+            "date": "1999-12-27", 
+            "id": 395, 
+            "note": "Sigfried is a 8-year-old chinese male diagnosed with ALL. He has a second cancer. "
+        }, 
+        {
+            "date": "2000-01-08", 
+            "id": 396, 
+            "note": "Sigfried is a 8-year-old chinese male diagnosed with acute lymphoblastic leukemia. Childhood acute lymphoblastic leukemia (also called ALL or acute lymphocytic leukemia) is a cancer of the blood and bone marrow. This type of cancer usually gets worse quickly if it is not treated."
+        }, 
+        {
+            "date": "2000-02-03", 
+            "id": 397, 
+            "note": "He has secondary cancer. "
+        }, 
+        {
+            "date": "2000-02-15", 
+            "id": 398, 
+            "note": "Sigfried is a 8-year-old Chinese male diagnosed with acute lymphoblastic leukemia. Childhood acute lymphoblastic leukemia (also called ALL or acute lymphocytic leukemia) is a cancer of the blood and bone marrow. This type of cancer usually gets worse quickly if it is not treated."
+        }, 
+        {
+            "date": "2000-02-18", 
+            "id": 399, 
+            "note": "Sigfried is a 8-year-old Chinese male diagnosed with ALL. Childhood acute lymphoblastic leukemia (also called ALL or acute lymphocytic leukemia) is a cancer of the blood and bone marrow. This type of cancer usually gets worse quickly if it is not treated.He has secondary cancer. "
+        }, 
+        {
+            "date": "2000-03-13", 
+            "id": 400, 
+            "note": "Sigfried is a 8-year-old Chinese male diagnosed with ALL. He has a second cancer. "
+        }
+    ]
+}

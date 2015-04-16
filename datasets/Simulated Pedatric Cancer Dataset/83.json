@@ -1,0 +1,45 @@
+{
+    "id": "83", 
+    "records": [
+        {
+            "date": "2012-04-08", 
+            "id": 657, 
+            "note": "She has had problems in school. "
+        }, 
+        {
+            "date": "2012-04-21", 
+            "id": 658, 
+            "note": "Denise is a 10-year-old hispanic female diagnosed with cancer of the blood. She has had problems in school. "
+        }, 
+        {
+            "date": "2012-05-09", 
+            "id": 659, 
+            "note": "Denise is a 10-year-old Hispanic female diagnosed with Leukemia. Leukemia is cancer of the blood and bone marrow (the soft material in the center of most bones).She has chronic heart failure. "
+        }, 
+        {
+            "date": "2012-05-25", 
+            "id": 660, 
+            "note": "Denise is a 10-year-old Hispanic female diagnosed with Leukemia. She has heart problems. She has had problems in school. "
+        }, 
+        {
+            "date": "2012-05-31", 
+            "id": 661, 
+            "note": "Denise is a 10-year-old latino female diagnosed with cancer of the blood. She has chronic heart failure. "
+        }, 
+        {
+            "date": "2012-06-30", 
+            "id": 662, 
+            "note": "Denise is a 10-year-old Hispanic female diagnosed with Leukemia. She has heart problems. "
+        }, 
+        {
+            "date": "2012-07-20", 
+            "id": 663, 
+            "note": "Denise is a 10-year-old latino female diagnosed with leukemia. She has had problems in school. "
+        }, 
+        {
+            "date": "2012-07-21", 
+            "id": 664, 
+            "note": "Denise is a 10-year-old hispanic female diagnosed with Leukemia. "
+        }
+    ]
+}

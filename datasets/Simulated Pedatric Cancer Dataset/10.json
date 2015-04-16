@@ -1,0 +1,45 @@
+{
+    "id": "10", 
+    "records": [
+        {
+            "date": "1996-05-16", 
+            "id": 73, 
+            "note": "He has a second cancer. He reports suffering from major anxiety. Hirsch reports sleeping at night is difficult."
+        }, 
+        {
+            "date": "1996-05-17", 
+            "id": 74, 
+            "note": "He has secondary cancer. He reports suffering from major anxiety. Hirsch reports sleeping at night is difficult."
+        }, 
+        {
+            "date": "1996-06-06", 
+            "id": 75, 
+            "note": "Hirsch is a 1-year-old Hispanic male diagnosed with solid tumor in the nerve cells. He has secondary cancer. "
+        }, 
+        {
+            "date": "1996-06-20", 
+            "id": 76, 
+            "note": "Hirsch is a 1-year-old hispanic male diagnosed with Neuroblastoma. "
+        }, 
+        {
+            "date": "1996-07-03", 
+            "id": 77, 
+            "note": "Hirsch is a 1-year-old Hispanic male diagnosed with neuroblastoma. Neuroblastoma is a solid cancerous tumor that begins in the nerve cells outside the brain of infants and young children. It can start in the nerve tissue near the spine in the neck, chest, abdomen, or pelvis, but it most often begins in the adrenal glands. The adrenal glands are located on top of both kidneys and make hormones that help control body functions, such as heart rate and blood pressure.He reports suffering from major anxiety. Hirsch reports sleeping at night is difficult."
+        }, 
+        {
+            "date": "1996-07-17", 
+            "id": 78, 
+            "note": "Hirsch is a 1-year-old Hispanic male diagnosed with neuroblastoma. "
+        }, 
+        {
+            "date": "1996-08-01", 
+            "id": 79, 
+            "note": "He has a second cancer. "
+        }, 
+        {
+            "date": "1996-08-22", 
+            "id": 80, 
+            "note": "He reports suffering from major anxiety. Hirsch reports sleeping at night is difficult."
+        }
+    ]
+}
