@@ -1,5 +1,12 @@
+/*
+	
+
+
+
 var mongoskin  = require('mongoskin')
 var db = require('./database.js').db()
+
+
 
 module.exports = {
 
@@ -104,12 +111,12 @@ module.exports = {
 
 
 	bulk_answer_once: function(_phrase_id, _answer, _answer_type, _user_id, _callback, _error_callback, _passthrough) {
-		/*
-			1. Find all hits with this phrase id
-			2. Update hit with this answer choice
-			3. Set 'answered' = true, 'user' : current_user, 'bulk_answered : true'
-			4. Delete this phrase id
-		*/
+		//
+		//	1. Find all hits with this phrase id
+		//	2. Update hit with this answer choice
+		//	3. Set 'answered' = true, 'user' : current_user, 'bulk_answered : true'
+		//	4. Delete this phrase id
+		
 
 		_phrase_id = new mongoskin.ObjectID(_phrase_id)
 
@@ -244,5 +251,5 @@ function _get_hits_by_phrase_id(_phrase_id, _callback, _error_callback, _passthr
 	})
 }
 
-
+*/
 
