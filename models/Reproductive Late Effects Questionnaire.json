@@ -1,0 +1,447 @@
+{
+  "_id": "55228c2a53f8d51d353c22b6",
+  "name": "Reproductive Late Effects Questionnaire",
+  "description": "Used to collect information on reproductive late effects",
+  "questions": [
+    {
+      "_id": "55228c2a53f8d51d353c225e",
+      "question": "Has the patient ever had erectile dysfunction?",
+      "type": "radio",
+      "frequency": "once",
+      "tag_ids": [
+        "55228c2a53f8d51d353c22ad"
+      ],
+      "choices": [
+        {
+          "_id": "55228c2a53f8d51d353c2261",
+          "name": "Yes"
+        },
+        {
+          "_id": "55228c2a53f8d51d353c2262",
+          "name": "No"
+        },
+        {
+          "_id": "55228c2a53f8d51d353c2263",
+          "name": "Not Sure"
+        }
+      ],
+      "triggers": [
+        {
+          "_id": "55228c2a53f8d51d353c2264",
+          "name": "erection",
+          "case_sensitive": false
+        },
+        {
+          "_id": "55228c2a53f8d51d353c2265",
+          "name": "erectile",
+          "case_sensitive": false
+        }
+      ]
+    },
+    {
+      "_id": "55228c2a53f8d51d353c2268",
+      "question": "Has the patient ever had hydrocele?",
+      "type": "radio",
+      "frequency": "once",
+      "tag_ids": [
+        "55228c2a53f8d51d353c2269",
+        "55228c2a53f8d51d353c22ae"
+      ],
+      "choices": [
+        {
+          "_id": "55228c2a53f8d51d353c226a",
+          "name": "Yes"
+        },
+        {
+          "_id": "55228c2a53f8d51d353c226b",
+          "name": "No"
+        },
+        {
+          "_id": "55228c2a53f8d51d353c226c",
+          "name": "Not Sure"
+        }
+      ],
+      "triggers": [
+        {
+          "_id": "55228c2a53f8d51d353c226d",
+          "name": "hydrocele",
+          "case_sensitive": false
+        },
+        {
+          "_id": "55228c2a53f8d51d353c226e",
+          "name": "sac",
+          "case_sensitive": false
+        },
+        {
+          "_id": "55228c2a53f8d51d353c226f",
+          "name": "scrotum",
+          "case_sensitive": false
+        },
+        {
+          "_id": "55228c2a53f8d51d353c2270",
+          "name": "scrotal",
+          "case_sensitive": false
+        },
+        {
+          "_id": "55228c2a53f8d51d353c2271",
+          "name": "testicle",
+          "case_sensitive": false
+        }
+      ]
+    },
+    {
+      "_id": "55228c2a53f8d51d353c2272",
+      "question": "Has the patient ever had gonadal dysfunction?",
+      "type": "radio",
+      "frequency": "once",
+      "tag_ids": [
+        "55228c2a53f8d51d353c22af",
+        "5522990153f8d51d353c22bb"
+      ],
+      "choices": [
+        {
+          "_id": "55228c2a53f8d51d353c2274",
+          "name": "Yes"
+        },
+        {
+          "_id": "55228c2a53f8d51d353c2275",
+          "name": "No"
+        },
+        {
+          "_id": "55228c2a53f8d51d353c2276",
+          "name": "Not Sure"
+        }
+      ],
+      "triggers": [
+        {
+          "_id": "55228c2a53f8d51d353c2277",
+          "name": "gonad",
+          "case_sensitive": false
+        },
+        {
+          "_id": "55228c2a53f8d51d353c2278",
+          "name": "gonads",
+          "case_sensitive": false
+        }
+      ]
+    },
+    {
+      "_id": "55228c2a53f8d51d353c2279",
+      "question": "Has the patient ever had azoospermia?",
+      "type": "radio",
+      "frequency": "once",
+      "tag_ids": [
+        "55228c2a53f8d51d353c22b0",
+        "5522990153f8d51d353c22bb"
+      ],
+      "choices": [
+        {
+          "_id": "55228c2a53f8d51d353c227b",
+          "name": "Yes"
+        },
+        {
+          "_id": "55228c2a53f8d51d353c227c",
+          "name": "No"
+        },
+        {
+          "_id": "55228c2a53f8d51d353c227d",
+          "name": "Not Sure"
+        }
+      ],
+      "triggers": [
+        {
+          "_id": "55228c2a53f8d51d353c227e",
+          "name": "sperm",
+          "case_sensitive": false
+        },
+        {
+          "_id": "55228c2a53f8d51d353c227f",
+          "name": "azoospermia",
+          "case_sensitive": false
+        }
+      ]
+    },
+    {
+      "_id": "55228c2a53f8d51d353c2280",
+      "question": "Has the patient ever had oligospermia?",
+      "type": "radio",
+      "frequency": "once",
+      "tag_ids": [
+        "55228c2a53f8d51d353c22b1",
+        "5522990153f8d51d353c22bb"
+      ],
+      "choices": [
+        {
+          "_id": "55228c2a53f8d51d353c2282",
+          "name": "Yes"
+        },
+        {
+          "_id": "55228c2a53f8d51d353c2283",
+          "name": "No"
+        },
+        {
+          "_id": "55228c2a53f8d51d353c2284",
+          "name": "Not Sure"
+        }
+      ],
+      "triggers": [
+        {
+          "_id": "55228c2a53f8d51d353c2285",
+          "name": "sperm",
+          "case_sensitive": false
+        },
+        {
+          "_id": "55228c2a53f8d51d353c2286",
+          "name": "semen",
+          "case_sensitive": false
+        }
+      ]
+    },
+    {
+      "_id": "55228c2a53f8d51d353c2287",
+      "question": "Has the patient ever had premature menopause?",
+      "type": "radio",
+      "frequency": "once",
+      "tag_ids": [
+        "55228c2a53f8d51d353c22b2",
+        "5522990153f8d51d353c22bb"
+      ],
+      "choices": [
+        {
+          "_id": "55228c2a53f8d51d353c2289",
+          "name": "Yes"
+        },
+        {
+          "_id": "55228c2a53f8d51d353c228a",
+          "name": "No"
+        },
+        {
+          "_id": "55228c2a53f8d51d353c228b",
+          "name": "Not Sure"
+        }
+      ],
+      "triggers": [
+        {
+          "_id": "55228c2a53f8d51d353c228c",
+          "name": "period",
+          "case_sensitive": false
+        },
+        {
+          "_id": "55228c2a53f8d51d353c228d",
+          "name": "periods",
+          "case_sensitive": false
+        },
+        {
+          "_id": "55228c2a53f8d51d353c228e",
+          "name": "hot flash",
+          "case_sensitive": false
+        },
+        {
+          "_id": "55228c2a53f8d51d353c228f",
+          "name": "hot flashes",
+          "case_sensitive": false
+        },
+        {
+          "_id": "55228c2a53f8d51d353c2290",
+          "name": "menopause",
+          "case_sensitive": false
+        },
+        {
+          "_id": "55228c2a53f8d51d353c2291",
+          "name": "sex",
+          "case_sensitive": false
+        }
+      ]
+    },
+    {
+      "_id": "55228c2a53f8d51d353c2292",
+      "question": "Has the patient ever had ovarian failure?",
+      "type": "radio",
+      "frequency": "once",
+      "tag_ids": [
+        "55228c2a53f8d51d353c22b3",
+        "5522990153f8d51d353c22bb"
+      ],
+      "choices": [
+        {
+          "_id": "55228c2a53f8d51d353c2294",
+          "name": "Yes"
+        },
+        {
+          "_id": "55228c2a53f8d51d353c2295",
+          "name": "No"
+        },
+        {
+          "_id": "55228c2a53f8d51d353c2296",
+          "name": "Not Sure"
+        }
+      ],
+      "triggers": [
+        {
+          "_id": "55228c2a53f8d51d353c2297",
+          "name": "ovarian",
+          "case_sensitive": false
+        },
+        {
+          "_id": "55228c2a53f8d51d353c2298",
+          "name": "ovaries",
+          "case_sensitive": false
+        },
+        {
+          "_id": "55228c2a53f8d51d353c2299",
+          "name": "period",
+          "case_sensitive": false
+        },
+        {
+          "_id": "55228c2a53f8d51d353c229a",
+          "name": "periods",
+          "case_sensitive": false
+        },
+        {
+          "_id": "55228c2a53f8d51d353c229b",
+          "name": "menopause",
+          "case_sensitive": false
+        }
+      ]
+    },
+    {
+      "_id": "55228c2a53f8d51d353c229c",
+      "question": "Has the patient ever had amenorrhea?",
+      "type": "radio",
+      "frequency": "once",
+      "tag_ids": [
+        "5522990153f8d51d353c22bb",
+        "55228c2a53f8d51d353c22b4"
+      ],
+      "choices": [
+        {
+          "_id": "55228c2a53f8d51d353c229e",
+          "name": "Yes"
+        },
+        {
+          "_id": "55228c2a53f8d51d353c229f",
+          "name": "No"
+        },
+        {
+          "_id": "55228c2a53f8d51d353c22a0",
+          "name": "Not Sure"
+        }
+      ],
+      "triggers": [
+        {
+          "_id": "55228c2a53f8d51d353c22a1",
+          "name": "menstruation",
+          "case_sensitive": false
+        },
+        {
+          "_id": "55228c2a53f8d51d353c22a2",
+          "name": "menstrual",
+          "case_sensitive": false
+        },
+        {
+          "_id": "55228c2a53f8d51d353c22a3",
+          "name": "amenorrhea",
+          "case_sensitive": false
+        },
+        {
+          "_id": "5522984553f8d51d353c22b9",
+          "name": "period",
+          "case_sensitive": false
+        },
+        {
+          "_id": "5522984b53f8d51d353c22ba",
+          "name": "periods",
+          "case_sensitive": false
+        }
+      ]
+    },
+    {
+      "_id": "55228c2a53f8d51d353c22a4",
+      "question": "Has the patient ever had retrograde ejaculation?",
+      "type": "radio",
+      "frequency": "once",
+      "tag_ids": [
+        "55228c2a53f8d51d353c22b5",
+        "5522990153f8d51d353c22bb"
+      ],
+      "choices": [
+        {
+          "_id": "55228c2a53f8d51d353c22a6",
+          "name": "Yes"
+        },
+        {
+          "_id": "55228c2a53f8d51d353c22a7",
+          "name": "No"
+        },
+        {
+          "_id": "55228c2a53f8d51d353c22a8",
+          "name": "Not Sure"
+        }
+      ],
+      "triggers": [
+        {
+          "_id": "55228c2a53f8d51d353c22a9",
+          "name": "retrograde",
+          "case_sensitive": false
+        },
+        {
+          "_id": "55228c2a53f8d51d353c22aa",
+          "name": "semen",
+          "case_sensitive": false
+        },
+        {
+          "_id": "55228c2a53f8d51d353c22ab",
+          "name": "ejaculate",
+          "case_sensitive": false
+        },
+        {
+          "_id": "55228c2a53f8d51d353c22ac",
+          "name": "ejaculation",
+          "case_sensitive": false
+        }
+      ]
+    }
+  ],
+  "tags": [
+    {
+      "_id": "55228c2a53f8d51d353c22ad",
+      "name": "erectile dysfunction"
+    },
+    {
+      "_id": "55228c2a53f8d51d353c22ae",
+      "name": "hydrocele"
+    },
+    {
+      "_id": "55228c2a53f8d51d353c22af",
+      "name": "gonadal dysfunction"
+    },
+    {
+      "_id": "55228c2a53f8d51d353c22b0",
+      "name": "azoospermia"
+    },
+    {
+      "_id": "55228c2a53f8d51d353c22b1",
+      "name": "oligospermia"
+    },
+    {
+      "_id": "55228c2a53f8d51d353c22b2",
+      "name": "premature menopause"
+    },
+    {
+      "_id": "55228c2a53f8d51d353c22b3",
+      "name": "premature ovarian failure"
+    },
+    {
+      "_id": "55228c2a53f8d51d353c22b4",
+      "name": "amenorrhea"
+    },
+    {
+      "_id": "55228c2a53f8d51d353c22b5",
+      "name": "retrograde ejaculation"
+    },
+    {
+      "_id": "5522990153f8d51d353c22bb",
+      "name": "infertility"
+    }
+  ]
+}
